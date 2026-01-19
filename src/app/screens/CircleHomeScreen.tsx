@@ -933,7 +933,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
         )}
       </div>
 
-      {/* TODAY IN CIRCLE MODAL - NEW */}
+      {/* TODAY IN CIRCLE MODAL - iOS STYLE */}
       {showTodayModal && (
         <>
           <div
@@ -947,25 +947,30 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                 boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
               }}
             >
-              <div className="px-5 pt-5">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-[20px] font-semibold text-slate-800">
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-9 h-1 bg-slate-300 rounded-full" />
+              </div>
+              
+              <div className="px-5 pb-2">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-[18px] font-semibold text-slate-900">
                     Today in {circleName}
                   </h2>
                   <button
                     onClick={() => setShowTodayModal(false)}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                    className="p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors"
                   >
-                    <X className="w-5 h-5 text-slate-600" />
+                    <X className="w-5 h-5 text-slate-500" />
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 mb-5 pb-5 border-b border-slate-100">
-                  <span className="text-[14px] font-semibold text-slate-700">
-                    Checked in:
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-100">
+                  <span className="text-[14px] text-slate-500">
+                    Checked in today
                   </span>
-                  <span className="text-[14px] font-bold text-purple-600">
-                    {postedCount}/{totalCount}
+                  <span className="text-[14px] font-semibold text-slate-900">
+                    {postedCount} of {totalCount}
                   </span>
                 </div>
 
@@ -1030,13 +1035,13 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
               </div>
 
               {/* Modal Action Buttons */}
-              <div className="px-5 pb-6 space-y-3 border-t border-slate-100 pt-6">
+              <div className="px-5 pb-8 pt-4 space-y-2.5">
                 <button
                   onClick={() => {
                     setShowTodayModal(false);
                     handleShareToday();
                   }}
-                  className="w-full px-4 py-3 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-[14px] font-semibold hover:opacity-90 transition-all active:scale-95"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-900 text-white text-[15px] font-semibold hover:bg-slate-800 transition-all active:scale-[0.98]"
                 >
                   Share Today
                 </button>
@@ -1045,7 +1050,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                     setShowTodayModal(false);
                     setShowAssignModal(true);
                   }}
-                  className="w-full px-4 py-3 rounded-full border-2 border-slate-200 text-slate-700 text-[14px] font-semibold hover:bg-slate-50 transition-all active:scale-95"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-100 text-slate-700 text-[15px] font-semibold hover:bg-slate-200 transition-all active:scale-[0.98]"
                 >
                   Assign Mission
                 </button>
@@ -1055,7 +1060,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
         </>
       )}
 
-      {/* MEMBER DETAIL MODAL - NEW */}
+      {/* MEMBER DETAIL MODAL - iOS STYLE */}
       {showMemberDetailModal && selectedMember && (
         <>
           <div
@@ -1064,46 +1069,52 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
           />
           <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
             <div
-              className="w-full bg-white rounded-t-[28px] p-5 pointer-events-auto max-h-[65vh] overflow-y-auto"
+              className="w-full bg-white rounded-t-[28px] pointer-events-auto max-h-[65vh] overflow-y-auto"
               style={{
                 boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
               }}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-[14px] font-semibold">
-                    {selectedMember.initial}
-                  </div>
-                  <div>
-                    <p className="text-[16px] font-semibold text-slate-800">{selectedMember.name}</p>
-                    <p className="text-[12px] text-slate-500">
-                      Last check-in {selectedMember.lastPostTime}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowMemberDetailModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-600" />
-                </button>
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-9 h-1 bg-slate-300 rounded-full" />
               </div>
+              
+              <div className="px-5 pb-6">
+                <div className="flex justify-between items-start mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-[14px] font-semibold">
+                      {selectedMember.initial}
+                    </div>
+                    <div>
+                      <p className="text-[17px] font-semibold text-slate-900">{selectedMember.name}</p>
+                      <p className="text-[13px] text-slate-500">
+                        Last check-in {selectedMember.lastPostTime}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowMemberDetailModal(false)}
+                    className="p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-slate-500" />
+                  </button>
+                </div>
 
               {/* Latest Post Preview */}
               {selectedMember.lastPostPreview && (
-                <div className="bg-slate-50 rounded-[16px] p-4 mb-5">
-                  <p className="text-[12px] text-slate-500 mb-2">Latest post preview</p>
-                  <div className="text-[18px] font-bold text-slate-800 mb-2">
+                <div className="bg-slate-50 rounded-2xl p-4 mb-5">
+                  <p className="text-[12px] text-slate-500 mb-2">Latest check-in</p>
+                  <div className="text-[20px] font-bold text-slate-900 mb-2">
                     {selectedMember.lastPostPreview.missions}/5 Missions
                   </div>
                   <div className="flex gap-2">
                     {selectedMember.lastPostPreview.wallet && (
-                      <div className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-medium">
+                      <div className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-medium">
                         {selectedMember.lastPostPreview.wallet}
                       </div>
                     )}
                     {selectedMember.lastPostPreview.streak && (
-                      <div className="px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-[10px] font-medium flex items-center gap-1">
+                      <div className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 text-[11px] font-medium flex items-center gap-1">
                         <Flame className="w-3 h-3" />
                         {selectedMember.lastPostPreview.streak}
                       </div>
@@ -1113,8 +1124,8 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
               )}
 
               {/* Action Buttons */}
-              <div className="space-y-3">
-                <button className="w-full px-4 py-3 rounded-full bg-slate-100 text-slate-700 text-[14px] font-semibold hover:bg-slate-200 transition-all">
+              <div className="space-y-2.5">
+                <button className="w-full px-4 py-3.5 rounded-2xl bg-slate-100 text-slate-700 text-[15px] font-semibold hover:bg-slate-200 transition-all active:scale-[0.98]">
                   View Last Post
                 </button>
                 <button
@@ -1124,17 +1135,18 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                     setAssignTo(selectedMember.name);
                     setAssignToId(selectedMember.id);
                   }}
-                  className="w-full px-4 py-3 rounded-full border-2 border-slate-200 text-slate-700 text-[14px] font-semibold hover:bg-slate-50 transition-all"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-900 text-white text-[15px] font-semibold hover:bg-slate-800 transition-all active:scale-[0.98]"
                 >
-                  Assign Mission to {selectedMember.initial}
+                  Assign Mission
                 </button>
+              </div>
               </div>
             </div>
           </div>
         </>
       )}
 
-      {/* Members Modal */}
+      {/* Members Modal - iOS STYLE */}
       {showMembersModal && (
         <>
           <div
@@ -1143,62 +1155,67 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
           />
           <div className="fixed inset-0 flex items-end z-[9999] pointer-events-none">
             <div
-              className="w-full bg-white rounded-t-[32px] p-6 pointer-events-auto max-h-[80vh] overflow-y-auto"
+              className="w-full bg-white rounded-t-[28px] pointer-events-auto max-h-[80vh] overflow-y-auto"
               style={{
                 boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
               }}
             >
-              <div className="flex justify-between items-center mb-5">
-                <h2 className="text-[20px] font-semibold text-slate-800">
-                  Members
-                </h2>
-                <button
-                  onClick={() => setShowMembersModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <X className="w-6 h-6 text-slate-600" />
-                </button>
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-9 h-1 bg-slate-300 rounded-full" />
               </div>
+              
+              <div className="px-5 pb-6">
+                <div className="flex justify-between items-center mb-5">
+                  <h2 className="text-[18px] font-semibold text-slate-900">
+                    Members
+                  </h2>
+                  <button
+                    onClick={() => setShowMembersModal(false)}
+                    className="p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-slate-500" />
+                  </button>
+                </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {circleMembers.map((member) => (
                   <div
                     key={member.initial}
-                    className="bg-slate-50 rounded-[16px] p-4"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-[13px] font-semibold">
-                          {member.initial}
-                        </div>
-                        <p className="text-[15px] font-medium text-slate-800">
-                          {member.name}
-                        </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-[13px] font-semibold">
+                        {member.initial}
                       </div>
-                      {member.posted && (
-                        <span className="text-[12px] font-medium text-green-600">
-                          Posted ✓
-                        </span>
-                      )}
+                      <p className="text-[15px] font-medium text-slate-900">
+                        {member.name}
+                      </p>
                     </div>
+                    {member.posted && (
+                      <span className="text-[12px] font-medium text-emerald-600">
+                        ✓ Posted
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
 
-              <div className="mt-6 p-4 rounded-[16px] bg-purple-50 border border-purple-200">
-                <h3 className="text-[14px] font-semibold text-slate-800 mb-1">
+              <div className="mt-5 p-4 rounded-2xl bg-purple-50">
+                <p className="text-[13px] font-medium text-slate-700">
                   Circle Privacy
-                </h3>
-                <p className="text-[13px] text-slate-600">
+                </p>
+                <p className="text-[12px] text-slate-500 mt-0.5">
                   Metrics only · No messages
                 </p>
+              </div>
               </div>
             </div>
           </div>
         </>
       )}
 
-      {/* ✅ NEW ASSIGN MISSION BOTTOM SHEET */}
+      {/* ✅ ASSIGN MISSION BOTTOM SHEET - iOS STYLE */}
       {showAssignModal && (
         <>
           {/* Overlay */}
@@ -1212,61 +1229,66 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
 
           {/* Bottom Sheet Wrapper */}
           <div className="fixed inset-0 flex items-end justify-center z-[10000] pointer-events-none">
-            {/* Sheet Container - Phone Sized */}
+            {/* Sheet Container */}
             <div
               className="w-full max-w-[390px] bg-white rounded-t-[28px] pointer-events-auto max-h-[85vh] overflow-y-auto flex flex-col"
               style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
             >
-              {/* ===== A) HEADER ===== */}
-              <div className="flex items-center justify-center px-5 pt-4 pb-4 border-b border-slate-200/60 sticky top-0 bg-white flex-shrink-0">
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+                <div className="w-9 h-1 bg-slate-300 rounded-full" />
+              </div>
+              
+              {/* ===== HEADER ===== */}
+              <div className="flex items-center justify-between px-5 pt-2 pb-4 flex-shrink-0">
                 <h2 className="text-[18px] font-semibold text-slate-900">Assign Mission</h2>
                 <button
                   onClick={() => {
                     setShowAssignModal(false);
                     onModalStateChange?.(false);
                   }}
-                  className="absolute right-5 p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  className="p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors"
                 >
-                  <X size={20} className="text-slate-600" />
+                  <X size={20} className="text-slate-500" />
                 </button>
               </div>
 
               {/* ===== SCROLLABLE CONTENT ===== */}
-              <div className="flex-1 overflow-y-auto px-5 py-6 space-y-0">
+              <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-0">
 
-                {/* ===== B) MISSION (REQUIRED) ===== */}
-                <div className="mb-6">
-                  <label className="text-[14px] font-semibold text-slate-700 block mb-2">
-                    Mission <span className="text-red-500">*</span>
+                {/* ===== MISSION (REQUIRED) ===== */}
+                <div className="mb-5">
+                  <label className="text-[13px] font-medium text-slate-500 block mb-2">
+                    Mission
                   </label>
                   <input
                     type="text"
                     value={assignmentTitle}
                     onChange={(e) => setAssignmentTitle(e.target.value)}
                     placeholder="e.g. Take bins out"
-                    className="w-full px-4 py-3 h-12 rounded-[16px] bg-slate-50 border border-slate-200 outline-none text-slate-800 placeholder:text-slate-400 text-sm font-medium focus:border-slate-300 transition-colors"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 outline-none text-slate-900 placeholder:text-slate-400 text-[15px] font-medium"
                   />
                 </div>
 
-                {/* ===== C) ASSIGN TO (REQUIRED - TAP ROW, NOT DROPDOWN) ===== */}
-                <div className="mb-6 pb-6 border-b border-slate-200/60">
-                  <label className="text-[14px] font-semibold text-slate-700 block mb-2">
-                    Assign to <span className="text-red-500">*</span>
+                {/* ===== ASSIGN TO (REQUIRED) ===== */}
+                <div className="mb-5">
+                  <label className="text-[13px] font-medium text-slate-500 block mb-2">
+                    Assign to
                   </label>
                   <button
                     onClick={() => setShowMemberPicker(true)}
-                    className="w-full px-4 py-3 h-12 rounded-[16px] bg-white border border-slate-200 outline-none text-slate-800 text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-between gap-3"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 text-[15px] font-medium flex items-center justify-between gap-3 active:bg-slate-100 transition-colors"
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       {assignedMember ? (
                         <>
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                             {assignedMember.initial}
                           </div>
-                          <span className="text-slate-800 font-medium">{assignedMember.name}</span>
+                          <span className="text-slate-900">{assignedMember.name}</span>
                         </>
                       ) : (
-                        <span className="text-slate-500">Select member</span>
+                        <span className="text-slate-400">Select member</span>
                       )}
                     </div>
                     <ChevronDown size={20} className="text-slate-400 flex-shrink-0" />
@@ -1342,13 +1364,13 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                   </p>
                 </div>
 
-                {/* ===== E) REPEAT TOGGLE (OPTIONAL) ===== */}
-                <div className="mb-6 pb-6 border-b border-slate-200/60 flex items-center justify-between">
-                  <label className="text-[14px] font-semibold text-slate-900">Repeat</label>
+                {/* ===== REPEAT TOGGLE ===== */}
+                <div className="flex items-center justify-between py-4 border-t border-slate-100">
+                  <span className="text-[15px] font-medium text-slate-900">Repeat</span>
                   <button
                     onClick={() => setRepeatEnabled(!repeatEnabled)}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
-                      repeatEnabled ? "bg-blue-500" : "bg-slate-300"
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                      repeatEnabled ? "bg-emerald-500" : "bg-slate-200"
                     }`}
                   >
                     <span
@@ -1441,67 +1463,63 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                   </div>
                 )}
 
-                {/* ===== F) REQUIRE PROOF TOGGLE ===== */}
-                <div className="mb-6 pb-6 border-b border-slate-200/60">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <label className="text-[14px] font-semibold text-slate-900 block">Require proof</label>
-                      <p className="text-[13px] text-slate-600 mt-1">Assignee must upload a photo before marking Done.</p>
-                    </div>
-                    <button
-                      onClick={() => setRequireProof(!requireProof)}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
-                        requireProof ? "bg-blue-500" : "bg-slate-300"
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
-                          requireProof ? "translate-x-5" : "translate-x-0.5"
-                        }`}
-                      />
-                    </button>
+                {/* ===== REQUIRE PROOF TOGGLE ===== */}
+                <div className="flex items-center justify-between py-4 border-t border-slate-100">
+                  <div>
+                    <span className="text-[15px] font-medium text-slate-900 block">Require proof</span>
+                    <span className="text-[12px] text-slate-500">Photo required to complete</span>
                   </div>
+                  <button
+                    onClick={() => setRequireProof(!requireProof)}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
+                      requireProof ? "bg-emerald-500" : "bg-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
+                        requireProof ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
                 </div>
 
-                {/* ===== G) SEND NUDGE NOW TOGGLE ===== */}
-                <div className="mb-20">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <label className="text-[14px] font-semibold text-slate-900 block">Send nudge now</label>
-                      <p className="text-[13px] text-slate-600 mt-1">Notify immediately (recommended)</p>
-                    </div>
-                    <button
-                      onClick={() => setNudgeTiming(nudgeTiming === "now" ? "at-due-time" : "now")}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
-                        nudgeTiming === "now" ? "bg-blue-500" : "bg-slate-300"
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
-                          nudgeTiming === "now" ? "translate-x-5" : "translate-x-0.5"
-                        }`}
-                      />
-                    </button>
+                {/* ===== SEND NUDGE TOGGLE ===== */}
+                <div className="flex items-center justify-between py-4 border-t border-slate-100 mb-4">
+                  <div>
+                    <span className="text-[15px] font-medium text-slate-900 block">Send nudge now</span>
+                    <span className="text-[12px] text-slate-500">Notify immediately</span>
                   </div>
+                  <button
+                    onClick={() => setNudgeTiming(nudgeTiming === "now" ? "at-due-time" : "now")}
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
+                      nudgeTiming === "now" ? "bg-emerald-500" : "bg-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform ${
+                        nudgeTiming === "now" ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
                 </div>
 
               </div>
 
-              {/* ===== H) STICKY BOTTOM BUTTONS ===== */}
-              <div className="flex gap-3 px-5 py-4 border-t border-slate-200/60 bg-white flex-shrink-0">
+              {/* ===== BOTTOM BUTTONS ===== */}
+              <div className="flex gap-3 px-5 py-5 border-t border-slate-100 bg-white flex-shrink-0">
                 <button
                   onClick={() => {
                     setShowAssignModal(false);
                     onModalStateChange?.(false);
                   }}
-                  className="flex-1 px-4 py-3 h-12 rounded-full text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  className="flex-1 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors active:scale-[0.98]"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAssignMission}
                   disabled={!assignmentTitle.trim() || !assignedMember}
-                  className="flex-1 px-4 py-3 h-12 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex-1 py-3.5 rounded-2xl bg-slate-900 text-white text-[15px] font-semibold hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                 >
                   Assign
                 </button>
