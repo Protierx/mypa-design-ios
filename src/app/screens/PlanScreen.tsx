@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { Plus, Clock, MoreVertical, Lock, Unlock, ChevronRight } from "lucide-react";
+import { Plus, Clock, MoreVertical, Lock, ChevronRight, CheckCircle2, Calendar as CalendarIcon, Sparkles, Play, TrendingUp, Target, Zap } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
-import { VoicePill } from "../components/VoicePill";
 import { Calendar } from "../components/ui/calendar";
+import { MYPAOrb } from "../components/MYPAOrb";
 
-export function PlanScreen() {
+interface PlanScreenProps {
+  onNavigate?: (screen: string) => void;
+}
+
+export function PlanScreen({ onNavigate }: PlanScreenProps) {
   const [timeBlocks, setTimeBlocks] = useState(() => {
     const todayStr = new Date().toISOString().split('T')[0];
     return [
-      { id: 1, date: todayStr, time: '9:00 AM', duration: '1h', durationMin: 60, durationMax: 60, title: 'Team standup', category: 'Work', isOverdue: false, isFixed: true, priority: 'High' as const, completed: false },
-      { id: 2, date: todayStr, time: '11:00 AM', duration: '2h', durationMin: 120, durationMax: 120, title: 'Deep work: Design review', category: 'Work', isOverdue: false, isFixed: false, priority: 'Normal' as const, completed: false },
+      { id: 1, date: todayStr, time: '9:00 AM', duration: '1h', durationMin: 60, durationMax: 60, title: 'Team standup', category: 'Work', isOverdue: false, isFixed: true, priority: 'High' as const, completed: true },
+      { id: 2, date: todayStr, time: '11:00 AM', duration: '2h', durationMin: 120, durationMax: 120, title: 'Deep work: Design review', category: 'Work', isOverdue: false, isFixed: false, priority: 'Normal' as const, completed: true },
       { id: 3, date: todayStr, time: '2:00 PM', duration: '30m', durationMin: 30, durationMax: 30, title: 'Lunch break', category: 'Personal', isOverdue: false, isFixed: false, priority: 'Low' as const, completed: false },
       { id: 4, date: todayStr, time: '3:00 PM', duration: '1h', durationMin: 60, durationMax: 60, title: 'Team sync', category: 'Work', isOverdue: true, isFixed: true, priority: 'High' as const, completed: false },
       { id: 5, date: todayStr, time: '5:00 PM', duration: '45m', durationMin: 45, durationMax: 45, title: 'Gym session', category: 'Health', isOverdue: false, isFixed: false, priority: 'Low' as const, completed: false },
@@ -18,7 +22,7 @@ export function PlanScreen() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategory, setNewCategory] = useState('Personal');
   const [newDuration, setNewDuration] = useState('30m');
   const [newDurationMin, setNewDurationMin] = useState(30);
   const [newDurationMax, setNewDurationMax] = useState(30);
@@ -37,6 +41,14 @@ export function PlanScreen() {
   const [editField, setEditField] = useState<'time' | 'duration' | 'priority' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [showAutoplanConfirm, setShowAutoplanConfirm] = useState(false);
+
+  // Computed values
+  const completedCount = timeBlocks.filter(b => b.completed).length;
+  const totalCount = timeBlocks.length;
+  const totalMinutes = timeBlocks.reduce((sum, b) => sum + b.durationMin, 0);
+  const completedMinutes = timeBlocks.filter(b => b.completed).reduce((sum, b) => sum + b.durationMin, 0);
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const nextTask = timeBlocks.find(b => !b.completed);
 
   
   // Capacity planning helpers
@@ -73,50 +85,42 @@ export function PlanScreen() {
     };
   };
 
-  const formatDurationRange = (min: number, max: number) => {
-    if (min === max) {
-      const h = Math.floor(min / 60);
-      const m = min % 60;
-      if (h > 0 && m === 0) return `${h}h`;
-      if (h > 0) return `${h}h ${m}m`;
-      return `${m}m`;
-    }
-    const minH = Math.floor(min / 60);
-    const minM = min % 60;
-    const maxH = Math.floor(max / 60);
-    const maxM = max % 60;
-    
-    const minStr = minH > 0 && minM === 0 ? `${minH}h` : minH > 0 ? `${minH}h ${minM}m` : `${minM}m`;
-    const maxStr = maxH > 0 && maxM === 0 ? `${maxH}h` : maxH > 0 ? `${maxH}h ${maxM}m` : `${maxM}m`;
-    return `${minStr}–${maxStr}`;
+  const formatDuration = (min: number) => {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    if (h > 0 && m === 0) return `${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
   };
 
-  const formatCapacityLine = (cap: ReturnType<typeof getCapacityForDate>) => {
-    const fh = Math.floor(cap.free / 60);
-    const fm = cap.free % 60;
-    const ph = Math.floor(cap.planned / 60);
-    const pm = cap.planned % 60;
-    const free = fh > 0 ? `${fh}h ${fm}m` : `${fm}m`;
-    const planned = ph > 0 ? `${ph}h ${pm}m` : `${pm}m`;
-    
-    if (cap.isOverCapacity) {
-      const oh = Math.floor(Math.abs(cap.difference) / 60);
-      const om = Math.abs(cap.difference) % 60;
-      const over = oh > 0 ? `${oh}h ${om}m` : `${om}m`;
-      return { free, planned, status: `Over by ${over}`, isOver: true };
-    } else {
-      const uh = Math.floor(cap.difference / 60);
-      const um = cap.difference % 60;
-      const under = uh > 0 ? `${uh}h ${um}m` : `${um}m`;
-      return { free, planned, status: `Under by ${under}`, isOver: false };
+  const formatDurationRange = (min: number, max: number) => {
+    if (min === max) return formatDuration(min);
+    return `${formatDuration(min)}–${formatDuration(max)}`;
+  };
+
+  const getCategoryDot = (category: string) => {
+    switch (category) {
+      case 'Work': return 'bg-blue-500';
+      case 'Health': return 'bg-emerald-500';
+      case 'Personal': return 'bg-purple-500';
+      default: return 'bg-slate-400';
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Work':
+        return 'bg-blue-100 text-blue-700';
+      case 'Health':
+        return 'bg-green-100 text-green-700';
+      case 'Personal':
+        return 'bg-purple-100 text-purple-700';
+      default:
+        return 'bg-slate-100 text-slate-600';
     }
   };
 
   const formatDate = (d: Date) => d.toISOString().split('T')[0];
-  const formatDisplayDate = (dateStr: string) => {
-    const dd = new Date(dateStr);
-    return dd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  };
 
   const parseDurationToMinutes = (dur: string) => {
     if (!dur) return 0;
@@ -133,25 +137,6 @@ export function PlanScreen() {
     const d = new Date();
     d.setHours(h, mm, 0, 0);
     return d;
-  };
-
-  const handleDayClick = (day: Date) => {
-    setSelectedDate(day);
-    setVisibleMonth(day);
-    setIsAdding(true);
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Work':
-        return 'bg-blue-100 text-blue-700';
-      case 'Health':
-        return 'bg-green-100 text-green-700';
-      case 'Personal':
-        return 'bg-purple-100 text-purple-700';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
   };
 
   const formatCurrentTime = () => {
@@ -384,299 +369,279 @@ export function PlanScreen() {
           -webkit-backdrop-filter: blur(20px);
           border-radius: 20px;
         }
+        .ios-card:active {
+          transform: scale(0.98);
+          transition: transform 0.15s ease;
+        }
+        .hero-card {
+          background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        .quick-card {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+        }
+        .task-card {
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+        }
+        .status-dot {
+          animation: status-pulse 2s ease-in-out infinite;
+        }
+        @keyframes status-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(0.95); }
+        }
       `}</style>
       
       {/* Header */}
-      <div className="px-6 pt-4 pb-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-[28px] font-bold text-slate-900">
-            Plan
-          </h1>
+      <div className="px-5 pt-2 pb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[13px] text-slate-500 font-medium">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Your Plan</h1>
+          </div>
+          <button
+            onClick={() => setShowMonthView(!showMonthView)}
+            className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm active:scale-95 transition-transform"
+          >
+            <CalendarIcon className="w-5 h-5 text-slate-600" />
+          </button>
         </div>
-        <VoicePill placeholder="Let's plan your future..." />
+        
+        {/* Status Pills */}
+        <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 status-dot" />
+            <span className="text-[12px] font-semibold text-emerald-700">{completedCount}/{totalCount} done</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full">
+            <Clock className="w-3 h-3 text-blue-600" />
+            <span className="text-[12px] font-semibold text-blue-700">{formatDuration(totalMinutes)} planned</span>
+          </div>
+        </div>
       </div>
 
-      {/* Month Selector */}
-      <div className="px-6 mb-6 relative">
-        <div className="flex items-center justify-between">
-          <button className="text-[17px] font-semibold text-slate-900">
-            {visibleMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
-          </button>
-          <button onClick={() => setShowMonthView(prev => !prev)} className="text-[15px] text-purple-600 font-medium">
-            {showMonthView ? 'Close' : 'View Month'}
-          </button>
-        </div>
-
-        {showMonthView && (
-          <div className="mt-3">
+      {/* Calendar View (collapsible) */}
+      {showMonthView && (
+        <div className="px-4 mb-4">
+          <div className="ios-card p-4 shadow-sm">
             <Calendar
               month={visibleMonth}
               onMonthChange={setVisibleMonth}
-              onDayClick={handleDayClick}
+              onDayClick={(day: Date) => {
+                setSelectedDate(day);
+                setVisibleMonth(day);
+                setIsAdding(true);
+              }}
               selected={selectedDate || undefined}
             />
+          </div>
+        </div>
+      )}
 
-            {selectedDate && (
-              <div className="mt-3 ios-card p-4">
-                <div className="text-[14px] text-slate-500 mb-2">
-                  Add block for <span className="text-slate-900 font-medium">{formatDisplayDate(formatDate(selectedDate))}</span>
+      <div className="px-4 space-y-3">
+        
+        {/* Hero Card - Today's Progress */}
+        <div className="hero-card rounded-[24px] overflow-hidden shadow-xl">
+          <div className="p-5">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Target className="w-4 h-4 text-purple-400" />
+                  <span className="text-[11px] font-semibold text-purple-400 uppercase tracking-wider">Today's Progress</span>
                 </div>
-
-                <div className="flex gap-2 mb-3">
-                  {['Work', 'Personal', 'Health', 'Other'].map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setNewCategory(cat)}
-                      className={`px-3 py-1 rounded-full text-[13px] ${newCategory === cat ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600'}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[42px] font-bold text-white leading-none">{completedCount}</span>
+                  <span className="text-[20px] text-white/50">/ {totalCount}</span>
                 </div>
-
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex gap-2">
-                    {['High','Normal','Low'].map(p => (
-                      <button key={p} onClick={() => setNewPriority(p as any)} className={`px-3 py-1 rounded-full text-[13px] ${newPriority === p ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                  <label className="ml-2 flex items-center gap-2 text-[13px] text-slate-500">
-                    <input type="checkbox" checked={newFixed} onChange={e => setNewFixed(e.target.checked)} />
-                    Fixed time
-                  </label>
-                </div>
-
-                <textarea
-                  value={newTitle}
-                  onChange={e => setNewTitle(e.target.value)}
-                  placeholder="Type your plan..."
-                  className="w-full resize-none bg-transparent outline-none text-slate-900 placeholder:text-slate-400 text-[15px]"
-                  rows={3}
-                />
-
-                <div className="flex gap-2 mt-3">
-                  <input
-                    value={newCategory}
-                    onChange={e => setNewCategory(e.target.value)}
-                    placeholder="Category (e.g., Work, Personal)"
-                    className="flex-1 px-3 py-2 rounded-xl bg-slate-100 text-[13px] placeholder:text-slate-400 outline-none"
+                <p className="text-[13px] text-slate-400 mt-1">tasks completed</p>
+              </div>
+              
+              {/* Progress Ring */}
+              <div className="relative w-20 h-20">
+                <svg className="w-20 h-20 transform -rotate-90">
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="34"
+                    stroke="rgba(255,255,255,0.1)"
+                    strokeWidth="6"
+                    fill="none"
                   />
-                  <input
-                    value={newDuration}
-                    onChange={e => setNewDuration(e.target.value)}
-                    placeholder="Duration (e.g., 30m)"
-                    className="w-28 px-3 py-2 rounded-xl bg-slate-100 text-[13px] placeholder:text-slate-400 outline-none"
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="34"
+                    stroke="url(#progressGradient)"
+                    strokeWidth="6"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 34 * (completedCount / Math.max(totalCount, 1))} ${2 * Math.PI * 34}`}
                   />
-                </div>
-
-                <div className="flex items-center justify-end gap-2 mt-3">
-                  <button onClick={handleCancel} className="px-4 py-2 rounded-full text-[14px] text-slate-500 hover:bg-slate-100">Cancel</button>
-                  <button onClick={handleAdd} className="px-4 py-2 rounded-full bg-purple-600 text-white text-[14px]">Add</button>
+                  <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#B58CFF" />
+                      <stop offset="100%" stopColor="#64C7FF" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[18px] font-bold text-white">{progressPercent}%</span>
                 </div>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Today Timeline */}
-      <div className="px-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-[20px] font-semibold text-slate-900">
-              Today
-            </h2>
-            <p className="text-[15px] text-slate-500 mt-1">
-              Thursday
-            </p>
-          </div>
-          <div className="flex items-center gap-6">
-            <button onClick={() => autoPlan()} className="text-[14px] px-3 py-1 rounded-full bg-purple-100 text-purple-600 mr-6 font-medium">
-              Auto Plan
-            </button>
-            <button 
-              onClick={() => setIsAdding(true)}
-              className="w-10 h-10 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform shadow-md"
-              style={{
-                background: 'linear-gradient(135deg, #B58CFF 0%, #64C7FF 100%)',
-              }}
-            >
-              <Plus className="w-5 h-5 text-white" strokeWidth={3} />
-            </button>
+            </div>
+            
+            {/* Time Stats */}
+            <div className="flex gap-3">
+              <div className="flex-1 bg-white/5 backdrop-blur rounded-xl p-3">
+                <p className="text-[11px] text-slate-400 uppercase tracking-wide">Completed</p>
+                <p className="text-[18px] font-bold text-emerald-400">{formatDuration(completedMinutes)}</p>
+              </div>
+              <div className="flex-1 bg-white/5 backdrop-blur rounded-xl p-3">
+                <p className="text-[11px] text-slate-400 uppercase tracking-wide">Remaining</p>
+                <p className="text-[18px] font-bold text-white">{formatDuration(totalMinutes - completedMinutes)}</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Capacity Line */}
-        {(() => {
-          const todayStr = formatDate(new Date());
-          const capacity = getCapacityForDate(todayStr);
-          const capacityLineInfo = formatCapacityLine(capacity);
-          
-          return (
-            <div 
-              className={`mb-4 px-4 py-2.5 rounded-full text-[13px] font-medium flex items-center justify-between cursor-pointer transition-colors ${
-                capacity.isOverCapacity
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-slate-100 text-slate-500'
-              }`}
-              onClick={() => capacity.isOverCapacity && setShowSmartFixMenu(!showSmartFixMenu)}
-            >
-              <span className="text-[12px]">
-                Free: {capacityLineInfo.free} · Planned: {capacityLineInfo.planned} · {capacityLineInfo.status}
-              </span>
-              {capacity.isOverCapacity && <ChevronRight className="w-4 h-4 ml-2" />}
+        {/* Next Up Card */}
+        {nextTask && (
+          <button
+            onClick={() => handleCompleteTask(nextTask.id)}
+            className="ios-card w-full p-4 shadow-sm text-left active:scale-[0.98] transition-transform"
+          >
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex flex-col items-center justify-center shadow-lg shadow-purple-500/20">
+                  <Play className="w-6 h-6 text-white" fill="white" />
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[11px] font-bold text-purple-600 uppercase tracking-wide">Up Next</span>
+                  <span className="text-[11px] text-slate-400">• {nextTask.time}</span>
+                </div>
+                <p className="text-[17px] font-semibold text-slate-900 truncate">{nextTask.title}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className={`w-2 h-2 rounded-full ${getCategoryDot(nextTask.category)}`} />
+                  <span className="text-[12px] text-slate-500">{nextTask.category}</span>
+                  <span className="text-[12px] text-slate-400">• {formatDuration(nextTask.durationMin)}</span>
+                </div>
+              </div>
+              
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-slate-400" />
+              </div>
             </div>
-          );
-        })()}
+          </button>
+        )}
 
-        {/* Smart Fix Suggestion */}
-        {(() => {
-          const todayStr = formatDate(new Date());
-          const capacity = getCapacityForDate(todayStr);
-          if (!capacity.isOverCapacity || !showSmartFixMenu) return null;
-          
-          const suggestion = getSmartFixSuggestion(todayStr);
-          if (!suggestion) return null;
-          
-          return (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl">
-              <p className="text-[13px] text-amber-900 font-medium mb-2">
-                Suggested: Move <span className="font-semibold">{suggestion.task.title}</span> to tomorrow
-              </p>
-              <button 
-                onClick={() => handleAutoFit(suggestion.task.id)}
-                className="text-[13px] px-3 py-1.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-medium transition-colors"
-              >
-                Auto-fit
-              </button>
+        {/* Quick Actions Row */}
+        <div className="flex gap-2.5">
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex-1 quick-card rounded-2xl p-3.5 flex items-center gap-3 shadow-sm active:scale-[0.97] transition-transform"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+              <Plus className="w-5 h-5 text-white" />
             </div>
-          );
-        })()}
+            <div className="text-left">
+              <p className="text-[14px] font-semibold text-slate-900">Add Task</p>
+              <p className="text-[11px] text-slate-500">Quick add</p>
+            </div>
+          </button>
 
+          <button
+            onClick={() => autoPlan()}
+            className="flex-1 quick-card rounded-2xl p-3.5 flex items-center gap-3 shadow-sm active:scale-[0.97] transition-transform"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-md shadow-violet-500/20">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="text-[14px] font-semibold text-slate-900">Auto Plan</p>
+              <p className="text-[11px] text-slate-500">Optimize</p>
+            </div>
+          </button>
+        </div>
+
+        {/* Auto Plan Confirmation */}
         {showAutoplanConfirm && autoplanSummary && (
-          <div className="mb-4 p-4 ios-card shadow-md">
+          <div className="ios-card p-4 shadow-md">
             <div className="text-[14px] text-slate-800 font-medium mb-3 whitespace-pre-line">{autoplanSummary}</div>
             <div className="flex gap-2 justify-end">
               <button onClick={handleUndoAutoplan} className="px-4 py-2 rounded-full text-[14px] text-slate-500 hover:bg-slate-100 border border-slate-200">
                 Undo
               </button>
-              <button onClick={handleAcceptAutoplan} className="px-4 py-2 rounded-full bg-purple-600 text-white text-[14px]">
+              <button onClick={handleAcceptAutoplan} className="px-4 py-2 rounded-full bg-slate-900 text-white text-[14px]">
                 Accept
               </button>
             </div>
           </div>
         )}
-        <div className="space-y-3">
+
+        {/* Section Header */}
+        <div className="flex items-center justify-between pt-2">
+          <h2 className="text-[15px] font-semibold text-slate-900">All Tasks</h2>
+          <span className="text-[12px] text-slate-500">{timeBlocks.length} items</span>
+        </div>
+
+        {/* Task List */}
+        <div className="space-y-2">
           {timeBlocks.map(block => (
             <div
               key={block.id}
-              className="ios-card p-4 shadow-sm"
+              className={`task-card rounded-2xl p-4 shadow-sm ${block.completed ? 'opacity-60' : ''}`}
             >
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 text-center pt-0.5">
-                  <p className="text-[15px] font-semibold text-slate-900">
-                    {block.time.split(' ')[0]}
-                  </p>
-                  <p className="text-[12px] text-slate-500">
-                    {block.time.split(' ')[1]}
-                  </p>
-                </div>
+              <div className="flex items-center gap-3">
+                {/* Completion Toggle */}
+                <button
+                  onClick={() => handleCompleteTask(block.id)}
+                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                    block.completed 
+                      ? 'bg-emerald-500 border-emerald-500' 
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  {block.completed && <CheckCircle2 className="w-4 h-4 text-white" />}
+                </button>
+                
+                {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className={`text-[17px] font-medium flex items-center gap-2 ${block.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                      <span>{block.title}</span>
-                      {block.isFixed && (
-                        <button onClick={() => handleToggleLock(block.id)} className="p-1 hover:bg-slate-100 rounded transition-colors" title="Tap to unlock">
-                          <Lock className="w-4 h-4 text-slate-400" />
-                        </button>
-                      )}
-                      {!block.isFixed && (
-                        <button onClick={() => handleToggleLock(block.id)} className="p-1 hover:bg-slate-100 rounded transition-colors opacity-50" title="Tap to lock">
-                          <Unlock className="w-4 h-4 text-slate-400" />
-                        </button>
-                      )}
-                      {block.priority && (
-                        <span onClick={() => cycleTaskPriority(block.id)} className={`text-[12px] px-2 py-0.5 rounded-full font-medium cursor-pointer transition-colors ${block.priority === 'High' ? 'bg-red-100 text-red-700' : block.priority === 'Low' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
-                          {block.priority}
-                        </span>
-                      )}
-                      {block.date && block.date !== formatDate(new Date()) && (
-                        <span className="ml-2 text-[12px] text-slate-500">
-                          {formatDisplayDate(block.date)}
-                        </span>
-                      )}
+                  <div className="flex items-center gap-2">
+                    <h3 className={`text-[15px] font-medium ${block.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                      {block.title}
                     </h3>
-                    {block.isOverdue && (
-                      <span className="flex items-center gap-1 text-[12px] text-amber-600">
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-                        Overdue
-                      </span>
+                    {block.isFixed && (
+                      <Lock className="w-3 h-3 text-slate-400" />
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-0.5 rounded-full text-[12px] font-medium ${getCategoryColor(block.category)}`}>
-                      {block.category}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-purple-100 text-purple-600">
-                      {formatDurationRange(block.durationMin || parseDurationToMinutes(block.duration), block.durationMax || parseDurationToMinutes(block.duration))}
-                    </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className={`w-1.5 h-1.5 rounded-full ${getCategoryDot(block.category)}`} />
+                    <span className="text-[12px] text-slate-500">{block.time}</span>
+                    <span className="text-[12px] text-slate-400">• {formatDuration(block.durationMin)}</span>
                   </div>
-                  {editingId === block.id && editField && (
-                    <div className="mt-2 p-2 bg-slate-50 rounded-xl">
-                      {editField === 'time' && (
-                        <div className="flex gap-2">
-                          <input value={editValue} onChange={e => setEditValue(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-sm bg-white border border-slate-200" />
-                          <button onClick={() => saveEdit(block.id)} className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg">Save</button>
-                          <button onClick={() => { setEditingId(null); setEditField(null); }} className="px-3 py-1 text-sm text-slate-500 hover:bg-slate-100 rounded-lg">Cancel</button>
-                        </div>
-                      )}
-                      {editField === 'duration' && (
-                        <div className="flex gap-2">
-                          <input value={editValue} onChange={e => setEditValue(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-sm bg-white border border-slate-200" />
-                          <button onClick={() => saveEdit(block.id)} className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg">Save</button>
-                          <button onClick={() => { setEditingId(null); setEditField(null); }} className="px-3 py-1 text-sm text-slate-500 hover:bg-slate-100 rounded-lg">Cancel</button>
-                        </div>
-                      )}
-                      {editField === 'priority' && (
-                        <div className="flex gap-2">
-                          {['High', 'Normal', 'Low'].map(p => (
-                            <button key={p} onClick={() => { setEditValue(p); saveEdit(block.id); }} className={`px-3 py-1 text-sm rounded-lg ${editValue === p ? 'bg-purple-600 text-white' : 'bg-white border border-slate-200'}`}>
-                              {p}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
-                <div className="relative">
-                  <button onClick={() => setOpenActionMenuId(openActionMenuId === block.id ? null : block.id)} className="p-2 text-slate-400 hover:text-slate-600">
-                    <MoreVertical className="w-5 h-5" />
+                
+                {/* Actions */}
+                <div className="relative flex-shrink-0">
+                  <button 
+                    onClick={() => setOpenActionMenuId(openActionMenuId === block.id ? null : block.id)} 
+                    className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
+                  >
+                    <MoreVertical className="w-4 h-4" />
                   </button>
                   {openActionMenuId === block.id && (
-                    <div className="absolute right-0 top-8 bg-white border border-slate-200 rounded-2xl shadow-lg z-10 min-w-max overflow-hidden">
+                    <div className="absolute right-0 top-8 bg-white rounded-2xl shadow-lg z-10 min-w-[140px] overflow-hidden border border-slate-100">
                       <button onClick={() => handleCompleteTask(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700">
-                        {block.completed ? '✓ Completed' : 'Mark Complete'}
-                      </button>
-                      <button onClick={() => startEditField(block.id, 'time')} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700 border-t border-slate-100">
-                        Edit time
-                      </button>
-                      <button onClick={() => startEditField(block.id, 'duration')} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700 border-t border-slate-100">
-                        Edit duration
-                      </button>
-                      <button onClick={() => startEditField(block.id, 'priority')} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700 border-t border-slate-100">
-                        Change priority
-                      </button>
-                      <button onClick={() => handleToggleLock(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700 border-t border-slate-100">
-                        {block.isFixed ? 'Unlock time' : 'Lock time'}
+                        {block.completed ? 'Undo' : 'Done'}
                       </button>
                       <button onClick={() => handleMoveToTomorrow(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700 border-t border-slate-100">
-                        Move to Tomorrow
-                      </button>
-                      <button onClick={() => handleShareTask(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700 border-t border-slate-100">
-                        Share to Circles
+                        Tomorrow
                       </button>
                       <button onClick={() => handleDeleteTask(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-red-50 text-red-600 border-t border-slate-100">
                         Delete
@@ -689,179 +654,120 @@ export function PlanScreen() {
           ))}
         </div>
 
-        {/* Add Block Button / Form */}
-        {!isAdding ? null : (
-          <>
-            {/* Backdrop */}
+        {/* Ask MYPA */}
+        <button
+          onClick={() => onNavigate?.('ask')}
+          className="w-full ios-card p-3 shadow-md flex items-center gap-3 active:scale-[0.98] transition-transform"
+        >
+          <MYPAOrb size="sm" showGlow={false} />
+          <div className="flex-1 text-left">
+            <p className="text-[15px] font-semibold text-slate-900">Ask MYPA</p>
+            <p className="text-[12px] text-slate-500">Try: "Move gym to tomorrow"</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-300" />
+        </button>
+      </div>
+
+      {/* Add Task Modal */}
+      {isAdding && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+            onClick={handleCancel}
+          />
+          
+          <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
             <div 
-              className="absolute inset-0 bg-black/40 z-40 transition-opacity backdrop-blur-sm rounded-[48px]"
-              onClick={handleCancel}
-            />
-            
-            {/* Fun Modal */}
-            <div className="absolute inset-0 flex items-end z-50 pointer-events-none rounded-[48px] overflow-hidden">
-              <div 
-                className="w-full bg-white rounded-t-[32px] p-6 pointer-events-auto animate-in slide-in-from-bottom-4 duration-300"
-                style={{
-                  boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
-                }}
-              >
-                <style>{`
-                  @keyframes slide-in-from-bottom {
-                    from {
-                      opacity: 0;
-                      transform: translateY(100%);
-                    }
-                    to {
-                      opacity: 1;
-                      transform: translateY(0);
-                    }
-                  }
-                  .animate-in {
-                    animation: slide-in-from-bottom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-                  }
-                `}</style>
-                
-                {/* Drag handle */}
-                <div className="flex justify-center mb-4">
-                  <div className="w-12 h-1 bg-slate-200 rounded-full" />
-                </div>
+              className="w-full bg-white rounded-t-[28px] p-5 pointer-events-auto"
+              style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}
+            >
+              {/* Handle bar */}
+              <div className="flex justify-center mb-4">
+                <div className="w-9 h-1 bg-slate-300 rounded-full" />
+              </div>
 
-                {/* Title */}
-                <h2 className="text-[24px] font-bold text-slate-900 mb-6">
-                  What's on your mind?
-                </h2>
+              <h2 className="text-[20px] font-bold text-slate-900 mb-5">
+                Add Task
+              </h2>
 
-                {/* Main Input - Full width textarea */}
-                <div className="mb-6">
-                  <textarea
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    placeholder="e.g., Finish project report, Morning yoga..."
-                    className="w-full px-4 py-3 rounded-2xl bg-slate-100 outline-none text-slate-900 placeholder:text-slate-400 text-[16px] resize-none"
-                    rows={2}
-                    autoFocus
-                  />
-                </div>
+              {/* Title Input */}
+              <input
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                placeholder="What do you need to do?"
+                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 outline-none text-slate-900 placeholder:text-slate-400 text-[16px] mb-4"
+                autoFocus
+              />
 
-                {/* Category Selector - Visual pills */}
-                <div className="mb-6">
-                  <label className="text-[13px] text-slate-500 font-medium block mb-2">Category</label>
-                  <div className="flex gap-2">
-                    {[
-                      { name: 'Work' },
-                      { name: 'Personal' },
-                      { name: 'Health' },
-                      { name: 'Other' }
-                    ].map(cat => (
-                      <button
-                        key={cat.name}
-                        onClick={() => setNewCategory(cat.name)}
-                        className={`px-4 py-2 rounded-full text-[14px] font-medium flex items-center gap-1.5 transition-all ${
-                          newCategory === cat.name 
-                            ? 'bg-purple-600 text-white shadow-md scale-105' 
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Duration & Priority - Side by side */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  {/* Duration */}
-                  <div>
-                    <label className="text-[13px] text-slate-500 font-medium block mb-2">Estimated time</label>
-                    <div className="flex gap-1.5">
-                      {[
-                        { dur: '10m', min: 10, max: 10 },
-                        { dur: '25m', min: 25, max: 25 },
-                        { dur: '45m', min: 45, max: 45 },
-                        { dur: '1h', min: 60, max: 60 }
-                      ].map(opt => (
-                        <button
-                          key={opt.dur}
-                          onClick={() => {
-                            setNewDuration(opt.dur);
-                            setNewDurationMin(opt.min);
-                            setNewDurationMax(opt.max);
-                          }}
-                          className={`flex-1 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
-                            newDuration === opt.dur
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                        >
-                          {opt.dur}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Priority */}
-                  <div>
-                    <label className="text-[13px] text-slate-500 font-medium block mb-2">Priority</label>
-                    <div className="flex gap-1.5">
-                      {[
-                        { label: 'High', value: 'High' },
-                        { label: 'Normal', value: 'Normal' },
-                        { label: 'Low', value: 'Low' }
-                      ].map(p => (
-                        <button
-                          key={p.value}
-                          onClick={() => setNewPriority(p.value as any)}
-                          className={`flex-1 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
-                            newPriority === p.value
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fixed Time Toggle */}
-                <label className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 mb-6 cursor-pointer hover:bg-slate-100 transition-colors">
-                  <input 
-                    type="checkbox" 
-                    checked={newFixed} 
-                    onChange={e => setNewFixed(e.target.checked)}
-                    className="w-5 h-5 rounded cursor-pointer"
-                  />
-                  <span className="text-[14px] text-slate-800 font-medium">Lock to this time</span>
-                  <span className="text-[12px] text-slate-500 ml-auto">Won't be moved by Auto Plan</span>
-                </label>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button 
-                    onClick={handleCancel}
-                    className="flex-1 px-4 py-3 rounded-full text-[15px] font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleAdd}
-                    disabled={!newTitle.trim()}
-                    className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-[15px] font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    style={{
-                      background: newTitle.trim() ? 'linear-gradient(135deg, #B58CFF 0%, #64C7FF 100%)' : undefined,
-                      backgroundColor: !newTitle.trim() ? '#e2e8f0' : undefined,
-                    }}
-                  >
-                    ✨ Add to plan
-                  </button>
+              {/* Category Selector */}
+              <div className="mb-4">
+                <label className="text-[13px] text-slate-500 font-medium block mb-2">Category</label>
+                <div className="flex gap-2">
+                  {['Work', 'Personal', 'Health'].map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setNewCategory(cat)}
+                      className={`flex-1 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
+                        newCategory === cat 
+                          ? 'bg-slate-900 text-white' 
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
                 </div>
               </div>
+
+              {/* Duration Selector */}
+              <div className="mb-6">
+                <label className="text-[13px] text-slate-500 font-medium block mb-2">Duration</label>
+                <div className="flex gap-2">
+                  {[
+                    { dur: '15m', min: 15 },
+                    { dur: '30m', min: 30 },
+                    { dur: '1h', min: 60 },
+                    { dur: '2h', min: 120 }
+                  ].map(opt => (
+                    <button
+                      key={opt.dur}
+                      onClick={() => {
+                        setNewDuration(opt.dur);
+                        setNewDurationMin(opt.min);
+                        setNewDurationMax(opt.min);
+                      }}
+                      className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
+                        newDuration === opt.dur
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {opt.dur}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button 
+                  onClick={handleCancel}
+                  className="flex-1 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleAdd}
+                  disabled={!newTitle.trim()}
+                  className="flex-1 py-3.5 rounded-2xl bg-slate-900 text-white text-[15px] font-semibold disabled:opacity-40"
+                >
+                  Add Task
+                </button>
+              </div>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
