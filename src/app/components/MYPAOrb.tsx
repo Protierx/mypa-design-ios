@@ -28,7 +28,7 @@ export function MYPAOrb({
       {/* Subtle ambient glow */}
       {showGlow && (
         <div 
-          className={`absolute inset-0 rounded-full bg-gradient-to-r from-[#E879F9] via-[#A78BFA] to-[#38BDF8] opacity-30 ${glowSizes[size]}`}
+          className={`absolute inset-0 rounded-full bg-gradient-to-r from-primary via-orb-middle to-secondary opacity-30 ${glowSizes[size]}`}
         />
       )}
 

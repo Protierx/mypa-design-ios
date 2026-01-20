@@ -61,7 +61,7 @@ export function PrivacyControlsScreen({ onNavigate }: PrivacyControlsScreenProps
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-28 relative">
+    <div className="min-h-screen bg-ios-bg pb-28 relative">
       <IOSStatusBar />
       
       {/* Header */}
@@ -185,7 +185,7 @@ export function PrivacyControlsScreen({ onNavigate }: PrivacyControlsScreenProps
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setShowPickerForCircle(null)}
           />
-          <div className="relative z-10 w-full bg-[#F2F2F7] rounded-t-[14px] pb-8 animate-in slide-in-from-bottom duration-200">
+          <div className="relative z-10 w-full bg-ios-bg rounded-t-[14px] pb-8 animate-in slide-in-from-bottom duration-200">
             <div className="w-9 h-1 bg-slate-300 rounded-full mx-auto mt-2 mb-3" />
             <p className="text-[13px] text-slate-500 text-center mb-2">
               {circles.find(c => c.id === showPickerForCircle)?.name}

@@ -10,9 +10,12 @@ import {
   Clock,
   X,
   ChevronRight,
+  Sparkles,
+  Inbox,
+  Zap,
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface InboxScreenProps {
   onNavigate?: (screen: string) => void;
@@ -175,7 +178,7 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
   const newCount = items.filter(i => i.isNew).length;
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-28 relative">
+    <div className="min-h-screen bg-ios-bg pb-28 relative overflow-hidden">
       <IOSStatusBar />
 
       <style>{`
@@ -189,31 +192,86 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
           transform: scale(0.98);
           transition: transform 0.15s ease;
         }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes gentlePulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
+        .gentle-pulse { animation: gentlePulse 3s ease-in-out infinite; }
       `}</style>
 
+      {/* Ambient background glow */}
+      <div className="absolute top-20 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-96 -left-20 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+
       {/* Header */}
-      <div className="px-5 pt-2 pb-4">
-        <div className="flex items-center justify-between mb-1">
+      <div className="px-5 pt-2 pb-4 relative z-10">
+        <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Inbox</h1>
+            <p className="text-[13px] text-slate-500 font-medium">Stay on top of things</p>
+            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Your Inbox</h1>
           </div>
           {newCount > 0 && (
-            <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-[12px] font-semibold text-red-600">{newCount} new</span>
+            <div className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-primary px-3 py-1.5 rounded-full shadow-lg shadow-purple-500/30">
+              <Sparkles className="w-3.5 h-3.5 text-white" />
+              <span className="text-[12px] font-bold text-white">{newCount} new</span>
             </div>
           )}
         </div>
 
+        {/* Smart Summary Card - More Personal */}
+        <div className="mt-3 mb-4 rounded-[24px] p-5 shadow-xl relative overflow-hidden" style={{ background: 'linear-gradient(145deg, var(--dark-card-start) 0%, var(--dark-card-middle) 50%, var(--dark-card-end) 100%)' }}>
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
+          
+          <div className="relative">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <Inbox className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white text-[16px] font-semibold mb-1">
+                  {items.filter(i => i.isNew).length === 0 ? "All caught up! 🎉" : `${items.filter(i => i.isNew).length} things need your attention`}
+                </p>
+                <p className="text-white/60 text-[13px] leading-relaxed">
+                  {assignments.filter(a => a.status === 'pending').length > 0 
+                    ? `You have ${assignments.filter(a => a.status === 'pending').length} tasks waiting for your response` 
+                    : "Looking good - your tasks are under control"}
+                </p>
+              </div>
+            </div>
+            
+            {/* Quick action */}
+            {items.filter(i => i.isNew).length > 0 && (
+              <button 
+                onClick={() => {
+                  items.forEach(item => {
+                    if (item.isNew) markRead(item.id);
+                  });
+                }}
+                className="mt-4 w-full py-3 rounded-xl bg-white/10 text-white text-[14px] font-semibold hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Mark all as read
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Filter Tabs */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2">
           {(["all", "messages", "reminders", "invites"] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-full text-[13px] font-semibold transition-all ${
                 activeTab === tab
-                  ? "bg-slate-900 text-white"
+                  ? "bg-gradient-to-r from-primary to-secondary text-white shadow-md"
                   : "bg-white text-slate-600 shadow-sm"
               }`}
             >
@@ -324,32 +382,39 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
             <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide">
-              Notifications
+              Activity
             </h2>
+            <span className="text-[12px] text-slate-400">{filtered.length} items</span>
           </div>
           
           {filtered.length === 0 ? (
-            <div className="ios-card p-8 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-emerald-500" />
+            <div className="ios-card p-8 flex flex-col items-center justify-center text-center shadow-sm">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mb-4 shadow-inner">
+                <span className="text-4xl">✨</span>
               </div>
-              <h3 className="text-[17px] font-semibold text-slate-900 mb-1">
-                You're all caught up
+              <h3 className="text-[18px] font-bold text-slate-900 mb-2">
+                All caught up!
               </h3>
-              <p className="text-[14px] text-slate-500 max-w-[200px]">
-                New messages and updates will appear here
+              <p className="text-[14px] text-slate-500 max-w-[240px] leading-relaxed">
+                Great job staying on top of things. New messages and updates will appear here.
               </p>
+              <div className="mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100">
+                <p className="text-[12px] text-emerald-600 font-medium flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5" />
+                  +10 XP for staying organized
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="ios-card overflow-hidden shadow-sm">
+            <div className="space-y-2.5">
               {filtered.map((it, index) => (
                 <div
                   key={it.id}
-                  className={`p-4 flex items-start gap-3 ${
-                    index < filtered.length - 1 ? "border-b border-slate-100" : ""
-                  } ${it.isNew ? "bg-purple-50/50" : ""}`}
+                  className={`ios-card p-4 shadow-sm slide-in ${it.isNew ? "ring-2 ring-purple-200 ring-offset-1" : ""}`}
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <div className={`w-11 h-11 rounded-2xl ${iconBgFor(it.type)} flex items-center justify-center flex-shrink-0`}>
+                  <div className="flex items-start gap-3">
+                  <div className={`w-11 h-11 rounded-2xl ${iconBgFor(it.type)} flex items-center justify-center flex-shrink-0 shadow-sm`}>
                     {iconFor(it.type)}
                   </div>
 
@@ -400,6 +465,7 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
                         </button>
                       </div>
                     )}
+                  </div>
                   </div>
                 </div>
               ))}

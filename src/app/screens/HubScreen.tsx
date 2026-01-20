@@ -1,450 +1,552 @@
-import { Calendar, Inbox, Trophy, User, Clock, CheckCircle2, Wallet, Play, Sparkles, ChevronRight, Bell, TrendingUp, AlertCircle } from "lucide-react";
+import { Calendar, Inbox, Trophy, Clock, CheckCircle2, Wallet, Sparkles, ChevronRight, Bell, Zap, Sun, Moon, CloudSun, Target, ArrowRight, MessageCircle, Check, Flame, X, Volume2 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
-import { MYPAOrb } from "../components/MYPAOrb";
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../../styles/cards.css";
 
 interface HubScreenProps {
   onNavigate?: (screen: string) => void;
+  onVoiceClick?: () => void;
 }
 
-// Briefing items data
-const briefingItems = [
-  { id: 1, icon: "🏋️", label: "Gym at 6 PM", type: "event", priority: "high" },
-  { id: 2, icon: "📧", label: "2 urgent emails", type: "inbox", priority: "high" },
-  { id: 3, icon: "✅", label: "3 tasks remaining", type: "task", priority: "medium" },
-  { id: 4, icon: "💰", label: "+42 min saved today", type: "positive", priority: "low" },
-];
+export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
+  const [greeting, setGreeting] = useState({ text: '', icon: Sun, period: 'day' });
+  const [completedPriorities, setCompletedPriorities] = useState<number[]>([]);
+  const [showBriefing, setShowBriefing] = useState(false);
+  const [briefingStep, setBriefingStep] = useState(0);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const briefingTimer = useRef<NodeJS.Timeout | null>(null);
 
-export function HubScreen({ onNavigate }: HubScreenProps) {
-  const [showBriefingOrb, setShowBriefingOrb] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const playButtonRef = useRef<HTMLButtonElement>(null);
+  // Daily briefing content
+  const briefingItems = [
+    { icon: '👋', text: `${greeting.text}, Alex! Here's your day at a glance.`, delay: 2000 },
+    { icon: '📋', text: `You have ${7 - 4} tasks remaining today. 2 are marked as priority.`, delay: 2500 },
+    { icon: '🏋️', text: 'Reminder: Gym session at 6:00 PM today.', delay: 2000 },
+    { icon: '🔥', text: `Amazing! You're on a 7-day streak. Keep it going!`, delay: 2000 },
+    { icon: '⚡', text: `You've saved 42 minutes this week. That's 67% more efficient!`, delay: 2500 },
+    { icon: '✨', text: 'Ready to make today great? Let\'s do this!', delay: 2000 },
+  ];
 
-  const handlePlayBriefing = () => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setShowBriefingOrb(true);
-      setIsTransitioning(false);
-    }, 400);
+  // Dynamic greeting based on time
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting({ text: 'Good morning', icon: Sun, period: 'morning' });
+    } else if (hour < 17) {
+      setGreeting({ text: 'Good afternoon', icon: CloudSun, period: 'afternoon' });
+    } else {
+      setGreeting({ text: 'Good evening', icon: Moon, period: 'evening' });
+    }
+  }, []);
+
+  // Start briefing animation
+  const startBriefing = () => {
+    setShowBriefing(true);
+    setBriefingStep(0);
+    setIsSpeaking(true);
+    playBriefingSequence(0);
   };
 
-  const handleCloseBriefing = () => {
-    setShowBriefingOrb(false);
+  const playBriefingSequence = (step: number) => {
+    if (step >= briefingItems.length) {
+      setIsSpeaking(false);
+      return;
+    }
+    setBriefingStep(step);
+    setIsSpeaking(true);
+    briefingTimer.current = setTimeout(() => {
+      playBriefingSequence(step + 1);
+    }, briefingItems[step].delay);
   };
+
+  const closeBriefing = () => {
+    setShowBriefing(false);
+    setBriefingStep(0);
+    setIsSpeaking(false);
+    if (briefingTimer.current) {
+      clearTimeout(briefingTimer.current);
+    }
+  };
+
+  // Today's data
+  const today = {
+    date: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+    userName: 'Alex',
+    streak: 7,
+    level: 12,
+    xp: 2460,
+    xpToNext: 340,
+    tasksCompleted: 4,
+    totalTasks: 7,
+    timeSaved: 42,
+    focusMinutes: 180,
+    mood: 'great',
+  };
+
+  // Priority items for today
+  const priorityItems = [
+    { id: 1, type: 'event', title: 'Gym Session', time: '6:00 PM', icon: '🏋️', urgent: true },
+    { id: 2, type: 'task', title: 'Review Q1 metrics', time: 'By 5 PM', icon: '📊', urgent: true },
+    { id: 3, type: 'reminder', title: 'Call Mom', time: 'Evening', icon: '📞', urgent: false },
+  ];
+
+  // Insights/nudges from MYPA
+  const insight = {
+    message: "You're crushing it! 67% more productive than last week.",
+    type: 'positive',
+  };
+
+  const GreetingIcon = greeting.icon;
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-24 relative">
+    <div className="min-h-screen bg-ios-bg pb-24 relative overflow-hidden">
       <IOSStatusBar />
       
       <style>{`
-        .ios-card {
-          background: rgba(255, 255, 255, 0.98);
+        .ios-glass {
+          background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-radius: 20px;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-        .ios-card:active {
-          transform: scale(0.98);
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .briefing-card {
-          background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-        .pulse-ring {
-          animation: pulse-ring 2s ease-out infinite;
+        .fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes orbPulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+          50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(139, 92, 246, 0.2); }
         }
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 0.6; }
-          100% { transform: scale(1.4); opacity: 0; }
+        .orb-pulse { animation: orbPulse 2s ease-in-out infinite; }
+        @keyframes orbSpeak {
+          0%, 100% { transform: scale(1); }
+          25% { transform: scale(1.1); }
+          50% { transform: scale(0.95); }
+          75% { transform: scale(1.08); }
         }
-        .status-dot {
-          animation: status-pulse 2s ease-in-out infinite;
+        .orb-speaking { animation: orbSpeak 0.6s ease-in-out infinite; }
+        @keyframes waveform {
+          0%, 100% { height: 8px; }
+          50% { height: 20px; }
         }
-        @keyframes status-pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(0.95); }
+        .wave-bar { animation: waveform 0.5s ease-in-out infinite; }
+        @keyframes typeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .quick-card {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-        }
-        .quick-card:active {
-          transform: scale(0.97);
-        }
-        .play-btn-morph {
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .play-btn-morph.transitioning {
-          transform: scale(2.5);
-          opacity: 0;
-        }
-        @keyframes float-orb {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
-        @keyframes glow-pulse {
-          0%, 100% { box-shadow: 0 0 30px rgba(181, 140, 255, 0.4), 0 0 60px rgba(100, 199, 255, 0.2); }
-          50% { box-shadow: 0 0 50px rgba(181, 140, 255, 0.6), 0 0 80px rgba(100, 199, 255, 0.4); }
-        }
-        .orb-container {
-          animation: float-orb 3s ease-in-out infinite;
-        }
-        .orb-glow {
-          animation: glow-pulse 2s ease-in-out infinite;
-        }
-        .briefing-item {
-          animation: slide-in 0.3s ease-out forwards;
-          opacity: 0;
-          transform: translateX(-10px);
-        }
-        @keyframes slide-in {
-          to { opacity: 1; transform: translateX(0); }
-        }
+        .type-in { animation: typeIn 0.4s ease-out forwards; }
       `}</style>
       
-      {/* Header - Cleaner iOS style */}
-      <div className="px-5 pt-2 pb-4">
+      {/* Header Section */}
+      <div className="relative px-5 pt-2 pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[13px] text-slate-500 font-medium">Thursday, Jan 11</p>
-            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Good afternoon</h1>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <GreetingIcon className="w-4 h-4 text-amber-500" />
+              <span className="text-[13px] text-slate-500 font-medium">{greeting.text}</span>
+            </div>
+            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">{today.userName}</h1>
           </div>
-          <button
-            onClick={() => onNavigate?.('profile')}
-            className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20 active:scale-95 transition-transform"
-          >
-            <User className="w-5 h-5 text-white" />
-          </button>
-        </div>
-        
-        {/* Status Pills - More informative */}
-        <div className="flex items-center gap-2 mt-3">
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 status-dot" />
-            <span className="text-[12px] font-semibold text-emerald-700">On Track</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full">
-            <CheckCircle2 className="w-3 h-3 text-slate-500" />
-            <span className="text-[12px] font-medium text-slate-600">4/7 done</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-full">
-            <TrendingUp className="w-3 h-3 text-purple-600" />
-            <span className="text-[12px] font-semibold text-purple-700">+42m</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onNavigate?.('profile')}
+              className="relative w-11 h-11 rounded-2xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <Bell className="w-5 h-5 text-slate-600" />
+              <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+            </button>
+            <button
+              onClick={() => onNavigate?.('profile')}
+              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            >
+              <span className="text-[16px] font-bold text-white">{today.userName[0]}</span>
+            </button>
           </div>
         </div>
       </div>
 
       <div className="px-4 space-y-3">
         
-        {/* Daily Briefing Card - Dark, elegant with preview list */}
-        <div className="briefing-card rounded-[24px] overflow-hidden shadow-xl">
-          {/* Header with play button */}
-          <div className="p-4 pb-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
-                  <span className="text-[11px] font-semibold text-purple-400 uppercase tracking-wider">Daily Briefing</span>
-                </div>
-                <h2 className="text-white text-[20px] font-bold">Your Morning Update</h2>
-                <p className="text-[13px] text-slate-400 mt-0.5">4 important items • ~2 min</p>
-              </div>
-              
-              {/* Play Button with morphing animation */}
-              <button
-                ref={playButtonRef}
-                onClick={handlePlayBriefing}
-                className={`play-btn-morph w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/30 active:scale-95 relative ${isTransitioning ? 'transitioning' : ''}`}
-              >
-                <div className="absolute inset-0 rounded-full bg-purple-400/30 pulse-ring" />
-                <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-              </button>
-            </div>
-          </div>
-          
-          {/* Briefing Preview List */}
-          <div className="px-4 pb-4">
-            <div className="bg-white/5 backdrop-blur rounded-2xl divide-y divide-white/5">
-              {briefingItems.map((item, index) => (
-                <div 
-                  key={item.id} 
-                  className="flex items-center gap-3 px-3 py-2.5"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <span className="text-[16px]">{item.icon}</span>
-                  <span className="text-[14px] text-white/90 font-medium flex-1">{item.label}</span>
-                  {item.priority === 'high' && (
-                    <div className="w-2 h-2 rounded-full bg-orange-400" />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Next Up Card - Cleaner design */}
+        {/* Daily Briefing Orb Card */}
         <button
-          onClick={() => onNavigate?.('plan')}
-          className="ios-card w-full p-4 shadow-sm text-left"
+          onClick={startBriefing}
+          className="w-full ios-glass rounded-2xl p-4 shadow-sm flex items-center gap-4 active:scale-[0.98] transition-transform"
         >
-          <div className="flex items-center gap-4">
-            {/* Time indicator - visual countdown */}
-            <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex flex-col items-center justify-center shadow-lg shadow-blue-500/20">
-                <span className="text-[20px] font-bold text-white leading-none">45</span>
-                <span className="text-[9px] text-white/80 font-medium uppercase">min</span>
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
-                <Clock className="w-2.5 h-2.5 text-white" />
-              </div>
+          <div className="relative">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg orb-pulse">
+              <Sparkles className="w-7 h-7 text-white" />
             </div>
-            
-            {/* Event details */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wide">Up Next</span>
-              </div>
-              <p className="text-[17px] font-semibold text-slate-900 truncate">Gym Session</p>
-              <p className="text-[13px] text-slate-500">6:00 PM • Downtown Fitness</p>
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
+              <Volume2 className="w-3 h-3 text-white" />
             </div>
-            
-            <ChevronRight className="w-5 h-5 text-slate-300" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-[16px] font-semibold text-slate-900">Daily Briefing</p>
+            <p className="text-[13px] text-slate-500">Tap to hear your day summary</p>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-1 h-3 bg-violet-400 rounded-full" />
+            <div className="w-1 h-5 bg-violet-500 rounded-full" />
+            <div className="w-1 h-4 bg-violet-400 rounded-full" />
           </div>
         </button>
-
-        {/* Quick Access Grid - Cleaner 2x2 */}
-        <div className="grid grid-cols-2 gap-2.5">
+        
+        {/* Compact Progress Card */}
+        <div className="ios-glass rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            {/* Progress Ring & Stats */}
+            <div className="flex items-center gap-4">
+              <div className="relative w-14 h-14">
+                <svg className="w-14 h-14 transform -rotate-90">
+                  <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="4" fill="none" />
+                  <circle
+                    cx="28" cy="28" r="24"
+                    stroke="#10b981"
+                    strokeWidth="4"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 24 * (today.tasksCompleted / today.totalTasks)} ${2 * Math.PI * 24}`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[14px] font-bold text-slate-900">{Math.round((today.tasksCompleted / today.totalTasks) * 100)}%</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[18px] font-bold text-slate-900">{today.tasksCompleted} of {today.totalTasks}</p>
+                <p className="text-[13px] text-slate-500">tasks done today</p>
+              </div>
+            </div>
+            
+            {/* Quick Stats */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-orange-100">
+                <Flame className="w-4 h-4 text-orange-500" />
+                <span className="text-[14px] font-bold text-orange-600">{today.streak}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-violet-100">
+                <Zap className="w-4 h-4 text-violet-500" />
+                <span className="text-[14px] font-bold text-violet-600">{today.level}</span>
+              </div>
+            </div>
+          </div>
           
-          {/* Plan */}
-          <button
-            onClick={() => onNavigate?.('plan')}
-            className="quick-card rounded-2xl p-4 text-left transition-all shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+          {/* XP Progress */}
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[12px] text-slate-500">Level {today.level} Progress</span>
+              <span className="text-[12px] font-medium text-violet-600">{today.xpToNext} XP to next</span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all"
+                style={{ width: `${((today.xp % 500) / 500) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+            <Clock className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+            <p className="text-[16px] font-bold text-slate-900">+{today.timeSaved}m</p>
+            <p className="text-[10px] text-slate-500">Saved</p>
+          </div>
+          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+            <Target className="w-4 h-4 text-blue-500 mx-auto mb-1" />
+            <p className="text-[16px] font-bold text-slate-900">{today.focusMinutes}m</p>
+            <p className="text-[10px] text-slate-500">Focus</p>
+          </div>
+          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+            <Trophy className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+            <p className="text-[16px] font-bold text-slate-900">#3</p>
+            <p className="text-[10px] text-slate-500">Rank</p>
+          </div>
+        </div>
+
+        {/* Priority Focus Section */}
+        <div>
+          <div className="flex items-center justify-between px-1 mb-2">
+            <h3 className="text-[15px] font-semibold text-slate-900">Priority Focus</h3>
+            <button 
+              onClick={() => onNavigate?.('plan')}
+              className="text-[13px] font-medium text-violet-600 flex items-center gap-0.5"
+            >
+              All tasks <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="space-y-2">
+            {priorityItems.map((item, index) => {
+              const isCompleted = completedPriorities.includes(item.id);
+              return (
+                <div
+                  key={item.id}
+                  className={`ios-glass rounded-2xl shadow-sm overflow-hidden slide-up ${isCompleted ? 'opacity-50' : ''}`}
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="p-3 flex items-center gap-3">
+                    {/* Check Button */}
+                    <button
+                      onClick={() => {
+                        if (isCompleted) {
+                          setCompletedPriorities(prev => prev.filter(id => id !== item.id));
+                        } else {
+                          setCompletedPriorities(prev => [...prev, item.id]);
+                        }
+                      }}
+                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        isCompleted 
+                          ? 'bg-emerald-500 border-emerald-500' 
+                          : 'border-slate-300'
+                      }`}
+                    >
+                      {isCompleted && <Check className="w-4 h-4 text-white" />}
+                    </button>
+                    
+                    {/* Icon */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
+                      item.urgent && !isCompleted
+                        ? 'bg-rose-100' 
+                        : 'bg-slate-100'
+                    }`}>
+                      {item.icon}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[15px] font-medium ${isCompleted ? 'line-through text-slate-400' : 'text-slate-900'}`}>{item.title}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-slate-500">{item.time}</span>
+                        {item.urgent && !isCompleted && (
+                          <span className="text-[9px] font-bold text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded">PRIORITY</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Navigate */}
+                    <button
+                      onClick={() => onNavigate?.('plan')}
+                      className="p-2 -mr-1 rounded-xl active:bg-slate-100 transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-slate-300" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Quick Actions Grid */}
+        <div>
+          <h3 className="text-[15px] font-semibold text-slate-900 px-1 mb-2">Quick Actions</h3>
+          <div className="grid grid-cols-4 gap-2">
+            <button
+              onClick={() => onNavigate?.('plan')}
+              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-1.5">
                 <Calendar className="w-5 h-5 text-white" />
               </div>
-              <span className="text-[11px] font-semibold text-slate-400">5 today</span>
-            </div>
-            <h3 className="text-[15px] font-semibold text-slate-900">Plan</h3>
-            <p className="text-[12px] text-slate-500">View schedule</p>
-          </button>
+              <p className="text-[11px] font-medium text-slate-700">Plan</p>
+            </button>
 
-          {/* Inbox */}
-          <button
-            onClick={() => onNavigate?.('inbox')}
-            className="quick-card rounded-2xl p-4 text-left transition-all shadow-sm relative"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md shadow-purple-500/20 relative">
+            <button
+              onClick={() => onNavigate?.('inbox')}
+              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform relative"
+            >
+              <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-[9px] font-bold text-white">2</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center mx-auto mb-1.5">
                 <Inbox className="w-5 h-5 text-white" />
               </div>
-              <div className="flex items-center gap-1.5 bg-red-500 px-2 py-0.5 rounded-full">
-                <Bell className="w-3 h-3 text-white" />
-                <span className="text-[11px] font-bold text-white">2</span>
-              </div>
-            </div>
-            <h3 className="text-[15px] font-semibold text-slate-900">Inbox</h3>
-            <p className="text-[12px] text-red-500 font-medium">2 urgent</p>
-          </button>
+              <p className="text-[11px] font-medium text-slate-700">Inbox</p>
+            </button>
 
-          {/* Challenges */}
-          <button
-            onClick={() => onNavigate?.('challenges')}
-            className="quick-card rounded-2xl p-4 text-left transition-all shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-md shadow-orange-500/20">
+            <button
+              onClick={() => onNavigate?.('challenges')}
+              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center mx-auto mb-1.5">
                 <Trophy className="w-5 h-5 text-white" />
               </div>
-              <span className="text-[11px] font-semibold text-orange-500">🔥 3</span>
-            </div>
-            <h3 className="text-[15px] font-semibold text-slate-900">Challenges</h3>
-            <p className="text-[12px] text-slate-500">1 active</p>
-          </button>
+              <p className="text-[11px] font-medium text-slate-700">Challenges</p>
+            </button>
 
-          {/* Wallet */}
-          <button
-            onClick={() => onNavigate?.('wallet')}
-            className="quick-card rounded-2xl p-4 text-left transition-all shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md shadow-green-500/20">
+            <button
+              onClick={() => onNavigate?.('wallet')}
+              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center mx-auto mb-1.5">
                 <Wallet className="w-5 h-5 text-white" />
               </div>
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-            </div>
-            <h3 className="text-[15px] font-semibold text-slate-900">Wallet</h3>
-            <p className="text-[12px] text-emerald-600 font-semibold">+42 min</p>
-          </button>
+              <p className="text-[11px] font-medium text-slate-700">Wallet</p>
+            </button>
+          </div>
         </div>
 
-        {/* Secondary Actions Row */}
-        <div className="flex gap-2.5">
-          {/* Sort Tasks */}
+        {/* Secondary Actions */}
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onNavigate?.('sort')}
-            className="flex-1 quick-card rounded-2xl p-3.5 flex items-center gap-3 shadow-sm"
+            className="ios-glass rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-md shadow-violet-500/20">
+            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
-            <div className="text-left">
+            <div className="text-left flex-1">
               <p className="text-[14px] font-semibold text-slate-900">Sort Tasks</p>
-              <p className="text-[11px] text-slate-500">Organize</p>
+              <p className="text-[11px] text-slate-500">6 pending</p>
             </div>
           </button>
 
-          {/* Reset */}
           <button
-            onClick={() => onNavigate?.('reset')}
-            className="flex-1 quick-card rounded-2xl p-3.5 flex items-center gap-3 shadow-sm"
+            onClick={() => onNavigate?.('daily-life-card')}
+            className="ios-glass rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform relative overflow-hidden"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-md">
-              <span className="text-[18px]">🔄</span>
+            <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-violet-500">
+              <span className="text-[9px] font-bold text-white">+50 XP</span>
             </div>
-            <div className="text-left">
-              <p className="text-[14px] font-semibold text-slate-900">Reset</p>
-              <p className="text-[11px] text-slate-500">Recalibrate</p>
+            <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center">
+              <span className="text-[18px]">📤</span>
+            </div>
+            <div className="text-left flex-1">
+              <p className="text-[14px] font-semibold text-slate-900">Share Day</p>
+              <p className="text-[11px] text-slate-500">To circles</p>
             </div>
           </button>
         </div>
 
-        {/* Ask MYPA - Floating action with mini orb */}
+        {/* Talk to MYPA */}
         <button
-          onClick={() => onNavigate?.('ask')}
-          className="w-full ios-card p-3 shadow-md flex items-center gap-3"
+          onClick={() => onVoiceClick?.()}
+          className="w-full ios-glass rounded-2xl p-4 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
         >
-          <MYPAOrb size="sm" showGlow={false} />
-          <div className="flex-1 text-left">
-            <p className="text-[15px] font-semibold text-slate-900">Ask MYPA</p>
-            <p className="text-[12px] text-slate-500">Try: "Rearrange my evening"</p>
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+            <MessageCircle className="w-6 h-6 text-white" />
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-300" />
+          <div className="flex-1 text-left">
+            <p className="text-[15px] font-semibold text-slate-900">Talk to MYPA</p>
+            <p className="text-[12px] text-slate-500">Ask anything or get help</p>
+          </div>
+          <ArrowRight className="w-5 h-5 text-slate-400" />
+        </button>
+
+        {/* Reset Day */}
+        <button
+          onClick={() => onNavigate?.('reset')}
+          className="w-full py-2 text-center"
+        >
+          <span className="text-[13px] text-slate-500">Overwhelmed? <span className="text-violet-600 font-medium">Reset day</span></span>
         </button>
       </div>
 
-      {/* Animated Briefing Orb Overlay */}
-      {showBriefingOrb && (
-        <div className="absolute inset-0 z-50 flex flex-col pointer-events-auto rounded-[48px] overflow-hidden">
-          {/* Backdrop with gradient */}
-          <div
-            onClick={handleCloseBriefing}
-            className="absolute inset-0 bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-900/95 backdrop-blur-xl transition-opacity animate-in fade-in duration-300"
+      {/* Daily Briefing Overlay */}
+      {showBriefing && (
+        <div className="fixed inset-0 z-[9999] flex flex-col">
+          {/* Dark gradient background */}
+          <div 
+            className="absolute inset-0 fade-in"
+            style={{
+              background: 'radial-gradient(ellipse at 50% 30%, #1e1b4b 0%, #0f0a1e 40%, #030014 100%)'
+            }}
           />
           
-          {/* Content Container */}
-          <div className="relative z-10 flex flex-col h-full pt-16 px-5">
+          {/* Close button */}
+          <button
+            onClick={closeBriefing}
+            className="absolute top-14 right-5 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <X className="w-5 h-5 text-white/80" />
+          </button>
+          
+          {/* Main content */}
+          <div className="relative flex-1 flex flex-col items-center justify-center px-6">
             
-            {/* Orb Section */}
-            <div className="flex flex-col items-center mb-6">
-              <div className="relative">
-                {/* MYPA Orb */}
-                <MYPAOrb size="lg" showGlow={true} />
-                
-                {/* Speaking indicator */}
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-white/10 backdrop-blur-md rounded-full px-3 py-1.5">
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-1 h-3 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-                    <div className="w-1 h-4 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
-                    <div className="w-1 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
-                    <div className="w-1 h-5 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '450ms' }} />
-                    <div className="w-1 h-3 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '600ms' }} />
-                  </div>
-                  <span className="text-[11px] text-white/80 font-medium ml-1">Speaking</span>
-                </div>
-              </div>
+            {/* Speaking Orb */}
+            <div className="relative mb-8">
+              {/* Outer glow rings */}
+              <div className={`absolute inset-0 rounded-full bg-violet-500/20 ${isSpeaking ? 'animate-ping' : ''}`} style={{ animationDuration: '1.5s' }} />
+              <div className={`absolute -inset-4 rounded-full bg-violet-500/10 ${isSpeaking ? 'animate-pulse' : ''}`} />
               
-              <h2 className="text-white text-[22px] font-bold mt-8 text-center">Your Daily Briefing</h2>
-              <p className="text-white/60 text-[14px] mt-1">Here's what you need to know</p>
-            </div>
-
-            {/* Briefing Items - Full detail view */}
-            <div className="flex-1 overflow-auto scrollbar-hide">
-              <div className="space-y-3">
-                {/* Up Next */}
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 animate-in slide-in-from-bottom-2" style={{ animationDelay: '100ms' }}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-blue-400 uppercase tracking-wide">Up Next</span>
-                        <div className="px-1.5 py-0.5 rounded bg-blue-500/20 text-[10px] text-blue-400 font-medium">45 min</div>
-                      </div>
-                      <p className="text-[16px] font-semibold text-white mt-0.5">Gym Session</p>
-                      <p className="text-[13px] text-white/60">6:00 PM at Downtown Fitness</p>
-                    </div>
+              {/* Main orb */}
+              <div className={`relative w-32 h-32 rounded-full bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-violet-500/50 ${isSpeaking ? 'orb-speaking' : 'orb-pulse'}`}>
+                {/* Inner glow */}
+                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/30 to-transparent" />
+                
+                {/* Waveform bars when speaking */}
+                {isSpeaking ? (
+                  <div className="flex items-center gap-1">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="w-2 bg-white rounded-full wave-bar"
+                        style={{ 
+                          animationDelay: `${i * 0.1}s`,
+                          height: '12px'
+                        }}
+                      />
+                    ))}
                   </div>
-                </div>
-
-                {/* Urgent Attention */}
-                <div className="bg-orange-500/10 backdrop-blur-md rounded-2xl p-4 border border-orange-500/20 animate-in slide-in-from-bottom-2" style={{ animationDelay: '200ms' }}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                      <AlertCircle className="w-5 h-5 text-orange-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-orange-400 uppercase tracking-wide">Needs Attention</span>
-                      </div>
-                      <p className="text-[16px] font-semibold text-white mt-0.5">2 Urgent Emails</p>
-                      <p className="text-[13px] text-white/60">From Sarah & Project Team</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress */}
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 animate-in slide-in-from-bottom-2" style={{ animationDelay: '300ms' }}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wide">Today's Progress</span>
-                      </div>
-                      <p className="text-[16px] font-semibold text-white mt-0.5">4 of 7 Tasks Complete</p>
-                      <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full w-[57%] bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Time Saved */}
-                <div className="bg-purple-500/10 backdrop-blur-md rounded-2xl p-4 animate-in slide-in-from-bottom-2" style={{ animationDelay: '400ms' }}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-5 h-5 text-purple-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-semibold text-purple-400 uppercase tracking-wide">Time Wallet</span>
-                      </div>
-                      <p className="text-[16px] font-semibold text-white mt-0.5">+42 Minutes Saved</p>
-                      <p className="text-[13px] text-white/60">MYPA optimized 3 routines today</p>
-                    </div>
-                  </div>
-                </div>
+                ) : (
+                  <Sparkles className="w-14 h-14 text-white" />
+                )}
               </div>
             </div>
-
-            {/* Action Button */}
-            <div className="pt-4 pb-6">
-              <button
-                onClick={handleCloseBriefing}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-500 to-blue-500 text-white text-[16px] font-semibold shadow-lg shadow-purple-500/25 active:scale-[0.98] transition-transform"
-              >
-                Got It
-              </button>
+            
+            {/* MYPA Label */}
+            <p className="text-violet-300 text-[14px] font-semibold uppercase tracking-widest mb-6">MYPA</p>
+            
+            {/* Briefing Messages */}
+            <div className="w-full max-w-sm min-h-[120px] flex flex-col items-center justify-center">
+              {briefingItems.slice(0, briefingStep + 1).map((item, index) => (
+                <div
+                  key={index}
+                  className={`w-full bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-3 type-in ${index === briefingStep ? 'border border-violet-400/30' : 'opacity-50'}`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-[24px]">{item.icon}</span>
+                    <p className="text-white text-[15px] font-medium leading-relaxed flex-1">{item.text}</p>
+                  </div>
+                </div>
+              ))}
             </div>
+            
+            {/* Progress dots */}
+            <div className="flex items-center gap-2 mt-4">
+              {briefingItems.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index <= briefingStep 
+                      ? 'bg-violet-400 w-3' 
+                      : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* Bottom action */}
+          <div className="relative p-6 pb-10">
+            <button
+              onClick={closeBriefing}
+              className="w-full py-4 rounded-2xl bg-white text-slate-900 text-[16px] font-semibold active:scale-[0.98] transition-transform"
+            >
+              {briefingStep >= briefingItems.length - 1 ? "Let's go!" : 'Skip briefing'}
+            </button>
           </div>
         </div>
       )}
+
     </div>
   );
 }

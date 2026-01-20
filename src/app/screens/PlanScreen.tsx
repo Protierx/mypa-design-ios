@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Clock, MoreVertical, Lock, ChevronRight, CheckCircle2, Calendar as CalendarIcon, Sparkles, Play, TrendingUp, Target, Zap } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Clock, MoreVertical, Lock, ChevronRight, CheckCircle2, Calendar as CalendarIcon, Sparkles, Play, Target, Trash2, ArrowRight, Check } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { Calendar } from "../components/ui/calendar";
 import { MYPAOrb } from "../components/MYPAOrb";
@@ -41,6 +41,9 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
   const [editField, setEditField] = useState<'time' | 'duration' | 'priority' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [showAutoplanConfirm, setShowAutoplanConfirm] = useState(false);
+  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const [swipedTaskId, setSwipedTaskId] = useState<number | null>(null);
+  const touchStartX = useRef<number>(0);
 
   // Computed values
   const completedCount = timeBlocks.filter(b => b.completed).length;
@@ -359,74 +362,64 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-28 relative">
+    <div className="min-h-screen bg-ios-bg pb-28 relative overflow-hidden">
       <IOSStatusBar />
       
       <style>{`
-        .ios-card {
-          background: rgba(255, 255, 255, 0.98);
+        .ios-glass {
+          background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-radius: 20px;
-        }
-        .ios-card:active {
-          transform: scale(0.98);
-          transition: transform 0.15s ease;
-        }
-        .hero-card {
-          background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        }
-        .quick-card {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
         }
         .task-card {
-          background: rgba(255, 255, 255, 0.98);
+          background: rgba(255, 255, 255, 0.92);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
+          transition: all 0.2s ease;
         }
-        .status-dot {
-          animation: status-pulse 2s ease-in-out infinite;
+        .task-card.swiped {
+          transform: translateX(-80px);
         }
-        @keyframes status-pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(0.95); }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .fade-in { animation: fadeIn 0.2s ease-out forwards; }
       `}</style>
       
       {/* Header */}
-      <div className="px-5 pt-2 pb-4">
+      <div className="px-5 pt-2 pb-3 relative z-10">
         <div className="flex items-center justify-between">
           <div>
+            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Plan</h1>
             <p className="text-[13px] text-slate-500 font-medium">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</p>
-            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Your Plan</h1>
           </div>
-          <button
-            onClick={() => setShowMonthView(!showMonthView)}
-            className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm active:scale-95 transition-transform"
-          >
-            <CalendarIcon className="w-5 h-5 text-slate-600" />
-          </button>
-        </div>
-        
-        {/* Status Pills */}
-        <div className="flex items-center gap-2 mt-3">
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 status-dot" />
-            <span className="text-[12px] font-semibold text-emerald-700">{completedCount}/{totalCount} done</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full">
-            <Clock className="w-3 h-3 text-blue-600" />
-            <span className="text-[12px] font-semibold text-blue-700">{formatDuration(totalMinutes)} planned</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowMonthView(!showMonthView)}
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 transition-all ${showMonthView ? 'bg-slate-900 text-white' : 'ios-glass shadow-sm text-slate-600'}`}
+            >
+              <CalendarIcon className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setIsAdding(true)}
+              className="w-11 h-11 rounded-2xl bg-slate-900 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            >
+              <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Calendar View (collapsible) */}
       {showMonthView && (
-        <div className="px-4 mb-4">
-          <div className="ios-card p-4 shadow-sm">
+        <div className="px-4 mb-4 relative z-10">
+          <div className="ios-glass rounded-2xl p-4 shadow-sm">
             <Calendar
               month={visibleMonth}
               onMonthChange={setVisibleMonth}
@@ -441,67 +434,45 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
         </div>
       )}
 
-      <div className="px-4 space-y-3">
+      <div className="px-4 space-y-3 relative z-10">
         
-        {/* Hero Card - Today's Progress */}
-        <div className="hero-card rounded-[24px] overflow-hidden shadow-xl">
-          <div className="p-5">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Target className="w-4 h-4 text-purple-400" />
-                  <span className="text-[11px] font-semibold text-purple-400 uppercase tracking-wider">Today's Progress</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[42px] font-bold text-white leading-none">{completedCount}</span>
-                  <span className="text-[20px] text-white/50">/ {totalCount}</span>
-                </div>
-                <p className="text-[13px] text-slate-400 mt-1">tasks completed</p>
-              </div>
-              
-              {/* Progress Ring */}
-              <div className="relative w-20 h-20">
-                <svg className="w-20 h-20 transform -rotate-90">
+        {/* Progress Card - Compact */}
+        <div className="ios-glass rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            {/* Progress Info */}
+            <div className="flex items-center gap-4">
+              {/* Circular Progress */}
+              <div className="relative w-14 h-14">
+                <svg className="w-14 h-14 transform -rotate-90">
+                  <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="4" fill="none" />
                   <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    stroke="rgba(255,255,255,0.1)"
-                    strokeWidth="6"
-                    fill="none"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    stroke="url(#progressGradient)"
-                    strokeWidth="6"
+                    cx="28" cy="28" r="24"
+                    stroke="#10b981"
+                    strokeWidth="4"
                     fill="none"
                     strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 34 * (completedCount / Math.max(totalCount, 1))} ${2 * Math.PI * 34}`}
+                    strokeDasharray={`${2 * Math.PI * 24 * (completedCount / Math.max(totalCount, 1))} ${2 * Math.PI * 24}`}
                   />
-                  <defs>
-                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#B58CFF" />
-                      <stop offset="100%" stopColor="#64C7FF" />
-                    </linearGradient>
-                  </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[18px] font-bold text-white">{progressPercent}%</span>
+                  <span className="text-[14px] font-bold text-slate-900">{progressPercent}%</span>
                 </div>
+              </div>
+              <div>
+                <p className="text-[18px] font-bold text-slate-900">{completedCount} of {totalCount}</p>
+                <p className="text-[13px] text-slate-500">tasks completed</p>
               </div>
             </div>
             
             {/* Time Stats */}
-            <div className="flex gap-3">
-              <div className="flex-1 bg-white/5 backdrop-blur rounded-xl p-3">
-                <p className="text-[11px] text-slate-400 uppercase tracking-wide">Completed</p>
-                <p className="text-[18px] font-bold text-emerald-400">{formatDuration(completedMinutes)}</p>
+            <div className="flex gap-4">
+              <div className="text-right">
+                <p className="text-[16px] font-bold text-emerald-600">{formatDuration(completedMinutes)}</p>
+                <p className="text-[11px] text-slate-500">Done</p>
               </div>
-              <div className="flex-1 bg-white/5 backdrop-blur rounded-xl p-3">
-                <p className="text-[11px] text-slate-400 uppercase tracking-wide">Remaining</p>
-                <p className="text-[18px] font-bold text-white">{formatDuration(totalMinutes - completedMinutes)}</p>
+              <div className="text-right">
+                <p className="text-[16px] font-bold text-slate-900">{formatDuration(totalMinutes - completedMinutes)}</p>
+                <p className="text-[11px] text-slate-500">Left</p>
               </div>
             </div>
           </div>
@@ -509,75 +480,61 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
 
         {/* Next Up Card */}
         {nextTask && (
-          <button
-            onClick={() => handleCompleteTask(nextTask.id)}
-            className="ios-card w-full p-4 shadow-sm text-left active:scale-[0.98] transition-transform"
-          >
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex flex-col items-center justify-center shadow-lg shadow-purple-500/20">
-                  <Play className="w-6 h-6 text-white" fill="white" />
+          <div className="ios-glass rounded-2xl overflow-hidden shadow-sm">
+            <div className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                  <Play className="w-5 h-5 text-violet-600" fill="currentColor" />
                 </div>
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[11px] font-bold text-purple-600 uppercase tracking-wide">Up Next</span>
-                  <span className="text-[11px] text-slate-400">• {nextTask.time}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[11px] font-semibold text-violet-600 uppercase">Up Next</span>
+                    <span className="text-[11px] text-slate-400">• {nextTask.time}</span>
+                  </div>
+                  <p className="text-[16px] font-semibold text-slate-900 truncate">{nextTask.title}</p>
                 </div>
-                <p className="text-[17px] font-semibold text-slate-900 truncate">{nextTask.title}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`w-2 h-2 rounded-full ${getCategoryDot(nextTask.category)}`} />
-                  <span className="text-[12px] text-slate-500">{nextTask.category}</span>
-                  <span className="text-[12px] text-slate-400">• {formatDuration(nextTask.durationMin)}</span>
-                </div>
-              </div>
-              
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-slate-400" />
+                <button
+                  onClick={() => handleCompleteTask(nextTask.id)}
+                  className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:bg-emerald-200 transition-colors"
+                >
+                  <Check className="w-5 h-5 text-emerald-600" />
+                </button>
               </div>
             </div>
-          </button>
+            <div className="flex border-t border-slate-100">
+              <button
+                onClick={() => handleMoveToTomorrow(nextTask.id)}
+                className="flex-1 py-2.5 text-[13px] font-medium text-slate-600 active:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+                Tomorrow
+              </button>
+              <div className="w-px bg-slate-100" />
+              <button
+                onClick={() => autoPlan()}
+                className="flex-1 py-2.5 text-[13px] font-medium text-violet-600 active:bg-violet-50 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Auto Plan
+              </button>
+            </div>
+          </div>
         )}
-
-        {/* Quick Actions Row */}
-        <div className="flex gap-2.5">
-          <button
-            onClick={() => setIsAdding(true)}
-            className="flex-1 quick-card rounded-2xl p-3.5 flex items-center gap-3 shadow-sm active:scale-[0.97] transition-transform"
-          >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20">
-              <Plus className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-[14px] font-semibold text-slate-900">Add Task</p>
-              <p className="text-[11px] text-slate-500">Quick add</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => autoPlan()}
-            className="flex-1 quick-card rounded-2xl p-3.5 flex items-center gap-3 shadow-sm active:scale-[0.97] transition-transform"
-          >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-md shadow-violet-500/20">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-[14px] font-semibold text-slate-900">Auto Plan</p>
-              <p className="text-[11px] text-slate-500">Optimize</p>
-            </div>
-          </button>
-        </div>
 
         {/* Auto Plan Confirmation */}
         {showAutoplanConfirm && autoplanSummary && (
-          <div className="ios-card p-4 shadow-md">
-            <div className="text-[14px] text-slate-800 font-medium mb-3 whitespace-pre-line">{autoplanSummary}</div>
+          <div className="ios-glass rounded-2xl p-4 shadow-sm border border-violet-200 bg-violet-50/50">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-4 h-4 text-violet-600" />
+              </div>
+              <div className="text-[13px] text-slate-700 font-medium whitespace-pre-line flex-1">{autoplanSummary}</div>
+            </div>
             <div className="flex gap-2 justify-end">
-              <button onClick={handleUndoAutoplan} className="px-4 py-2 rounded-full text-[14px] text-slate-500 hover:bg-slate-100 border border-slate-200">
+              <button onClick={handleUndoAutoplan} className="px-4 py-2 rounded-xl text-[13px] text-slate-600 bg-white shadow-sm active:bg-slate-50">
                 Undo
               </button>
-              <button onClick={handleAcceptAutoplan} className="px-4 py-2 rounded-full bg-slate-900 text-white text-[14px]">
+              <button onClick={handleAcceptAutoplan} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-[13px] font-medium active:scale-95 transition-transform">
                 Accept
               </button>
             </div>
@@ -585,70 +542,116 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
         )}
 
         {/* Section Header */}
-        <div className="flex items-center justify-between pt-2">
-          <h2 className="text-[15px] font-semibold text-slate-900">All Tasks</h2>
-          <span className="text-[12px] text-slate-500">{timeBlocks.length} items</span>
+        <div className="flex items-center justify-between pt-1">
+          <h2 className="text-[15px] font-semibold text-slate-900">Today's Tasks</h2>
+          <span className="text-[12px] text-slate-500">{timeBlocks.length} tasks</span>
         </div>
 
         {/* Task List */}
         <div className="space-y-2">
-          {timeBlocks.map(block => (
+          {timeBlocks.map((block, index) => (
             <div
               key={block.id}
-              className={`task-card rounded-2xl p-4 shadow-sm ${block.completed ? 'opacity-60' : ''}`}
+              className="relative slide-up"
+              style={{ animationDelay: `${index * 0.03}s` }}
             >
-              <div className="flex items-center gap-3">
-                {/* Completion Toggle */}
+              {/* Swipe Actions Background */}
+              <div className="absolute inset-y-0 right-0 w-20 flex items-center justify-center rounded-r-2xl bg-red-500">
+                <Trash2 className="w-5 h-5 text-white" />
+              </div>
+              
+              {/* Task Card */}
+              <div
+                className={`task-card rounded-2xl shadow-sm relative ${block.completed ? 'opacity-50' : ''} ${swipedTaskId === block.id ? 'swiped' : ''}`}
+                onTouchStart={(e) => {
+                  touchStartX.current = e.touches[0].clientX;
+                }}
+                onTouchMove={(e) => {
+                  const diff = touchStartX.current - e.touches[0].clientX;
+                  if (diff > 50) setSwipedTaskId(block.id);
+                  else if (diff < -20) setSwipedTaskId(null);
+                }}
+                onTouchEnd={() => {
+                  if (swipedTaskId === block.id) {
+                    // Could trigger delete after a delay
+                  }
+                }}
+              >
                 <button
-                  onClick={() => handleCompleteTask(block.id)}
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                    block.completed 
-                      ? 'bg-emerald-500 border-emerald-500' 
-                      : 'border-slate-300 hover:border-slate-400'
-                  }`}
+                  onClick={() => {
+                    if (swipedTaskId === block.id) {
+                      handleDeleteTask(block.id);
+                      setSwipedTaskId(null);
+                    } else {
+                      setExpandedTaskId(expandedTaskId === block.id ? null : block.id);
+                    }
+                  }}
+                  className="w-full p-4 text-left"
                 >
-                  {block.completed && <CheckCircle2 className="w-4 h-4 text-white" />}
+                  <div className="flex items-center gap-3">
+                    {/* Completion Toggle */}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCompleteTask(block.id);
+                      }}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        block.completed 
+                          ? 'bg-emerald-500 border-emerald-500' 
+                          : 'border-slate-300'
+                      }`}
+                    >
+                      {block.completed && <Check className="w-3.5 h-3.5 text-white" />}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-[15px] font-medium ${block.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                          {block.title}
+                        </h3>
+                        {block.isFixed && <Lock className="w-3 h-3 text-slate-400" />}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${getCategoryDot(block.category)}`} />
+                        <span className="text-[12px] text-slate-500">{block.time}</span>
+                        <span className="text-[12px] text-slate-400">• {formatDuration(block.durationMin)}</span>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${getCategoryColor(block.category)}`}>
+                          {block.category}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Chevron */}
+                    <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${expandedTaskId === block.id ? 'rotate-90' : ''}`} />
+                  </div>
                 </button>
                 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className={`text-[15px] font-medium ${block.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                      {block.title}
-                    </h3>
-                    {block.isFixed && (
-                      <Lock className="w-3 h-3 text-slate-400" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <div className={`w-1.5 h-1.5 rounded-full ${getCategoryDot(block.category)}`} />
-                    <span className="text-[12px] text-slate-500">{block.time}</span>
-                    <span className="text-[12px] text-slate-400">• {formatDuration(block.durationMin)}</span>
-                  </div>
-                </div>
-                
-                {/* Actions */}
-                <div className="relative flex-shrink-0">
-                  <button 
-                    onClick={() => setOpenActionMenuId(openActionMenuId === block.id ? null : block.id)} 
-                    className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                  {openActionMenuId === block.id && (
-                    <div className="absolute right-0 top-8 bg-white rounded-2xl shadow-lg z-10 min-w-[140px] overflow-hidden border border-slate-100">
-                      <button onClick={() => handleCompleteTask(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700">
-                        {block.completed ? 'Undo' : 'Done'}
+                {/* Expanded Actions */}
+                {expandedTaskId === block.id && (
+                  <div className="px-4 pb-4 pt-0 fade-in">
+                    <div className="flex gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => handleCompleteTask(block.id)}
+                        className="flex-1 py-2 rounded-xl bg-emerald-100 text-emerald-700 text-[13px] font-medium active:bg-emerald-200 transition-colors"
+                      >
+                        {block.completed ? 'Undo' : 'Complete'}
                       </button>
-                      <button onClick={() => handleMoveToTomorrow(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-slate-50 text-slate-700 border-t border-slate-100">
+                      <button
+                        onClick={() => handleMoveToTomorrow(block.id)}
+                        className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-700 text-[13px] font-medium active:bg-slate-200 transition-colors"
+                      >
                         Tomorrow
                       </button>
-                      <button onClick={() => handleDeleteTask(block.id)} className="block w-full text-left px-4 py-2.5 text-[14px] hover:bg-red-50 text-red-600 border-t border-slate-100">
+                      <button
+                        onClick={() => handleDeleteTask(block.id)}
+                        className="py-2 px-4 rounded-xl bg-red-100 text-red-600 text-[13px] font-medium active:bg-red-200 transition-colors"
+                      >
                         Delete
                       </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -657,12 +660,12 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
         {/* Ask MYPA */}
         <button
           onClick={() => onNavigate?.('ask')}
-          className="w-full ios-card p-3 shadow-md flex items-center gap-3 active:scale-[0.98] transition-transform"
+          className="w-full ios-glass rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
         >
           <MYPAOrb size="sm" showGlow={false} />
           <div className="flex-1 text-left">
-            <p className="text-[15px] font-semibold text-slate-900">Ask MYPA</p>
-            <p className="text-[12px] text-slate-500">Try: "Move gym to tomorrow"</p>
+            <p className="text-[14px] font-semibold text-slate-900">Ask MYPA</p>
+            <p className="text-[12px] text-slate-500">"Move gym to tomorrow"</p>
           </div>
           <ChevronRight className="w-5 h-5 text-slate-300" />
         </button>
@@ -670,103 +673,93 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
 
       {/* Add Task Modal */}
       {isAdding && (
-        <>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
           <div 
-            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm fade-in"
             onClick={handleCancel}
           />
           
-          <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
-            <div 
-              className="w-full bg-white rounded-t-[28px] p-5 pointer-events-auto"
-              style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}
-            >
-              {/* Handle bar */}
-              <div className="flex justify-center mb-4">
-                <div className="w-9 h-1 bg-slate-300 rounded-full" />
-              </div>
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
 
-              <h2 className="text-[20px] font-bold text-slate-900 mb-5">
-                Add Task
-              </h2>
+            <h2 className="text-[20px] font-bold text-slate-900 mb-5">Add Task</h2>
 
-              {/* Title Input */}
-              <input
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                placeholder="What do you need to do?"
-                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 outline-none text-slate-900 placeholder:text-slate-400 text-[16px] mb-4"
-                autoFocus
-              />
+            {/* Title Input */}
+            <input
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              placeholder="What do you need to do?"
+              className="w-full px-4 py-3.5 rounded-xl bg-slate-100 outline-none text-slate-900 placeholder:text-slate-400 text-[15px] mb-4"
+              autoFocus
+            />
 
-              {/* Category Selector */}
-              <div className="mb-4">
-                <label className="text-[13px] text-slate-500 font-medium block mb-2">Category</label>
-                <div className="flex gap-2">
-                  {['Work', 'Personal', 'Health'].map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setNewCategory(cat)}
-                      className={`flex-1 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-                        newCategory === cat 
-                          ? 'bg-slate-900 text-white' 
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Duration Selector */}
-              <div className="mb-6">
-                <label className="text-[13px] text-slate-500 font-medium block mb-2">Duration</label>
-                <div className="flex gap-2">
-                  {[
-                    { dur: '15m', min: 15 },
-                    { dur: '30m', min: 30 },
-                    { dur: '1h', min: 60 },
-                    { dur: '2h', min: 120 }
-                  ].map(opt => (
-                    <button
-                      key={opt.dur}
-                      onClick={() => {
-                        setNewDuration(opt.dur);
-                        setNewDurationMin(opt.min);
-                        setNewDurationMax(opt.min);
-                      }}
-                      className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-                        newDuration === opt.dur
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {opt.dur}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button 
-                  onClick={handleCancel}
-                  className="flex-1 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleAdd}
-                  disabled={!newTitle.trim()}
-                  className="flex-1 py-3.5 rounded-2xl bg-slate-900 text-white text-[15px] font-semibold disabled:opacity-40"
-                >
-                  Add Task
-                </button>
+            {/* Category Selector */}
+            <div className="mb-4">
+              <label className="text-[12px] text-slate-500 font-semibold uppercase tracking-wide block mb-2">Category</label>
+              <div className="flex gap-2">
+                {['Work', 'Personal', 'Health'].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setNewCategory(cat)}
+                    className={`flex-1 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
+                      newCategory === cat 
+                        ? 'bg-slate-900 text-white' 
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
             </div>
+
+            {/* Duration Selector */}
+            <div className="mb-6">
+              <label className="text-[12px] text-slate-500 font-semibold uppercase tracking-wide block mb-2">Duration</label>
+              <div className="flex gap-2">
+                {[
+                  { dur: '15m', min: 15 },
+                  { dur: '30m', min: 30 },
+                  { dur: '1h', min: 60 },
+                  { dur: '2h', min: 120 }
+                ].map(opt => (
+                  <button
+                    key={opt.dur}
+                    onClick={() => {
+                      setNewDuration(opt.dur);
+                      setNewDurationMin(opt.min);
+                      setNewDurationMax(opt.min);
+                    }}
+                    className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
+                      newDuration === opt.dur
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {opt.dur}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button 
+                onClick={handleCancel}
+                className="flex-1 py-3.5 rounded-xl text-[15px] font-semibold text-slate-700 bg-slate-100 active:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAdd}
+                disabled={!newTitle.trim()}
+                className="flex-1 py-3.5 rounded-xl bg-slate-900 text-white text-[15px] font-semibold disabled:opacity-40 active:scale-[0.98] transition-transform"
+              >
+                Add Task
+              </button>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

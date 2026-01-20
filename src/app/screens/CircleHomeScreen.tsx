@@ -14,6 +14,8 @@ import {
   Copy,
   Check,
   ChevronDown,
+  MessageCircle,
+  Trophy,
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState, useEffect } from "react";
@@ -111,6 +113,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
   const [showInviteSheet, setShowInviteSheet] = useState(false);
   const [copySuccess, setCopySuccess] = useState<'link' | 'code' | null>(null);
   const [feedFilter, setFeedFilter] = useState<"all" | "checkins" | "assignments">("all");
+  const [circleTab, setCircleTab] = useState<"feed" | "challenges" | "members">("feed");
 
   // Circle invite data
   const inviteCode = "MYPA-7K2P";
@@ -507,57 +510,64 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] pb-24 relative">
+    <div className="min-h-screen bg-ios-bg pb-24 relative">
       <IOSStatusBar />
 
       <style>{`
         .ios-card {
-          background: rgba(255, 255, 255, 0.98);
+          background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-radius: 20px;
+          border-radius: 16px;
+          border: 1px solid rgba(255,255,255,0.5);
+        }
+        .glass-button {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
         }
       `}</style>
 
-      {/* Clean Header */}
-      <div className="bg-[#F2F2F7] px-6 pt-4 pb-3">
+      {/* Clean iOS Header */}
+      <div className="bg-ios-bg px-5 pt-4 pb-2">
         <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate?.("circles")}
-            className="p-2 rounded-full hover:bg-black/5 transition-colors -ml-2"
+            className="p-2 -ml-2 rounded-xl glass-button hover:bg-white/90 transition-colors"
           >
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
 
-          <h1 className="text-[20px] font-bold text-slate-900">
+          <h1 className="text-[17px] font-semibold text-slate-900">
             {circleName}
           </h1>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowMembersModal(true)}
-              className="p-2 rounded-full hover:bg-black/5 transition-colors"
+              className="p-2 rounded-xl glass-button hover:bg-white/90 transition-colors"
             >
               <Users className="w-5 h-5 text-slate-600" />
             </button>
             <div className="relative">
               <button
                 onClick={() => setShowActionMenu(!showActionMenu)}
-                className="p-2 rounded-full hover:bg-black/5 transition-colors"
+                className="p-2 rounded-xl glass-button hover:bg-white/90 transition-colors"
               >
                 <MoreVertical className="w-5 h-5 text-slate-600" />
               </button>
 
               {showActionMenu && (
-                <div className="absolute right-0 top-10 ios-card shadow-lg z-50 min-w-[180px] overflow-hidden">
+                <div className="absolute right-0 top-11 bg-white rounded-2xl shadow-xl z-50 min-w-[200px] overflow-hidden border border-slate-200/50">
                   <button
                     onClick={() => {
                       setShowAssignModal(true);
                       setShowActionMenu(false);
                       onModalStateChange?.(true);
                     }}
-                    className="block w-full text-left px-4 py-3 text-[15px] text-slate-700 hover:bg-slate-50 border-b border-slate-100"
+                    className="flex items-center gap-3 w-full text-left px-4 py-3.5 text-[15px] text-slate-700 hover:bg-slate-50 border-b border-slate-100"
                   >
+                    <Plus className="w-4 h-4 text-purple-500" />
                     Assign Mission
                   </button>
                   <button
@@ -565,8 +575,9 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                       setShowInviteSheet(true);
                       setShowActionMenu(false);
                     }}
-                    className="block w-full text-left px-4 py-3 text-[15px] text-slate-700 hover:bg-slate-50 border-b border-slate-100"
+                    className="flex items-center gap-3 w-full text-left px-4 py-3.5 text-[15px] text-slate-700 hover:bg-slate-50 border-b border-slate-100"
                   >
+                    <Share2 className="w-4 h-4 text-blue-500" />
                     Invite Members
                   </button>
                   <button
@@ -574,8 +585,9 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                       setShowCircleSettings(true);
                       setShowActionMenu(false);
                     }}
-                    className="block w-full text-left px-4 py-3 text-[15px] text-slate-700 hover:bg-slate-50"
+                    className="flex items-center gap-3 w-full text-left px-4 py-3.5 text-[15px] text-slate-700 hover:bg-slate-50"
                   >
+                    <MoreVertical className="w-4 h-4 text-slate-400" />
                     Circle Settings
                   </button>
                 </div>
@@ -585,353 +597,461 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
         </div>
       </div>
 
-      {/* Today Status Card - CLICKABLE */}
-      <div className="px-4 pt-4 pb-3">
-        <button
-          onClick={handleOpenTodayModal}
-          className="w-full text-left ios-card p-4 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
-        >
-          {/* Header Row */}
+      {/* Circle Stats Card - iOS Glass Style */}
+      <div className="px-4 pt-3 pb-2">
+        <div className="ios-card p-4 shadow-sm">
+          {/* Streak Badge & Members Row */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-semibold text-slate-800">Today's Check-ins</h2>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${postedCount === totalCount ? 'bg-emerald-500' : 'bg-purple-500'}`} />
-              <span className="text-[13px] font-medium text-slate-600">
-                {postedCount}/{totalCount}
-              </span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50">
+              <Flame className="w-4 h-4 text-amber-500" />
+              <span className="text-amber-700 text-[13px] font-semibold">12 day streak</span>
             </div>
+            <button 
+              onClick={handleOpenTodayModal}
+              className="text-[13px] text-purple-600 font-medium"
+            >
+              View all →
+            </button>
           </div>
 
-          {/* Avatar Ring Row - 32px circles */}
-          <div className="flex gap-2 items-center">
-            {circleMembers.map((member) => (
-              <div key={member.id} className="relative flex-shrink-0">
+          {/* Member Avatars Row */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex -space-x-2">
+              {circleMembers.slice(0, 4).map((member, idx) => (
+                <div 
+                  key={member.id} 
+                  className="relative"
+                  style={{ zIndex: 10 - idx }}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-[12px] font-semibold bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-white shadow-sm ${
+                      member.posted ? "ring-2 ring-emerald-400 ring-offset-1 ring-offset-white" : ""
+                    }`}
+                  >
+                    {member.initial}
+                  </div>
+                  {member.posted && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {/* You */}
+              <div className="relative" style={{ zIndex: 5 }}>
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-[11px] font-semibold bg-gradient-to-br from-purple-400 to-blue-400 border-2 ${
-                    member.posted
-                      ? "border-emerald-500"
-                      : "border-slate-200"
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-[10px] font-bold bg-slate-700 border-2 border-white shadow-sm ${
+                    userPosted ? "ring-2 ring-emerald-400 ring-offset-1 ring-offset-white" : ""
                   }`}
                 >
-                  {member.initial}
+                  You
                 </div>
-                {member.posted && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
-                    <Check className="w-2 h-2 text-white" />
+                {userPosted && (
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
+                    <Check className="w-2.5 h-2.5 text-white" />
                   </div>
                 )}
               </div>
-            ))}
-
-            {/* You Avatar */}
-            <div className="relative flex-shrink-0">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-[10px] font-bold bg-slate-800 border-2 ${
-                  userPosted ? "border-emerald-500" : "border-slate-200"
-                }`}
-              >
-                You
-              </div>
-              {userPosted && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
-                  <Check className="w-2 h-2 text-white" />
-                </div>
-              )}
             </div>
-
-            {/* Your Turn / Posted Indicator - INTERACTIVE */}
-            <div className="ml-auto">
-              {!userPosted ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShareToday();
-                  }}
-                  className="px-3 py-1.5 rounded-full bg-purple-600 text-white text-[12px] font-semibold hover:bg-purple-700 transition-colors active:scale-95"
-                >
-                  Share
-                </button>
-              ) : (
-                <span className="text-[12px] text-emerald-600 font-semibold flex items-center gap-1">
-                  <Check className="w-4 h-4" /> Posted
-                </span>
-              )}
+            <div className="flex-1">
+              <p className="text-[14px] font-semibold text-slate-800">{postedCount} of {totalCount} checked in</p>
+              <p className="text-[12px] text-slate-500">Today's progress</p>
             </div>
           </div>
-        </button>
-      </div>
 
-      {/* Empty State - No Check-ins */}
-      {postedCount === 0 && (
-        <div className="px-4 pb-3">
-          <div className="ios-card p-6 text-center">
-            <p className="text-[15px] font-medium text-slate-700 mb-4">
-              Be the first to share today
-            </p>
+          {/* Progress Bar */}
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
+            <div 
+              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+              style={{ width: `${(postedCount / totalCount) * 100}%` }}
+            />
+          </div>
+
+          {/* Share Button - Only if not posted */}
+          {!userPosted && (
             <button
               onClick={handleShareToday}
-              className="w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-purple-500 to-blue-500 text-white text-[15px] font-semibold hover:opacity-90 transition-all active:scale-[0.98] shadow-lg shadow-purple-500/25"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[15px] font-semibold shadow-lg shadow-purple-500/20 hover:opacity-95 active:scale-[0.98] transition-all"
             >
-              Share Today
+              Share Your Day
+            </button>
+          )}
+          {userPosted && (
+            <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-[14px] font-medium">
+              <Check className="w-4 h-4" />
+              You've shared today
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => {
+                setShowAssignModal(true);
+                onModalStateChange?.(true);
+              }}
+              className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-[13px] font-medium hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Assign Mission
+            </button>
+            <button
+              onClick={() => setShowInviteSheet(true)}
+              className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-[13px] font-medium hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Invite
             </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Feed Header with iOS Segmented Control */}
+      {/* Content Tabs */}
       <div className="px-4 pt-2 pb-3">
-        <p className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-3 px-1">
-          Activity
-        </p>
-        {/* iOS Segmented Control */}
-        <div className="flex bg-slate-200/70 rounded-xl p-1">
-          {(["all", "checkins", "assignments"] as const).map((option) => (
+        <div className="flex bg-slate-100 rounded-xl p-1">
+          {(["feed", "challenges", "members"] as const).map((tab) => (
             <button
-              key={option}
-              onClick={() => setFeedFilter(option)}
-              className={`flex-1 py-2 px-3 rounded-lg text-[13px] font-semibold transition-all ${
-                feedFilter === option
+              key={tab}
+              onClick={() => setCircleTab(tab)}
+              className={`flex-1 py-2.5 px-3 rounded-lg text-[13px] font-semibold transition-all ${
+                circleTab === tab
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-500"
               }`}
             >
-              {option === "all" && "All"}
-              {option === "checkins" && "Check-ins"}
-              {option === "assignments" && "Tasks"}
+              {tab === "feed" && "Feed"}
+              {tab === "challenges" && `Challenges`}
+              {tab === "members" && `Members`}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Feed Posts */}
-      <div className="px-4 space-y-3 pb-4">
-        {filteredPosts.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-[14px] text-slate-500">No activity yet</p>
-          </div>
-        ) : (
-          filteredPosts.map((post) => {
-            if (post.type === "system") {
-              // System update card - ENHANCED
-              const statusChipColor = 
-                post.systemType === "completed" ? "bg-green-50 text-green-700" :
-                post.systemType === "accepted" ? "bg-amber-50 text-amber-700" :
-                post.systemType === "assigned" ? "bg-purple-50 text-purple-700" :
-                "bg-red-50 text-red-700";
-
-              const statusChipLabel = 
-                post.systemType === "completed" ? "Complete" :
-                post.systemType === "accepted" ? "Due" :
-                post.systemType === "assigned" ? "Assigned" :
-                "Declined";
-
-              const borderColor =
-                post.systemType === "completed" ? "border-l-4 border-green-200" :
-                post.systemType === "accepted" ? "border-l-4 border-amber-200" :
-                post.systemType === "assigned" ? "border-l-4 border-purple-200" :
-                "border-l-4 border-red-200";
-
-              return (
-                <div
-                  key={post.id}
-                  className={`ios-card p-4 ${
-                    post.systemType === "completed" ? "border-l-4 border-emerald-400" :
-                    post.systemType === "accepted" ? "border-l-4 border-amber-400" :
-                    post.systemType === "assigned" ? "border-l-4 border-purple-400" :
-                    "border-l-4 border-red-400"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{
-                        backgroundColor: 
-                          post.systemType === "completed" ? "#dcfce7" :
-                          post.systemType === "accepted" ? "#fef3c7" :
-                          post.systemType === "assigned" ? "#ede9fe" :
-                          "#fee2e2"
-                      }}
-                    >
-                      {post.systemType === "completed" && (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      )}
-                      {post.systemType === "accepted" && (
-                        <Clock className="w-5 h-5 text-amber-600" />
-                      )}
-                      {post.systemType === "declined" && (
-                        <X className="w-5 h-5 text-red-600" />
-                      )}
-                      {post.systemType === "assigned" && (
-                        <Clock className="w-5 h-5 text-purple-600" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-slate-700">
-                        {post.systemText}
-                      </p>
-                      {post.dueTime && (
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          Due {post.dueTime}
-                        </p>
-                      )}
-                      {post.time && (
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          {post.time}
-                        </p>
-                      )}
-                      {/* Proof Status Indicator - if present */}
-                      {post.systemType === "assigned" && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-purple-600 text-[10px] font-semibold whitespace-nowrap">
-                            <Camera size={12} />
-                            Proof required
-                          </span>
-                        </div>
-                      )}
-                      {post.systemType === "completed" && (
-                        <div className="flex flex-wrap gap-1.5 mt-2 items-center">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-semibold whitespace-nowrap">
-                            ✓ Proof submitted
-                          </span>
-                          <button
-                            onClick={() => {
-                              // Find the assignment with proof
-                              const assignment = allAssignments.find(a => 
-                                a.title === post.systemText?.split(": ")[1]?.split(" (Proof")[0]
-                              );
-                              if (assignment && assignment.proofImageUri) {
-                                setSelectedAssignmentForProof(assignment);
-                                setShowViewProofModal(true);
-                              }
-                            }}
-                            className="text-[10px] font-semibold text-primary hover:opacity-75 transition-opacity underline"
-                          >
-                            View proof
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className={`px-2 py-1 rounded-md text-[10px] font-semibold flex-shrink-0 whitespace-nowrap ${statusChipColor}`}>
-                      {statusChipLabel}
-                    </div>
-                  </div>
+      {/* Tab Content */}
+      {circleTab === "feed" && (
+        <>
+          {/* Empty State - No Check-ins */}
+          {postedCount === 0 && (
+            <div className="px-4 pb-3">
+              <div className="ios-card p-5 text-center shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mx-auto mb-3">
+                  <Share2 className="w-7 h-7 text-purple-600" />
                 </div>
-              );
-            }
-
-            // Receipt Card (Daily Share Post) - ENHANCED
-            return (
-              <div
-                key={post.id}
-                className={`ios-card p-4 ${
-                  post.isNew ? "ring-2 ring-purple-300" : ""
-                }`}
-              >
-                {/* New Badge */}
-                {post.isNew && (
-                  <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-purple-600" />
-                )}
-
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center text-white text-[12px] font-semibold flex-shrink-0">
-                    {post.user?.initial}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-semibold text-slate-800">
-                      {post.user?.name}
-                    </p>
-                    <p className="text-[12px] text-slate-500">{post.time}</p>
-                  </div>
-                </div>
-
-                {/* Main Stats Row - Missions Big */}
-                {post.missions && (
-                  <div className="mb-3">
-                    <div className="text-[24px] font-bold text-slate-800 mb-2">
-                      {post.missions.completed}/{post.missions.total} Missions
-                    </div>
-
-                    {/* Metric Pills */}
-                    <div className="flex gap-2 flex-wrap">
-                      {post.wallet && (
-                        <div className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-medium">
-                          {post.wallet}
-                        </div>
-                      )}
-                      {post.streak && (
-                        <div className="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-[11px] font-medium flex items-center gap-1">
-                          <Flame className="w-3 h-3" />
-                          {post.streak}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Note Preview - NEW */}
-                {post.note && (
-                  <div className="mb-2 px-3 py-2 rounded-lg bg-slate-50">
-                    <p className="text-[12px] text-slate-700 italic">
-                      "{post.note}"
-                    </p>
-                  </div>
-                )}
-                {!post.note && post.missions && (
-                  <div className="mb-2 px-3 py-2 rounded-lg bg-slate-50">
-                    <p className="text-[12px] text-slate-500 italic">
-                      No note added
-                    </p>
-                  </div>
-                )}
-
-                {/* Privacy Footer */}
-                {post.privacy && (
-                  <p className="text-[11px] text-slate-500 mb-3">
-                    {post.privacy}
-                  </p>
-                )}
-
-                {/* Reactions Row - ANIMATED */}
-                <div className="flex items-center gap-4 text-slate-600">
-                  {post.reactions?.heart !== undefined && (
-                    <button
-                      onClick={() => handleReaction(post.id, "heart")}
-                      className={`flex items-center gap-1 text-[12px] hover:text-slate-800 transition-all ${
-                        post.reactionAnimatingId === post.id ? "scale-110" : "scale-100"
-                      }`}
-                    >
-                      <Heart className="w-4 h-4" />
-                      <span>{post.reactions.heart}</span>
-                    </button>
-                  )}
-                  {post.reactions?.fire !== undefined && (
-                    <button
-                      onClick={() => handleReaction(post.id, "fire")}
-                      className={`flex items-center gap-1 text-[12px] hover:text-slate-800 transition-all ${
-                        post.reactionAnimatingId === post.id ? "scale-110" : "scale-100"
-                      }`}
-                    >
-                      <span>🔥</span>
-                      <span>{post.reactions.fire}</span>
-                    </button>
-                  )}
-                  {post.reactions?.clap !== undefined && (
-                    <button
-                      onClick={() => handleReaction(post.id, "clap")}
-                      className={`flex items-center gap-1 text-[12px] hover:text-slate-800 transition-all ${
-                        post.reactionAnimatingId === post.id ? "scale-110" : "scale-100"
-                      }`}
-                    >
-                      <span>👏</span>
-                      <span>{post.reactions.clap}</span>
-                    </button>
-                  )}
+                <p className="text-[16px] font-semibold text-slate-800 mb-1">
+                  Be the first to share today
+                </p>
+                <p className="text-[13px] text-slate-500 mb-4">
+                  Inspire your circle with your daily progress
+                </p>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => onNavigate?.('daily-life-card')}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[15px] font-semibold hover:opacity-95 active:scale-[0.98] transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2"
+                  >
+                    <Camera className="w-5 h-5" />
+                    Create Daily Life Card
+                  </button>
+                  <button
+                    onClick={handleShareToday}
+                    className="w-full py-3 rounded-xl bg-slate-100 text-slate-700 text-[14px] font-medium hover:bg-slate-200 active:scale-[0.98] transition-all"
+                  >
+                    Quick Share
+                  </button>
                 </div>
               </div>
-            );
-          })
-        )}
-      </div>
+            </div>
+          )}
+
+          {/* Feed Filter */}
+          <div className="px-4 pb-3">
+            <div className="flex bg-slate-50 rounded-lg p-1 gap-0.5">
+              {(["all", "checkins", "assignments"] as const).map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setFeedFilter(option)}
+                  className={`flex-1 py-1.5 px-2 rounded-md text-[12px] font-medium transition-all ${
+                    feedFilter === option
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  {option === "all" && "All"}
+                  {option === "checkins" && "Check-ins"}
+                  {option === "assignments" && "Tasks"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Feed Posts */}
+          <div className="px-4 space-y-3 pb-4">
+            {filteredPosts.length === 0 ? (
+              <div className="ios-card p-6 text-center">
+                <p className="text-[14px] text-slate-500">No activity yet</p>
+              </div>
+            ) : (
+              filteredPosts.map((post) => {
+                if (post.type === "system") {
+                  const statusChipColor = 
+                    post.systemType === "completed" ? "bg-green-50 text-green-700" :
+                    post.systemType === "accepted" ? "bg-amber-50 text-amber-700" :
+                    post.systemType === "assigned" ? "bg-purple-50 text-purple-700" :
+                    "bg-red-50 text-red-700";
+
+                  const statusChipLabel = 
+                    post.systemType === "completed" ? "Complete" :
+                    post.systemType === "accepted" ? "Due" :
+                    post.systemType === "assigned" ? "Assigned" :
+                    "Declined";
+
+                  return (
+                    <div
+                      key={post.id}
+                      className={`ios-card p-4 ${
+                        post.systemType === "completed" ? "border-l-4 border-emerald-400" :
+                        post.systemType === "accepted" ? "border-l-4 border-amber-400" :
+                        post.systemType === "assigned" ? "border-l-4 border-purple-400" :
+                        "border-l-4 border-red-400"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{
+                            backgroundColor: 
+                              post.systemType === "completed" ? "var(--status-completed-bg)" :
+                              post.systemType === "accepted" ? "var(--status-accepted-bg)" :
+                              post.systemType === "assigned" ? "var(--status-assigned-bg)" :
+                              "var(--status-error-bg)"
+                          }}
+                        >
+                          {post.systemType === "completed" && <CheckCircle className="w-5 h-5 text-green-600" />}
+                          {post.systemType === "accepted" && <Clock className="w-5 h-5 text-amber-600" />}
+                          {post.systemType === "declined" && <X className="w-5 h-5 text-red-600" />}
+                          {post.systemType === "assigned" && <Clock className="w-5 h-5 text-purple-600" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] text-slate-700">{post.systemText}</p>
+                          {post.time && <p className="text-[11px] text-slate-500 mt-0.5">{post.time}</p>}
+                        </div>
+                        <div className={`px-2 py-1 rounded-md text-[10px] font-semibold flex-shrink-0 ${statusChipColor}`}>
+                          {statusChipLabel}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Receipt Card
+                return (
+                  <div key={post.id} className={`ios-card p-4 shadow-sm ${post.isNew ? "ring-2 ring-purple-400/30" : ""}`}>
+                    {post.isNew && (
+                      <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-semibold">NEW</div>
+                    )}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-[13px] font-semibold ${
+                        post.missions && post.missions.completed === post.missions.total ? "ring-2 ring-emerald-400 ring-offset-2" : ""
+                      }`}>
+                        {post.user?.initial}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-semibold text-slate-800">{post.user?.name}</p>
+                        <p className="text-[12px] text-slate-500">{post.time}</p>
+                      </div>
+                    </div>
+                    {post.missions && (
+                      <div className="flex items-center gap-4 mb-4 p-3 bg-slate-50 rounded-xl">
+                        <div className="relative w-14 h-14 flex-shrink-0">
+                          <svg className="w-14 h-14 transform -rotate-90">
+                            <circle cx="28" cy="28" r="24" className="fill-none stroke-slate-200" strokeWidth="5" />
+                            <circle cx="28" cy="28" r="24" className="fill-none stroke-purple-500" strokeWidth="5" strokeLinecap="round"
+                              strokeDasharray={`${(post.missions.completed / post.missions.total) * 150.8} 150.8`} />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[14px] font-bold text-slate-800">{post.missions.completed}/{post.missions.total}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[12px] text-slate-500 mb-2">Missions completed</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {post.wallet && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[12px] font-medium">💰 {post.wallet}</span>}
+                            {post.streak && <span className="px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 text-[12px] font-medium flex items-center gap-1"><Flame className="w-3 h-3" /> {post.streak}d</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {post.note && (
+                      <div className="mb-4 p-3 bg-purple-50/50 rounded-xl border border-purple-100/50">
+                        <p className="text-[13px] text-slate-700 italic">"{post.note}"</p>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                      {post.reactions?.heart !== undefined && (
+                        <button onClick={() => handleReaction(post.id, "heart")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-pink-50 transition-all active:scale-95">
+                          <Heart className={`w-4 h-4 ${post.reactions.heart > 0 ? "fill-pink-500 text-pink-500" : "text-slate-400"}`} />
+                          <span className="text-[12px] font-medium text-slate-600">{post.reactions.heart}</span>
+                        </button>
+                      )}
+                      {post.reactions?.fire !== undefined && (
+                        <button onClick={() => handleReaction(post.id, "fire")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-orange-50 transition-all active:scale-95">
+                          <span>🔥</span>
+                          <span className="text-[12px] font-medium text-slate-600">{post.reactions.fire}</span>
+                        </button>
+                      )}
+                      {post.reactions?.clap !== undefined && (
+                        <button onClick={() => handleReaction(post.id, "clap")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 hover:bg-amber-50 transition-all active:scale-95">
+                          <span>👏</span>
+                          <span className="text-[12px] font-medium text-slate-600">{post.reactions.clap}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Challenges Tab */}
+      {circleTab === "challenges" && (
+        <div className="px-4 pb-4 space-y-3">
+          {/* Challenge 1 */}
+          <div className="ios-card p-4 shadow-sm">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-2xl">🏋️</div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-[15px] font-semibold text-slate-800">Morning Workout</h4>
+                  <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[11px] font-medium">18 days left</span>
+                </div>
+                <p className="text-[13px] text-slate-500">Post workout proof by 10 AM</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full" style={{ width: '60%' }} />
+              </div>
+              <span className="text-[12px] font-medium text-slate-600">3/5 today</span>
+            </div>
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-1.5">
+                  <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center text-[10px] border-2 border-white">🥇</div>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-[9px] font-bold border-2 border-white">A</div>
+                </div>
+                <span className="text-[11px] text-slate-500">Alex leads • 12d streak</span>
+              </div>
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50">
+                <Flame className="w-3 h-3 text-amber-500" />
+                <span className="text-[11px] font-semibold text-amber-700">7d</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Challenge 2 */}
+          <div className="ios-card p-4 shadow-sm">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center text-2xl">📵</div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-[15px] font-semibold text-slate-800">No Phone After 9PM</h4>
+                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[11px] font-medium">3 days left</span>
+                </div>
+                <p className="text-[13px] text-slate-500">Log your screen time</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-purple-400 to-purple-500 rounded-full" style={{ width: '40%' }} />
+              </div>
+              <span className="text-[12px] font-medium text-slate-600">2/5 today</span>
+            </div>
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-[12px] text-slate-500">You're in 2nd place!</span>
+              <button className="px-3 py-1.5 rounded-lg bg-purple-600 text-white text-[12px] font-semibold hover:bg-purple-700 transition-colors">
+                Log Today
+              </button>
+            </div>
+          </div>
+
+          {/* Create Challenge */}
+          <button className="w-full py-4 rounded-xl border-2 border-dashed border-slate-200 text-slate-500 text-[14px] font-medium hover:border-purple-300 hover:text-purple-600 hover:bg-purple-50/50 transition-all flex items-center justify-center gap-2">
+            <Plus className="w-5 h-5" />
+            Start New Challenge
+          </button>
+        </div>
+      )}
+
+      {/* Members Tab */}
+      {circleTab === "members" && (
+        <div className="px-4 pb-4 space-y-2">
+          {circleMembers.map((member, idx) => (
+            <div key={member.id} className="ios-card p-4 shadow-sm flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-[14px] font-semibold ${
+                member.posted ? "ring-2 ring-emerald-400 ring-offset-2" : ""
+              }`}>
+                {member.initial}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[15px] font-semibold text-slate-800">{member.name}</p>
+                  {member.role === "admin" && (
+                    <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-semibold">Admin</span>
+                  )}
+                </div>
+                <p className="text-[12px] text-slate-500">
+                  {member.posted ? "✓ Checked in today" : "Waiting to check in"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50">
+                  <Flame className="w-3 h-3 text-amber-500" />
+                  <span className="text-[11px] font-semibold text-amber-700">8d</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setAssignTo(member.name);
+                    setAssignToId(member.id);
+                    setShowAssignModal(true);
+                    onModalStateChange?.(true);
+                  }}
+                  className="p-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+          
+          {/* You */}
+          <div className="ios-card p-4 shadow-sm flex items-center gap-3 bg-purple-50/30">
+            <div className={`w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-white text-[12px] font-bold ${
+              userPosted ? "ring-2 ring-emerald-400 ring-offset-2" : ""
+            }`}>
+              You
+            </div>
+            <div className="flex-1">
+              <p className="text-[15px] font-semibold text-slate-800">You</p>
+              <p className="text-[12px] text-slate-500">
+                {userPosted ? "✓ Checked in today" : "Waiting to check in"}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50">
+              <Flame className="w-3 h-3 text-amber-500" />
+              <span className="text-[11px] font-semibold text-amber-700">12d</span>
+            </div>
+          </div>
+
+          {/* Invite */}
+          <button 
+            onClick={() => setShowInviteSheet(true)}
+            className="w-full py-4 rounded-xl border-2 border-dashed border-slate-200 text-slate-500 text-[14px] font-medium hover:border-purple-300 hover:text-purple-600 hover:bg-purple-50/50 transition-all flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Invite Members
+          </button>
+        </div>
+      )}
 
       {/* TODAY IN CIRCLE MODAL - iOS STYLE */}
       {showTodayModal && (
@@ -1617,9 +1737,39 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
               <h2 className="text-[20px] font-semibold text-slate-800 mb-2">
                 Share Your Day
               </h2>
-              <p className="text-[14px] text-slate-500 mb-6">
+              <p className="text-[14px] text-slate-500 mb-4">
                 Choose what you'd like to share with your circle
               </p>
+
+              {/* Daily Life Card Quick Access */}
+              <button
+                onClick={() => {
+                  setShowShareModal(false);
+                  onModalStateChange?.(false);
+                  onNavigate?.('daily-life-card');
+                }}
+                className="w-full mb-5 p-4 rounded-2xl text-left active:scale-[0.98] transition-transform"
+                style={{ background: 'linear-gradient(145deg, var(--dark-card-start) 0%, var(--dark-card-middle) 50%, var(--dark-card-end) 100%)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-purple-500/20">
+                    <Share2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white font-semibold text-[15px]">Create Daily Life Card</p>
+                    <p className="text-white/60 text-[12px]">Beautiful shareable card with your stats</p>
+                  </div>
+                  <div className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                    +50 XP
+                  </div>
+                </div>
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-[1px] bg-slate-200" />
+                <span className="text-[12px] text-slate-400 font-medium">or quick share</span>
+                <div className="flex-1 h-[1px] bg-slate-200" />
+              </div>
 
               {/* Share Options - Toggle Cards */}
               <div className="space-y-3 mb-6">
@@ -1697,7 +1847,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                 </button>
                 <button
                   onClick={handleConfirmShare}
-                  className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-[14px] font-semibold hover:opacity-90 transition-all active:scale-95"
+                  className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[14px] font-semibold hover:opacity-90 transition-all active:scale-95"
                 >
                   Share to Circle
                 </button>
@@ -1840,7 +1990,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                       setSelectedAssignmentForProof(null);
                     }}
                     disabled={!proofImageFile}
-                    className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="flex-1 px-4 py-3 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Submit Proof
                   </button>
@@ -1987,7 +2137,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
               <div className="mb-8">
                 <p className="text-[13px] font-medium text-slate-600 mb-3">Invite code</p>
                 
-                <div className="flex items-center justify-center px-4 py-5 rounded-[20px] bg-gradient-to-br from-[#B58CFF]/10 to-[#64C7FF]/10 border border-[#B58CFF]/20 mb-4">
+                <div className="flex items-center justify-center px-4 py-5 rounded-[20px] bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 mb-4">
                   <p className="text-[32px] font-bold text-slate-800 tracking-widest">
                     {inviteCode}
                   </p>
@@ -1995,7 +2145,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
 
                 <button
                   onClick={handleCopyCode}
-                  className="w-full px-4 py-3 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-[14px] font-semibold hover:opacity-90 transition-colors flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[14px] font-semibold hover:opacity-90 transition-colors flex items-center justify-center gap-2"
                 >
                   {copySuccess === 'code' ? (
                     <>

@@ -14,11 +14,15 @@ import { ProofCameraScreen } from "./screens/ProofCameraScreen";
 import { ProofConfirmScreen } from "./screens/ProofConfirmScreen";
 import { DailyLifeCardScreen } from "./screens/DailyLifeCardScreen";
 import { PrivacyControlsScreen } from "./screens/PrivacyControlsScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { HelpSupportScreen } from "./screens/HelpSupportScreen";
+import { EditProfileScreen } from "./screens/EditProfileScreen";
+import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { TabBar } from "./components/TabBar";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('hub');
-  const [previousTab, setPreviousTab] = useState('hub');
+  const [activeTab, setActiveTab] = useState('home');
+  const [previousTab, setPreviousTab] = useState('home');
   const [isListening, setIsListening] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -46,7 +50,7 @@ export default function App() {
 
   const handleEndCall = () => {
     setIsListening(false);
-    setActiveTab(previousTab === 'voice' ? 'hub' : previousTab);
+    setActiveTab(previousTab === 'voice' ? 'home' : previousTab);
   };
 
   const renderScreen = () => {
@@ -55,10 +59,10 @@ export default function App() {
     }
 
     switch (activeTab) {
-      case 'hub':
-        return <HubScreen onNavigate={handleNavigate} />;
+      case 'home':
+        return <HubScreen onNavigate={handleNavigate} onVoiceClick={handleVoiceClick} />;
       case 'plan':
-        return <PlanScreen />;
+        return <PlanScreen onNavigate={handleNavigate} />;
       case 'inbox':
         return <InboxScreen onNavigate={handleNavigate} />;
       case 'sort':
@@ -83,9 +87,16 @@ export default function App() {
         return <DailyLifeCardScreen onNavigate={handleNavigate} />;
       case 'privacy-controls':
         return <PrivacyControlsScreen onNavigate={handleNavigate} />;
-        return <PrivacyControlsScreen />;
+      case 'settings':
+        return <SettingsScreen onNavigate={handleNavigate} />;
+      case 'help':
+        return <HelpSupportScreen onNavigate={handleNavigate} />;
+      case 'edit-profile':
+        return <EditProfileScreen onNavigate={handleNavigate} />;
+      case 'notifications':
+        return <NotificationsScreen onNavigate={handleNavigate} />;
       default:
-        return <HubScreen onNavigate={handleNavigate} />;
+        return <HubScreen onNavigate={handleNavigate} onVoiceClick={handleVoiceClick} />;
     }
   };
 
@@ -105,7 +116,7 @@ export default function App() {
         {/* Screen Content - this is the containment boundary for modals */}
         <div 
           id="screen-container"
-          className={`w-full h-full rounded-[48px] overflow-hidden relative transition-colors duration-500 ${isListening ? 'bg-black' : 'bg-[#F2F2F7]'}`}
+          className={`w-full h-full rounded-[48px] overflow-hidden relative transition-colors duration-500 ${isListening ? 'bg-black' : 'bg-ios-bg'}`}
           style={{ isolation: 'isolate' }}
         >
           

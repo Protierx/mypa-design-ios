@@ -43,6 +43,34 @@
   --gradient-purple: #B58CFF;
   --gradient-blue: #64C7FF;
   
+  /* iOS System Background - Consistent across all screens */
+  --ios-bg: #F6F7FA;
+  --ios-bg-secondary: #F2F2F7;
+  
+  /* Orb/Voice Gradient (Pink-Purple-Blue) */
+  --orb-gradient-start: #B58CFF;
+  --orb-gradient-middle: #A78BFA;
+  --orb-gradient-end: #64C7FF;
+  
+  /* Dark card gradient (briefing/profile cards) */
+  --dark-card-start: #1a1a2e;
+  --dark-card-middle: #16213e;
+  --dark-card-end: #0f3460;
+  
+  /* Success/Wallet gradient (green tones) */
+  --success-gradient-start: #059669;
+  --success-gradient-middle: #10b981;
+  --success-gradient-end: #34d399;
+  
+  /* Semantic status colors */
+  --status-completed-bg: #dcfce7;
+  --status-accepted-bg: #fef3c7;
+  --status-assigned-bg: #ede9fe;
+  --status-error-bg: #fee2e2;
+  
+  /* iOS Red for destructive actions */
+  --ios-red: #FF453A;
+  
   /* Spacing */
   --spacing-base: 10px;
   
@@ -110,6 +138,13 @@
   --shadow-lg: 0 8px 24px 0 rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 30px 0 rgba(181, 140, 255, 0.25);
   
+  /* iOS backgrounds for dark mode */
+  --ios-bg: #0B0F14;
+  --ios-bg-secondary: #161B22;
+  
+  /* iOS Red */
+  --ios-red: #FF453A;
+  
   /* Chart colors */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -172,6 +207,16 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* MYPA-specific theme colors */
+  --color-ios-bg: var(--ios-bg);
+  --color-ios-bg-secondary: var(--ios-bg-secondary);
+  --color-gradient-purple: var(--gradient-purple);
+  --color-gradient-blue: var(--gradient-blue);
+  --color-orb-start: var(--orb-gradient-start);
+  --color-orb-middle: var(--orb-gradient-middle);
+  --color-orb-end: var(--orb-gradient-end);
+  --color-ios-red: var(--ios-red);
 }
 
 @layer base {
