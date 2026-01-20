@@ -3,19 +3,24 @@ import {
   ArrowLeft, 
   Camera, 
   CheckCircle2, 
-  Users, 
   Plus, 
   Trophy, 
   Flame, 
   Target, 
-  Calendar,
-  TrendingUp,
   Clock,
   ChevronRight,
   Sparkles,
   Crown,
   Medal,
-  Star
+  Star,
+  Zap,
+  TrendingUp,
+  Gift,
+  Lock,
+  ChevronDown,
+  X,
+  Check,
+  Users
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 
@@ -30,42 +35,58 @@ interface Challenge {
   duration: string;
   daysLeft: number;
   totalDays: number;
-  members: { initial: string; color: string }[];
+  members: { name: string; initial: string; color: string; streak: number; rank: number }[];
   todayPrompt: string;
   progress: { completed: number; total: number };
   myStatus: 'pending' | 'completed' | 'missed';
   myStreak: number;
   bestStreak: number;
   category: 'fitness' | 'wellness' | 'learning' | 'productivity' | 'social';
-}
-
-interface Invite {
-  id: number;
-  name: string;
-  emoji: string;
-  inviter: string;
-  duration: string;
-  members: { initial: string; color: string }[];
-  reward?: string;
+  xpReward: number;
+  stakes?: string;
 }
 
 export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
-  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'completed'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'leaderboard' | 'achievements'>('active');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [selectedChallengeId, setSelectedChallengeId] = useState<number | null>(null);
+  const [expandedChallenge, setExpandedChallenge] = useState<number | null>(null);
+  const [selectedTimeframe, setSelectedTimeframe] = useState<'week' | 'month' | 'all'>('week');
 
   // User stats
   const userStats = {
-    totalChallenges: 12,
-    activeStreak: 7,
+    totalXP: 4850,
+    currentStreak: 7,
     longestStreak: 21,
-    completionRate: 89,
+    challengesWon: 8,
     rank: 3,
-    totalMembers: 24
+    totalMembers: 24,
+    level: 12,
+    nextLevelXP: 5000
   };
 
-  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([
+  // Leaderboard data
+  const leaderboard = [
+    { rank: 1, name: 'Sarah', initial: 'S', xp: 6240, streak: 21, wins: 12, isYou: false, movement: 'up' },
+    { rank: 2, name: 'Mike', initial: 'M', xp: 5890, streak: 18, wins: 10, isYou: false, movement: 'same' },
+    { rank: 3, name: 'You', initial: 'A', xp: 4850, streak: 7, wins: 8, isYou: true, movement: 'up' },
+    { rank: 4, name: 'Emma', initial: 'E', xp: 4200, streak: 5, wins: 6, isYou: false, movement: 'down' },
+    { rank: 5, name: 'Jake', initial: 'J', xp: 3950, streak: 4, wins: 5, isYou: false, movement: 'up' },
+    { rank: 6, name: 'Lily', initial: 'L', xp: 3400, streak: 3, wins: 4, isYou: false, movement: 'same' },
+  ];
+
+  // Achievements
+  const achievements = [
+    { id: 1, name: 'First Blood', emoji: '🎯', description: 'Complete your first challenge', unlocked: true, xp: 100 },
+    { id: 2, name: 'Streak Master', emoji: '🔥', description: '7-day streak', unlocked: true, xp: 250 },
+    { id: 3, name: 'Consistency King', emoji: '👑', description: '21-day streak', unlocked: false, xp: 500, progress: 7, total: 21 },
+    { id: 4, name: 'Social Butterfly', emoji: '🦋', description: 'Join 5 group challenges', unlocked: true, xp: 150 },
+    { id: 5, name: 'Early Bird', emoji: '🐦', description: 'Submit proof before 8 AM for 7 days', unlocked: false, xp: 300, progress: 3, total: 7 },
+    { id: 6, name: 'Champion', emoji: '🏆', description: 'Win 10 challenges', unlocked: false, xp: 1000, progress: 8, total: 10 },
+    { id: 7, name: 'Perfectionist', emoji: '💎', description: '100% completion rate for a month', unlocked: false, xp: 750, progress: 89, total: 100 },
+    { id: 8, name: 'Team Player', emoji: '🤝', description: 'Help 5 friends complete challenges', unlocked: true, xp: 200 },
+  ];
+
+  const [activeChallenges] = useState<Challenge[]>([
     {
       id: 1,
       name: 'Morning Workout',
@@ -74,18 +95,20 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
       daysLeft: 18,
       totalDays: 30,
       members: [
-        { initial: 'A', color: 'from-rose-400 to-rose-600' },
-        { initial: 'B', color: 'from-blue-400 to-blue-600' },
-        { initial: 'C', color: 'from-green-400 to-green-600' },
-        { initial: 'D', color: 'from-purple-400 to-purple-600' },
-        { initial: 'E', color: 'from-amber-400 to-amber-600' },
+        { name: 'You', initial: 'A', color: 'from-violet-400 to-violet-600', streak: 7, rank: 1 },
+        { name: 'Sarah', initial: 'S', color: 'from-rose-400 to-rose-600', streak: 6, rank: 2 },
+        { name: 'Mike', initial: 'M', color: 'from-blue-400 to-blue-600', streak: 5, rank: 3 },
+        { name: 'Emma', initial: 'E', color: 'from-green-400 to-green-600', streak: 4, rank: 4 },
+        { name: 'Jake', initial: 'J', color: 'from-amber-400 to-amber-600', streak: 3, rank: 5 },
       ],
       todayPrompt: 'Post your workout proof by 10 AM',
       progress: { completed: 3, total: 5 },
       myStatus: 'pending',
       myStreak: 7,
       bestStreak: 12,
-      category: 'fitness'
+      category: 'fitness',
+      xpReward: 50,
+      stakes: '$5 per miss'
     },
     {
       id: 2,
@@ -95,16 +118,17 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
       daysLeft: 6,
       totalDays: 14,
       members: [
-        { initial: 'J', color: 'from-indigo-400 to-indigo-600' },
-        { initial: 'M', color: 'from-pink-400 to-pink-600' },
-        { initial: 'S', color: 'from-teal-400 to-teal-600' },
+        { name: 'You', initial: 'A', color: 'from-violet-400 to-violet-600', streak: 14, rank: 1 },
+        { name: 'Lily', initial: 'L', color: 'from-pink-400 to-pink-600', streak: 10, rank: 2 },
+        { name: 'Tom', initial: 'T', color: 'from-teal-400 to-teal-600', streak: 8, rank: 3 },
       ],
       todayPrompt: 'Share what you read today',
       progress: { completed: 3, total: 3 },
       myStatus: 'completed',
       myStreak: 14,
       bestStreak: 14,
-      category: 'learning'
+      category: 'learning',
+      xpReward: 30
     },
     {
       id: 3,
@@ -114,48 +138,47 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
       daysLeft: 3,
       totalDays: 7,
       members: [
-        { initial: 'K', color: 'from-orange-400 to-orange-600' },
-        { initial: 'L', color: 'from-cyan-400 to-cyan-600' },
+        { name: 'You', initial: 'A', color: 'from-violet-400 to-violet-600', streak: 4, rank: 2 },
+        { name: 'Kate', initial: 'K', color: 'from-orange-400 to-orange-600', streak: 5, rank: 1 },
       ],
-      todayPrompt: 'Log your screen time',
+      todayPrompt: 'Screenshot your screen time',
       progress: { completed: 1, total: 2 },
       myStatus: 'pending',
       myStreak: 4,
       bestStreak: 4,
-      category: 'wellness'
+      category: 'wellness',
+      xpReward: 25
     },
   ]);
 
-  const [invites, setInvites] = useState<Invite[]>([
+  const invites = [
     {
       id: 1,
       name: 'Hydration Challenge',
       emoji: '💧',
       inviter: 'Sarah',
       duration: '7 days',
-      members: [
-        { initial: 'S', color: 'from-cyan-400 to-cyan-600' },
-        { initial: 'K', color: 'from-purple-400 to-purple-600' },
-        { initial: 'L', color: 'from-green-400 to-green-600' },
-      ],
-      reward: '🏆 Badge unlock'
+      members: 4,
+      xpReward: 200,
     },
-  ]);
-
-  const completedChallenges = [
-    { id: 101, name: 'January Meditation', emoji: '🧘', completedOn: 'Jan 15', streak: 15 },
-    { id: 102, name: 'Gratitude Journal', emoji: '📝', completedOn: 'Jan 10', streak: 30 },
   ];
 
-  const getCategoryColor = (category: Challenge['category']) => {
+  const getCategoryGradient = (category: Challenge['category']) => {
     switch (category) {
-      case 'fitness': return 'bg-rose-100 text-rose-700';
-      case 'wellness': return 'bg-purple-100 text-purple-700';
-      case 'learning': return 'bg-blue-100 text-blue-700';
-      case 'productivity': return 'bg-amber-100 text-amber-700';
-      case 'social': return 'bg-green-100 text-green-700';
-      default: return 'bg-slate-100 text-slate-700';
+      case 'fitness': return 'from-rose-500 to-orange-500';
+      case 'wellness': return 'from-violet-500 to-purple-500';
+      case 'learning': return 'from-blue-500 to-indigo-500';
+      case 'productivity': return 'from-amber-500 to-yellow-500';
+      case 'social': return 'from-emerald-500 to-teal-500';
+      default: return 'from-slate-500 to-slate-600';
     }
+  };
+
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return { icon: Crown, color: 'text-amber-500', bg: 'bg-amber-100' };
+    if (rank === 2) return { icon: Medal, color: 'text-slate-400', bg: 'bg-slate-100' };
+    if (rank === 3) return { icon: Medal, color: 'text-amber-600', bg: 'bg-amber-50' };
+    return { icon: Star, color: 'text-slate-400', bg: 'bg-slate-50' };
   };
 
   return (
@@ -163,521 +186,586 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
       <IOSStatusBar />
       
       <style>{`
-        .hero-card {
-          background: linear-gradient(145deg, var(--dark-card-start) 0%, var(--dark-card-middle) 50%, var(--dark-card-end) 100%);
-        }
-        .streak-glow {
-          box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
-        }
-        @keyframes flame-pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-        .flame-animate {
-          animation: flame-pulse 1.5s ease-in-out infinite;
+        .ios-glass {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
         }
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .slide-up { animation: slideUp 0.4s ease-out forwards; }
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(251, 146, 60, 0.3); }
+          50% { box-shadow: 0 0 30px rgba(251, 146, 60, 0.5); }
+        }
+        .streak-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        @keyframes bounce-in {
+          0% { transform: scale(0.8); opacity: 0; }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .bounce-in { animation: bounce-in 0.4s ease-out forwards; }
+        @keyframes confetti {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(-20px) rotate(180deg); opacity: 0; }
+        }
+        .confetti { animation: confetti 0.6s ease-out forwards; }
       `}</style>
       
-      {/* Ambient glows */}
-      <div className="absolute top-20 -right-20 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-80 -left-20 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-      
       {/* Header */}
-      <div className="px-6 pt-4 pb-2 relative z-10">
-        <div className="flex items-center justify-between mb-2">
+      <div className="px-5 pt-2 pb-3 relative z-10">
+        <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate?.('hub')}
-            className="p-2 rounded-full hover:bg-black/5 transition-colors -ml-2"
+            className="w-10 h-10 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
-          <div className="text-center">
-            <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Compete & Grow</p>
-            <h1 className="text-[20px] font-bold text-slate-800">Challenges</h1>
-          </div>
+          <h1 className="text-[20px] font-bold text-slate-900">Challenges</h1>
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="p-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-all shadow-lg shadow-purple-500/30"
+            className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 text-white" />
           </button>
         </div>
       </div>
 
-      {/* Hero Stats Card */}
-      <div className="px-4 mb-6 relative z-10">
-        <div className="hero-card rounded-[24px] p-5 text-white relative overflow-hidden">
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/20 rounded-full blur-2xl" />
-          
-          <div className="relative">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center streak-glow shadow-lg">
-                  <Flame className="w-7 h-7 text-white flame-animate" />
-                </div>
-                <div>
-                  <p className="text-[13px] text-white/60">You're on fire! 🔥</p>
-                  <p className="text-[32px] font-black leading-tight">{userStats.activeStreak} days</p>
-                </div>
+      {/* Stats Banner */}
+      <div className="px-4 mb-4">
+        <div className="ios-glass rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            {/* XP & Level */}
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center streak-glow">
+                <Flame className="w-7 h-7 text-white" />
               </div>
-              <div className="text-right bg-white/10 rounded-xl p-3">
-                <div className="flex items-center gap-1 justify-end mb-0.5">
-                  <Crown className="w-4 h-4 text-amber-400" />
-                  <span className="text-[15px] font-bold text-white">#{userStats.rank}</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[24px] font-black text-slate-900">{userStats.currentStreak}</span>
+                  <span className="text-[14px] text-slate-500">day streak</span>
                 </div>
-                <p className="text-[11px] text-white/50">of {userStats.totalMembers} members</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Zap className="w-3.5 h-3.5 text-violet-500" />
+                  <span className="text-[13px] font-semibold text-violet-600">{userStats.totalXP} XP</span>
+                  <span className="text-[11px] text-slate-400">• Lvl {userStats.level}</span>
+                </div>
               </div>
             </div>
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-white/10 backdrop-blur rounded-xl p-3 text-center">
-                <Trophy className="w-4 h-4 mx-auto mb-1 text-amber-400" />
-                <p className="text-[16px] font-bold">{userStats.longestStreak}</p>
-                <p className="text-[10px] text-white/50">Best Streak</p>
+            
+            {/* Rank Badge */}
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="flex items-center gap-1 justify-end">
+                  <Crown className="w-4 h-4 text-amber-500" />
+                  <span className="text-[20px] font-bold text-slate-900">#{userStats.rank}</span>
+                </div>
+                <span className="text-[11px] text-slate-500">of {userStats.totalMembers}</span>
               </div>
-              <div className="bg-white/10 backdrop-blur rounded-xl p-3 text-center">
-                <Target className="w-4 h-4 mx-auto mb-1 text-purple-400" />
-                <p className="text-[16px] font-bold">{userStats.totalChallenges}</p>
-                <p className="text-[10px] text-white/50">Challenges</p>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-amber-600" />
               </div>
-              <div className="bg-white/10 backdrop-blur rounded-xl p-3 text-center">
-                <TrendingUp className="w-4 h-4 mx-auto mb-1 text-emerald-400" />
-                <p className="text-[16px] font-bold">{userStats.completionRate}%</p>
-                <p className="text-[10px] text-white/50">Success</p>
-              </div>
+            </div>
+          </div>
+          
+          {/* XP Progress */}
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] text-slate-500">Level {userStats.level} → {userStats.level + 1}</span>
+              <span className="text-[11px] font-medium text-violet-600">{userStats.nextLevelXP - userStats.totalXP} XP to go</span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+                style={{ width: `${(userStats.totalXP / userStats.nextLevelXP) * 100}%` }}
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="px-6 mb-4">
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-full">
-          {(['active', 'completed'] as const).map((filter) => (
+      {/* Tab Navigation */}
+      <div className="px-4 mb-4">
+        <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
+          {[
+            { id: 'active', label: 'Active', icon: Target },
+            { id: 'leaderboard', label: 'Rankings', icon: Trophy },
+            { id: 'achievements', label: 'Badges', icon: Medal },
+          ].map((tab) => (
             <button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              className={`flex-1 px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
-                activeFilter === filter
-                  ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-800'
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500'
               }`}
             >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Invites Section */}
-      {invites.length > 0 && activeFilter === 'active' && (
-        <div className="px-6 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <h2 className="text-[15px] font-semibold text-slate-800">New Invites</h2>
-          </div>
-          <div className="space-y-3">
-            {invites.map(invite => (
-              <div
-                key={invite.id}
-                className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-[20px] p-4 border border-amber-200"
-              >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm">
-                    {invite.emoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-semibold text-slate-800">{invite.name}</h3>
-                    <p className="text-[12px] text-slate-500">
-                      {invite.inviter} invited you • {invite.duration}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      {invite.members.slice(0, 3).map((member, idx) => (
-                        <div
-                          key={idx}
-                          className={`w-6 h-6 rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-white text-[10px] font-semibold border-2 border-white`}
-                          style={{ marginLeft: idx > 0 ? '-6px' : '0' }}
-                        >
-                          {member.initial}
-                        </div>
-                      ))}
-                    </div>
-                    {invite.reward && (
-                      <span className="text-[11px] text-amber-700 font-medium">{invite.reward}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setInvites(invites.filter(i => i.id !== invite.id))}
-                      className="px-4 py-1.5 rounded-full bg-slate-200 text-slate-700 text-[13px] font-medium hover:bg-slate-300 transition-colors"
-                    >
-                      Decline
-                    </button>
-                    <button 
-                      onClick={() => {
-                        // Accept invite - move to active challenges
-                        setActiveChallenges([...activeChallenges, {
-                          id: Date.now(),
-                          name: invite.name,
-                          emoji: invite.emoji,
-                          duration: invite.duration,
-                          category: 'fitness',
-                          daysLeft: 21,
-                          totalDays: 21,
-                          members: invite.members,
-                          progress: { completed: 0, total: invite.members.length + 1 },
-                          myStatus: 'pending' as const,
-                          myStreak: 0,
-                          bestStreak: 0,
-                          todayPrompt: 'Complete your first day!'
-                        }]);
-                        setInvites(invites.filter(i => i.id !== invite.id));
-                      }}
-                      className="px-4 py-1.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
-                    >
-                      Accept
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Active Challenges */}
-      {activeFilter === 'active' && (
-        <div className="px-6 mb-8">
-          <h2 className="text-[15px] font-semibold text-slate-800 mb-3">Active Challenges</h2>
+      <div className="px-4">
+        {/* Active Challenges Tab */}
+        {activeTab === 'active' && (
           <div className="space-y-4">
-            {activeChallenges.map(challenge => (
+            {/* Invites */}
+            {invites.length > 0 && (
+              <div className="ios-glass rounded-2xl p-4 shadow-sm border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
+                <div className="flex items-center gap-2 mb-3">
+                  <Gift className="w-4 h-4 text-amber-600" />
+                  <span className="text-[13px] font-semibold text-amber-700">New Challenge Invite</span>
+                </div>
+                {invites.map(invite => (
+                  <div key={invite.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm">
+                        {invite.emoji}
+                      </div>
+                      <div>
+                        <p className="text-[15px] font-semibold text-slate-900">{invite.name}</p>
+                        <p className="text-[12px] text-slate-500">{invite.inviter} • {invite.members} members • +{invite.xpReward} XP</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="px-3 py-2 rounded-xl bg-white text-slate-600 text-[13px] font-medium shadow-sm active:scale-95 transition-transform">
+                        <X className="w-4 h-4" />
+                      </button>
+                      <button className="px-4 py-2 rounded-xl bg-slate-900 text-white text-[13px] font-medium active:scale-95 transition-transform">
+                        Join
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Challenge Cards */}
+            {activeChallenges.map((challenge, index) => (
               <div
                 key={challenge.id}
-                className="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100"
+                className="ios-glass rounded-2xl shadow-sm overflow-hidden slide-up"
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
-                {/* Header Row */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl">
-                    {challenge.emoji}
+                {/* Challenge Header */}
+                <div className={`p-4 bg-gradient-to-r ${getCategoryGradient(challenge.category)}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl">
+                        {challenge.emoji}
+                      </div>
+                      <div>
+                        <h3 className="text-[17px] font-bold text-white">{challenge.name}</h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[12px] text-white/80">{challenge.daysLeft} days left</span>
+                          <span className="text-[12px] text-white/60">•</span>
+                          <span className="text-[12px] text-white/80">+{challenge.xpReward} XP/day</span>
+                        </div>
+                      </div>
+                    </div>
+                    {challenge.myStatus === 'completed' ? (
+                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <Check className="w-5 h-5 text-white" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
+                        <Flame className="w-4 h-4 text-white" />
+                        <span className="text-[14px] font-bold text-white">{challenge.myStreak}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-[16px] font-semibold text-slate-800">{challenge.name}</h3>
-                      {challenge.myStatus === 'completed' && (
-                        <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      )}
+                  
+                  {/* Progress Bar */}
+                  <div className="mt-4">
+                    <div className="flex justify-between text-[11px] text-white/70 mb-1">
+                      <span>Day {challenge.totalDays - challenge.daysLeft}</span>
+                      <span>{Math.round((1 - challenge.daysLeft / challenge.totalDays) * 100)}%</span>
+                    </div>
+                    <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-white rounded-full"
+                        style={{ width: `${(1 - challenge.daysLeft / challenge.totalDays) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Challenge Body */}
+                <div className="p-4">
+                  {/* Today's Status */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <span className="text-[13px] text-slate-600">{challenge.todayPrompt}</span>
+                    </div>
+                    <span className="text-[12px] font-medium text-slate-500">{challenge.progress.completed}/{challenge.progress.total} done</span>
+                  </div>
+
+                  {/* Mini Leaderboard */}
+                  <button
+                    onClick={() => setExpandedChallenge(expandedChallenge === challenge.id ? null : challenge.id)}
+                    className="w-full"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[12px] font-semibold text-slate-700">Challenge Leaderboard</span>
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expandedChallenge === challenge.id ? 'rotate-180' : ''}`} />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${getCategoryColor(challenge.category)}`}>
-                        {challenge.category}
-                      </span>
-                      <span className="text-[12px] text-slate-500">
-                        {challenge.daysLeft} days left
-                      </span>
+                      {challenge.members.slice(0, 5).map((member, i) => (
+                        <div key={i} className="relative">
+                          <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-white text-[12px] font-semibold border-2 ${member.name === 'You' ? 'border-violet-400' : 'border-white'}`}>
+                            {member.initial}
+                          </div>
+                          {member.rank <= 3 && (
+                            <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                              member.rank === 1 ? 'bg-amber-400 text-amber-900' : 
+                              member.rank === 2 ? 'bg-slate-300 text-slate-700' : 
+                              'bg-amber-200 text-amber-800'
+                            }`}>
+                              {member.rank}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {challenge.members.length > 5 && (
+                        <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-semibold text-slate-600">
+                          +{challenge.members.length - 5}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {/* Streak Badge */}
-                  <div className="flex items-center gap-1 bg-amber-100 px-2 py-1 rounded-full">
-                    <Flame className="w-3.5 h-3.5 text-amber-600" />
-                    <span className="text-[12px] font-semibold text-amber-700">{challenge.myStreak}</span>
-                  </div>
-                </div>
+                  </button>
 
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
-                    <span>Day {challenge.totalDays - challenge.daysLeft} of {challenge.totalDays}</span>
-                    <span>{Math.round((1 - challenge.daysLeft / challenge.totalDays) * 100)}%</span>
-                  </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all"
-                      style={{ width: `${(1 - challenge.daysLeft / challenge.totalDays) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Members */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      {challenge.members.slice(0, 4).map((member, index) => (
-                        <div
-                          key={index}
-                          className={`w-8 h-8 rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-white text-[12px] font-semibold border-2 border-white`}
-                          style={{ marginLeft: index > 0 ? '-8px' : '0', zIndex: 4 - index }}
-                        >
-                          {member.initial}
+                  {/* Expanded Leaderboard */}
+                  {expandedChallenge === challenge.id && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                      {challenge.members.map((member, i) => (
+                        <div key={i} className={`flex items-center justify-between p-2 rounded-xl ${member.name === 'You' ? 'bg-violet-50' : ''}`}>
+                          <div className="flex items-center gap-3">
+                            <span className={`w-6 text-[13px] font-bold ${member.rank <= 3 ? 'text-amber-600' : 'text-slate-400'}`}>#{member.rank}</span>
+                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-white text-[11px] font-semibold`}>
+                              {member.initial}
+                            </div>
+                            <span className={`text-[14px] font-medium ${member.name === 'You' ? 'text-violet-700' : 'text-slate-700'}`}>
+                              {member.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-orange-500">
+                            <Flame className="w-4 h-4" />
+                            <span className="text-[14px] font-bold">{member.streak}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
-                    <span className="text-[12px] text-slate-500">
-                      {challenge.progress.completed}/{challenge.progress.total} done today
-                    </span>
-                  </div>
-                </div>
+                  )}
 
-                {/* Today's Prompt */}
-                <div className="bg-purple-50 rounded-2xl p-3.5 mb-4">
-                  <div className="flex items-start gap-2">
-                    <Clock className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-[13px] text-slate-700">
-                      <span className="font-medium text-purple-700">Today:</span> {challenge.todayPrompt}
-                    </p>
-                  </div>
-                </div>
+                  {/* Stakes Badge */}
+                  {challenge.stakes && (
+                    <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-rose-50 rounded-xl">
+                      <span className="text-[12px]">💰</span>
+                      <span className="text-[12px] font-medium text-rose-700">{challenge.stakes}</span>
+                    </div>
+                  )}
 
-                {/* Action Button */}
-                <div className="flex items-center justify-between">
+                  {/* Action Button */}
                   {challenge.myStatus === 'pending' ? (
-                    <>
-                      <button 
-                        onClick={() => {
-                          setSelectedChallengeId(challenge.id);
-                          setShowActivityModal(true);
-                        }}
-                        className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors"
-                      >
-                        View activity
-                      </button>
-                      <button 
-                        onClick={() => onNavigate?.('proof-camera')}
-                        className="px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[14px] font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Submit proof
-                      </button>
-                    </>
+                    <button 
+                      onClick={() => onNavigate?.('proof-camera')}
+                      className="w-full mt-4 py-3 rounded-xl bg-slate-900 text-white text-[15px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                    >
+                      <Camera className="w-5 h-5" />
+                      Submit Proof
+                    </button>
                   ) : (
-                    <>
-                      <button 
-                        onClick={() => {
-                          setSelectedChallengeId(challenge.id);
-                          setShowActivityModal(true);
-                        }}
-                        className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors"
-                      >
-                        View activity
-                      </button>
-                      <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span className="text-[14px] font-medium">Done for today!</span>
-                      </div>
-                    </>
+                    <div className="mt-4 py-3 rounded-xl bg-emerald-100 text-emerald-700 text-[15px] font-semibold flex items-center justify-center gap-2">
+                      <CheckCircle2 className="w-5 h-5" />
+                      Completed for today! +{challenge.xpReward} XP
+                    </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Completed Challenges */}
-      {activeFilter === 'completed' && (
-        <div className="px-6">
-          <h2 className="text-[15px] font-semibold text-slate-800 mb-3">Completed</h2>
-          <div className="space-y-3">
-            {completedChallenges.map(challenge => (
-              <div
-                key={challenge.id}
-                className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-green-100 flex items-center justify-center text-xl">
-                    {challenge.emoji}
+        {/* Leaderboard Tab */}
+        {activeTab === 'leaderboard' && (
+          <div className="space-y-4">
+            {/* Timeframe Selector */}
+            <div className="flex gap-2">
+              {[
+                { id: 'week', label: 'This Week' },
+                { id: 'month', label: 'This Month' },
+                { id: 'all', label: 'All Time' },
+              ].map((tf) => (
+                <button
+                  key={tf.id}
+                  onClick={() => setSelectedTimeframe(tf.id as any)}
+                  className={`flex-1 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                    selectedTimeframe === tf.id
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-white text-slate-600 shadow-sm'
+                  }`}
+                >
+                  {tf.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Top 3 Podium */}
+            <div className="ios-glass rounded-2xl p-4 shadow-sm">
+              <div className="flex items-end justify-center gap-3 mb-4">
+                {/* 2nd Place */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center text-white text-[20px] font-bold border-4 border-slate-200 mb-2">
+                    {leaderboard[1].initial}
                   </div>
-                  <div>
-                    <h3 className="text-[15px] font-semibold text-slate-800">{challenge.name}</h3>
-                    <p className="text-[12px] text-slate-500">Completed {challenge.completedOn}</p>
+                  <Medal className="w-6 h-6 text-slate-400 mb-1" />
+                  <span className="text-[13px] font-semibold text-slate-700">{leaderboard[1].name}</span>
+                  <span className="text-[11px] text-slate-500">{leaderboard[1].xp} XP</span>
+                  <div className="h-16 w-20 bg-slate-200 rounded-t-lg mt-2 flex items-center justify-center">
+                    <span className="text-[24px] font-black text-slate-400">2</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Medal className="w-5 h-5 text-amber-500" />
-                  <span className="text-[14px] font-semibold text-slate-700">{challenge.streak} days</span>
+                
+                {/* 1st Place */}
+                <div className="flex flex-col items-center -mt-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-[24px] font-bold border-4 border-amber-300 mb-2 shadow-lg shadow-amber-500/30">
+                    {leaderboard[0].initial}
+                  </div>
+                  <Crown className="w-7 h-7 text-amber-500 mb-1" />
+                  <span className="text-[14px] font-bold text-slate-900">{leaderboard[0].name}</span>
+                  <span className="text-[12px] text-amber-600 font-medium">{leaderboard[0].xp} XP</span>
+                  <div className="h-24 w-24 bg-gradient-to-t from-amber-400 to-amber-300 rounded-t-lg mt-2 flex items-center justify-center">
+                    <span className="text-[32px] font-black text-amber-700">1</span>
+                  </div>
+                </div>
+                
+                {/* 3rd Place */}
+                <div className="flex flex-col items-center">
+                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${leaderboard[2].isYou ? 'from-violet-400 to-purple-500 border-violet-300' : 'from-amber-200 to-amber-300 border-amber-200'} flex items-center justify-center text-white text-[20px] font-bold border-4 mb-2`}>
+                    {leaderboard[2].initial}
+                  </div>
+                  <Medal className="w-6 h-6 text-amber-600 mb-1" />
+                  <span className={`text-[13px] font-semibold ${leaderboard[2].isYou ? 'text-violet-700' : 'text-slate-700'}`}>{leaderboard[2].name}</span>
+                  <span className="text-[11px] text-slate-500">{leaderboard[2].xp} XP</span>
+                  <div className={`h-12 w-20 ${leaderboard[2].isYou ? 'bg-violet-200' : 'bg-amber-100'} rounded-t-lg mt-2 flex items-center justify-center`}>
+                    <span className={`text-[24px] font-black ${leaderboard[2].isYou ? 'text-violet-400' : 'text-amber-400'}`}>3</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Full Leaderboard */}
+            <div className="ios-glass rounded-2xl shadow-sm overflow-hidden">
+              {leaderboard.slice(3).map((player, index) => (
+                <div 
+                  key={player.rank}
+                  className={`flex items-center justify-between p-4 ${index > 0 ? 'border-t border-slate-100' : ''} ${player.isYou ? 'bg-violet-50' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 text-[15px] font-bold text-slate-400">#{player.rank}</span>
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${player.isYou ? 'from-violet-400 to-purple-500' : 'from-slate-300 to-slate-400'} flex items-center justify-center text-white text-[14px] font-bold`}>
+                      {player.initial}
+                    </div>
+                    <div>
+                      <p className={`text-[15px] font-semibold ${player.isYou ? 'text-violet-700' : 'text-slate-800'}`}>{player.name}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-slate-500">{player.xp} XP</span>
+                        <span className="text-[12px] text-slate-400">•</span>
+                        <span className="text-[12px] text-orange-500">{player.streak}🔥</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {player.movement === 'up' && <TrendingUp className="w-4 h-4 text-emerald-500" />}
+                    {player.movement === 'down' && <TrendingUp className="w-4 h-4 text-rose-500 rotate-180" />}
+                    <span className="text-[13px] font-medium text-slate-500">{player.wins} wins</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Achievements Tab */}
+        {activeTab === 'achievements' && (
+          <div className="space-y-3">
+            {/* Stats Summary */}
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+                <span className="text-[20px] font-bold text-emerald-600">{achievements.filter(a => a.unlocked).length}</span>
+                <p className="text-[10px] text-slate-500">Unlocked</p>
+              </div>
+              <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+                <span className="text-[20px] font-bold text-slate-400">{achievements.filter(a => !a.unlocked).length}</span>
+                <p className="text-[10px] text-slate-500">Locked</p>
+              </div>
+              <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+                <span className="text-[20px] font-bold text-violet-600">{achievements.filter(a => a.unlocked).reduce((sum, a) => sum + a.xp, 0)}</span>
+                <p className="text-[10px] text-slate-500">XP Earned</p>
+              </div>
+            </div>
+
+            {/* Achievement Cards */}
+            {achievements.map((achievement, index) => (
+              <div
+                key={achievement.id}
+                className={`ios-glass rounded-2xl p-4 shadow-sm slide-up ${!achievement.unlocked ? 'opacity-70' : ''}`}
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl ${
+                    achievement.unlocked 
+                      ? 'bg-gradient-to-br from-amber-100 to-orange-100' 
+                      : 'bg-slate-100'
+                  }`}>
+                    {achievement.unlocked ? achievement.emoji : <Lock className="w-6 h-6 text-slate-400" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className={`text-[15px] font-semibold ${achievement.unlocked ? 'text-slate-900' : 'text-slate-500'}`}>
+                        {achievement.name}
+                      </h3>
+                      {achievement.unlocked && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      )}
+                    </div>
+                    <p className="text-[12px] text-slate-500 mt-0.5">{achievement.description}</p>
+                    
+                    {/* Progress bar for locked achievements */}
+                    {!achievement.unlocked && achievement.progress !== undefined && (
+                      <div className="mt-2">
+                        <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                          <span>{achievement.progress}/{achievement.total}</span>
+                          <span>{Math.round((achievement.progress / achievement.total!) * 100)}%</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-violet-400 to-purple-400 rounded-full"
+                            style={{ width: `${(achievement.progress / achievement.total!) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className={`px-2.5 py-1 rounded-lg ${achievement.unlocked ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                    <span className={`text-[12px] font-bold ${achievement.unlocked ? 'text-emerald-700' : 'text-slate-500'}`}>
+                      +{achievement.xp} XP
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-
-          {completedChallenges.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <Trophy className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="text-[17px] font-semibold text-slate-800 mb-2">No completed challenges yet</h3>
-              <p className="text-[14px] text-slate-500 max-w-xs">Finish your first challenge to see it here!</p>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Create Challenge Modal */}
       {showCreateModal && (
-        <>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
           <div 
-            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
             onClick={() => setShowCreateModal(false)} 
           />
-          <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
-            <div 
-              className="w-full bg-white rounded-t-[32px] p-6 pointer-events-auto max-h-[85vh] overflow-y-auto"
-              style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}
-            >
-              <div className="w-9 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
-              
-              <h2 className="text-[22px] font-bold text-slate-800 mb-2">Create Challenge</h2>
-              <p className="text-[14px] text-slate-500 mb-6">Start a new challenge with your circle</p>
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+            
+            <h2 className="text-[20px] font-bold text-slate-900 mb-1">Create Challenge</h2>
+            <p className="text-[13px] text-slate-500 mb-5">Start a competition with friends</p>
 
-              {/* Challenge Name */}
-              <div className="mb-5">
-                <label className="text-[13px] font-medium text-slate-700 mb-2 block">Challenge Name</label>
-                <input 
-                  type="text"
-                  placeholder="e.g., Morning Workout"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-[15px] focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-
-              {/* Duration */}
-              <div className="mb-5">
-                <label className="text-[13px] font-medium text-slate-700 mb-2 block">Duration</label>
-                <div className="flex gap-2">
-                  {['7 days', '14 days', '21 days', '30 days'].map((duration) => (
-                    <button
-                      key={duration}
-                      className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 text-[13px] font-medium text-slate-700 hover:border-primary hover:text-primary transition-colors"
-                    >
-                      {duration}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Category */}
-              <div className="mb-5">
-                <label className="text-[13px] font-medium text-slate-700 mb-2 block">Category</label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { name: 'Fitness', emoji: '🏋️' },
-                    { name: 'Wellness', emoji: '🧘' },
-                    { name: 'Learning', emoji: '📚' },
-                    { name: 'Productivity', emoji: '⚡' },
-                    { name: 'Social', emoji: '👥' }
-                  ].map((cat) => (
-                    <button
-                      key={cat.name}
-                      className="px-4 py-2 rounded-full border border-slate-200 text-[13px] font-medium text-slate-700 hover:border-primary hover:text-primary transition-colors flex items-center gap-1.5"
-                    >
-                      <span>{cat.emoji}</span>
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Daily Prompt */}
-              <div className="mb-6">
-                <label className="text-[13px] font-medium text-slate-700 mb-2 block">Daily Check-in Prompt</label>
-                <textarea 
-                  placeholder="e.g., Share your workout proof"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-[15px] focus:outline-none focus:border-primary transition-colors resize-none"
-                  rows={2}
-                />
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-3.5 rounded-full border border-slate-200 text-[15px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => {
-                    // Create new challenge (in real app would use form values)
-                    setShowCreateModal(false);
-                  }}
-                  className="flex-1 px-4 py-3.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[15px] font-semibold hover:opacity-90 transition-opacity"
-                >
-                  Create & Invite
-                </button>
-              </div>
+            {/* Challenge Name */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide block mb-2">Name</label>
+              <input 
+                type="text"
+                placeholder="e.g., Morning Workout"
+                className="w-full px-4 py-3 rounded-xl bg-slate-100 outline-none text-slate-900 placeholder-slate-400 text-[15px]"
+              />
             </div>
-          </div>
-        </>
-      )}
 
-      {/* Activity Modal */}
-      {showActivityModal && selectedChallengeId && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" 
-            onClick={() => setShowActivityModal(false)} 
-          />
-          <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
-            <div 
-              className="w-full bg-white rounded-t-[32px] p-6 pointer-events-auto max-h-[70vh] overflow-y-auto"
-              style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}
-            >
-              <div className="w-9 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
-              
-              <h2 className="text-[20px] font-bold text-slate-800 mb-4">Today's Activity</h2>
-
-              {/* Activity Feed */}
-              <div className="space-y-4">
-                {[
-                  { name: 'Alex', time: '8:30 AM', status: 'completed', message: 'Morning jog done! 🏃‍♂️' },
-                  { name: 'Sarah', time: '9:15 AM', status: 'completed', message: 'Crushed it at the gym!' },
-                  { name: 'Mike', time: '—', status: 'pending', message: null },
-                ].map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold ${
-                      activity.status === 'completed' ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-slate-300'
-                    }`}>
-                      {activity.name[0]}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-slate-800">{activity.name}</span>
-                        <span className="text-[12px] text-slate-500">{activity.time}</span>
-                      </div>
-                      {activity.message ? (
-                        <p className="text-[13px] text-slate-600 mt-1">{activity.message}</p>
-                      ) : (
-                        <p className="text-[13px] text-slate-400 mt-1">Hasn't posted yet</p>
-                      )}
-                    </div>
-                    {activity.status === 'completed' && (
-                      <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                    )}
-                  </div>
+            {/* Duration */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide block mb-2">Duration</label>
+              <div className="flex gap-2">
+                {['7 days', '14 days', '21 days', '30 days'].map((duration) => (
+                  <button
+                    key={duration}
+                    className="flex-1 px-3 py-2.5 rounded-xl bg-slate-100 text-[13px] font-medium text-slate-700 active:bg-slate-200 transition-colors"
+                  >
+                    {duration}
+                  </button>
                 ))}
               </div>
+            </div>
 
-              {/* Close Button */}
+            {/* Category */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide block mb-2">Category</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: 'Fitness', emoji: '🏋️' },
+                  { name: 'Wellness', emoji: '🧘' },
+                  { name: 'Learning', emoji: '📚' },
+                  { name: 'Productivity', emoji: '⚡' },
+                  { name: 'Social', emoji: '👥' }
+                ].map((cat) => (
+                  <button
+                    key={cat.name}
+                    className="px-3 py-2 rounded-xl bg-slate-100 text-[13px] font-medium text-slate-700 active:bg-slate-200 transition-colors flex items-center gap-1.5"
+                  >
+                    <span>{cat.emoji}</span>
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stakes (Optional) */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide block mb-2">Stakes (Optional)</label>
+              <div className="flex gap-2">
+                {['None', '$1/miss', '$5/miss', 'Custom'].map((stake) => (
+                  <button
+                    key={stake}
+                    className="flex-1 px-3 py-2.5 rounded-xl bg-slate-100 text-[13px] font-medium text-slate-700 active:bg-slate-200 transition-colors"
+                  >
+                    {stake}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* XP Reward */}
+            <div className="mb-6">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide block mb-2">Daily XP Reward</label>
+              <div className="flex items-center gap-4 px-4 py-3 bg-violet-50 rounded-xl">
+                <Zap className="w-5 h-5 text-violet-500" />
+                <span className="text-[15px] font-semibold text-violet-700">+50 XP per day completed</span>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
               <button 
-                onClick={() => setShowActivityModal(false)}
-                className="w-full mt-6 py-3.5 rounded-full bg-slate-100 text-slate-700 text-[15px] font-semibold hover:bg-slate-200 transition-colors"
+                onClick={() => setShowCreateModal(false)}
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 text-slate-700 text-[15px] font-semibold active:bg-slate-200 transition-colors"
               >
-                Close
+                Cancel
+              </button>
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                className="flex-1 py-3.5 rounded-xl bg-slate-900 text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
+              >
+                Create & Invite
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

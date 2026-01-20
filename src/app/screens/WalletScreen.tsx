@@ -1,4 +1,21 @@
-import { ArrowLeft, Clock, Sparkles, TrendingUp, Gift, ChevronRight, Flame, Target, Calendar, Share2, Star, Trophy, Zap } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Clock, 
+  Sparkles, 
+  TrendingUp, 
+  Gift, 
+  ChevronRight, 
+  Flame, 
+  Target, 
+  Share2, 
+  Trophy, 
+  Zap,
+  Calendar,
+  CheckCircle2,
+  ArrowUpRight,
+  History,
+  X
+} from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState } from "react";
 
@@ -10,33 +27,53 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('week');
   const [showShareModal, setShowShareModal] = useState(false);
   
+  // Time stats per period
   const stats = {
     today: { saved: '42m', tasks: 8, streak: 6, efficiency: 87 },
     week: { saved: '2h 40m', tasks: 34, streak: 6, efficiency: 92 },
     month: { saved: '12h 20m', tasks: 142, streak: 6, efficiency: 89 },
   };
 
-  const recentSaves = [
-    { id: 1, action: 'Completed "Morning workout" early', time: '+15m', when: '2h ago', icon: '🏃', xp: 25 },
-    { id: 2, action: 'Batched 3 errands together', time: '+12m', when: '4h ago', icon: '📦', xp: 20 },
-    { id: 3, action: 'Auto-rescheduled conflicts', time: '+8m', when: 'Yesterday', icon: '🔄', xp: 15 },
-    { id: 4, action: 'Optimized commute route', time: '+7m', when: 'Yesterday', icon: '🚗', xp: 15 },
-  ];
-
-  const milestones = [
-    { id: 1, title: '1 Hour', reached: true, reward: '🎉', description: 'First hour saved!' },
-    { id: 2, title: '5 Hours', reached: true, reward: '⭐', description: 'Productivity pro!' },
-    { id: 3, title: '10 Hours', reached: true, reward: '🏆', description: 'Time master!' },
-    { id: 4, title: '24 Hours', reached: false, reward: '👑', progress: 51, description: 'Unlock premium' },
-  ];
-
-  // Weekly goal tracking
-  const weeklyGoal = {
-    target: '4h',
-    current: '2h 40m',
-    percentage: 67,
-    daysLeft: 3,
+  // User wallet data
+  const wallet = {
+    totalTimeSaved: '48h 32m',
+    streak: 6,
+    bestStreak: 21,
+    tasksCompleted: 342,
+    avgDaily: '1h 12m'
   };
+
+  // Recent time savings
+  const recentSavings = [
+    { id: 1, action: 'Completed Morning Workout early', time: '+15m', when: '2h ago', icon: '🏃' },
+    { id: 2, action: 'Batched 3 errands together', time: '+12m', when: '4h ago', icon: '📦' },
+    { id: 3, action: 'Auto-rescheduled conflicts', time: '+8m', when: 'Yesterday', icon: '🔄' },
+    { id: 4, action: 'Quick meal prep routine', time: '+20m', when: 'Yesterday', icon: '🍳' },
+    { id: 5, action: 'Optimized commute route', time: '+10m', when: '2 days ago', icon: '🚗' },
+  ];
+
+  // Milestones
+  const milestones = [
+    { id: 1, title: '1 Hour', reached: true, reward: '🎉' },
+    { id: 2, title: '5 Hours', reached: true, reward: '⭐' },
+    { id: 3, title: '10 Hours', reached: true, reward: '🏆' },
+    { id: 4, title: '24 Hours', reached: false, reward: '👑', progress: 51 },
+    { id: 5, title: '50 Hours', reached: false, reward: '💎', progress: 24 },
+    { id: 6, title: '100 Hours', reached: false, reward: '🌟', progress: 12 },
+  ];
+
+  // Weekly breakdown
+  const weeklyBreakdown = [
+    { day: 'Mon', time: 45, label: '45m' },
+    { day: 'Tue', time: 32, label: '32m' },
+    { day: 'Wed', time: 55, label: '55m' },
+    { day: 'Thu', time: 28, label: '28m' },
+    { day: 'Fri', time: 0, label: '—' },
+    { day: 'Sat', time: 0, label: '—' },
+    { day: 'Sun', time: 0, label: '—' },
+  ];
+
+  const maxTime = Math.max(...weeklyBreakdown.map(d => d.time), 60);
 
   const currentStats = stats[selectedPeriod];
 
@@ -45,400 +82,315 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
       <IOSStatusBar />
 
       <style>{`
-        .ios-card {
-          background: rgba(255, 255, 255, 0.98);
+        .ios-glass {
+          background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-radius: 20px;
         }
-        .time-glow {
-          text-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+          50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
         }
-        .shimmer {
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-          background-size: 200% 100%;
-          animation: shimmer 2s infinite;
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
-        .float { animation: float 3s ease-in-out infinite; }
-        @keyframes celebrate {
-          0%, 100% { transform: scale(1) rotate(0deg); }
-          25% { transform: scale(1.1) rotate(-5deg); }
-          75% { transform: scale(1.1) rotate(5deg); }
-        }
-        .celebrate { animation: celebrate 0.5s ease-in-out; }
+        .time-glow { animation: pulse-glow 2s ease-in-out infinite; }
       `}</style>
       
-      {/* Ambient background glows */}
-      <div className="absolute top-32 -right-20 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-80 -left-20 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-      
       {/* Header */}
-      <div className="px-6 pt-4 pb-2 relative z-10">
+      <div className="px-5 pt-2 pb-3 relative z-10">
         <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate?.('hub')}
-            className="p-2 rounded-full hover:bg-black/5 transition-colors -ml-2"
+            className="w-10 h-10 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
-          <div className="text-center">
-            <p className="text-[12px] text-slate-400 font-medium">Your Progress</p>
-            <h1 className="text-[20px] font-bold text-slate-900">Time Wallet</h1>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-            <Star className="w-5 h-5 text-emerald-600" />
-          </div>
+          <h1 className="text-[20px] font-bold text-slate-900">Time Saved</h1>
+          <button className="w-10 h-10 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform">
+            <History className="w-5 h-5 text-slate-600" />
+          </button>
         </div>
       </div>
 
-      {/* Hero Time Saved Card */}
-      <div className="px-4 mb-5 relative z-10">
-        <div 
-          className="relative overflow-hidden rounded-[28px] p-6"
-          style={{
-            background: 'linear-gradient(145deg, var(--success-gradient-start) 0%, var(--success-gradient-middle) 50%, var(--success-gradient-end) 100%)',
-          }}
-        >
-          {/* Decorative elements */}
-          <div className="absolute top-4 right-4 w-24 h-24 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute top-1/2 right-8 w-16 h-16 rounded-full bg-yellow-400/20 blur-xl" />
-          
-          <div className="relative">
-            {/* Period Selector */}
-            <div className="flex bg-white/20 rounded-full p-1 mb-6 w-fit">
-              {(['today', 'week', 'month'] as const).map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setSelectedPeriod(period)}
-                  className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all ${
-                    selectedPeriod === period
-                      ? 'bg-white text-emerald-700 shadow-sm'
-                      : 'text-white/90 hover:bg-white/10'
-                  }`}
-                >
-                  {period === 'today' ? 'Today' : period === 'week' ? 'This Week' : 'This Month'}
-                </button>
-              ))}
-            </div>
-
-            {/* Main Time Display */}
-            <div className="mb-6">
-              <p className="text-white/80 text-[14px] font-medium mb-1 flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
-                You've saved
-              </p>
-              <div className="flex items-end gap-2">
-                <p className="text-[60px] font-black text-white leading-none time-glow">
-                  {currentStats.saved}
-                </p>
-                <div className="mb-3 float">
-                  <span className="text-3xl">⏰</span>
+      {/* Main Time Card */}
+      <div className="px-4 mb-4">
+        <div className="rounded-2xl overflow-hidden" style={{
+          background: 'linear-gradient(145deg, #10b981 0%, #059669 50%, #047857 100%)'
+        }}>
+          <div className="p-5">
+            {/* Total Time */}
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <p className="text-white/70 text-[13px] font-medium mb-1">Total Time Saved</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[44px] font-black text-white">{wallet.totalTimeSaved}</span>
                 </div>
+                <p className="text-white/60 text-[12px] mt-1">Avg {wallet.avgDaily}/day</p>
+              </div>
+              <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center time-glow">
+                <Clock className="w-8 h-8 text-white" />
               </div>
             </div>
 
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-white/15 backdrop-blur rounded-2xl p-3 text-center">
-                <Zap className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
-                <p className="text-white text-[20px] font-bold">{currentStats.tasks}</p>
-                <p className="text-white/70 text-[11px]">Tasks Done</p>
+            {/* Quick Stats */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex-1 bg-white/15 rounded-xl p-3 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span className="text-[12px] text-white/70">Streak</span>
+                </div>
+                <span className="text-[22px] font-bold text-white">{wallet.streak} days</span>
               </div>
-              <div className="bg-white/15 backdrop-blur rounded-2xl p-3 text-center">
-                <Flame className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-                <p className="text-white text-[20px] font-bold">{currentStats.streak}</p>
-                <p className="text-white/70 text-[11px]">Day Streak</p>
-              </div>
-              <div className="bg-white/15 backdrop-blur rounded-2xl p-3 text-center">
-                <TrendingUp className="w-5 h-5 text-emerald-300 mx-auto mb-1" />
-                <p className="text-white text-[20px] font-bold">{currentStats.efficiency}%</p>
-                <p className="text-white/70 text-[11px]">Efficiency</p>
+              <div className="flex-1 bg-white/15 rounded-xl p-3 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                  <span className="text-[12px] text-white/70">Tasks</span>
+                </div>
+                <span className="text-[22px] font-bold text-white">{wallet.tasksCompleted}</span>
               </div>
             </div>
 
-            {/* Motivational message */}
-            <div className="pt-4 border-t border-white/20 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-yellow-300" />
-              </div>
-              <p className="text-white/95 text-[14px] font-medium flex-1">
-                {selectedPeriod === 'today' 
-                  ? "Amazing start! Keep this momentum going 🚀" 
-                  : selectedPeriod === 'week'
-                  ? "That's like getting a free lunch break this week! 🍕"
-                  : "You've earned back half a work day this month! 💪"}
-              </p>
-            </div>
+            {/* Share Button */}
+            <button 
+              onClick={() => setShowShareModal(true)}
+              className="w-full py-3 rounded-xl bg-white/20 text-white text-[14px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              <Share2 className="w-4 h-4" />
+              Share Progress
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Weekly Goal Progress */}
-      <div className="px-4 mb-5">
-        <div className="ios-card p-4 border-2 border-purple-200">
+      {/* Period Selector */}
+      <div className="px-4 mb-4">
+        <div className="flex gap-2">
+          {(['today', 'week', 'month'] as const).map((period) => (
+            <button
+              key={period}
+              onClick={() => setSelectedPeriod(period)}
+              className={`flex-1 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+                selectedPeriod === period
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-white text-slate-600 shadow-sm'
+              }`}
+            >
+              {period === 'today' ? 'Today' : period === 'week' ? 'This Week' : 'Month'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-4 space-y-4">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center mx-auto mb-2">
+              <Clock className="w-5 h-5 text-emerald-600" />
+            </div>
+            <span className="text-[20px] font-bold text-slate-900">{currentStats.saved}</span>
+            <p className="text-[11px] text-slate-500">Time Saved</p>
+          </div>
+          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center mx-auto mb-2">
+              <Zap className="w-5 h-5 text-violet-600" />
+            </div>
+            <span className="text-[20px] font-bold text-slate-900">{currentStats.tasks}</span>
+            <p className="text-[11px] text-slate-500">Tasks Done</p>
+          </div>
+          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mx-auto mb-2">
+              <TrendingUp className="w-5 h-5 text-amber-600" />
+            </div>
+            <span className="text-[20px] font-bold text-slate-900">{currentStats.efficiency}%</span>
+            <p className="text-[11px] text-slate-500">Efficiency</p>
+          </div>
+        </div>
+
+        {/* Weekly Chart */}
+        {selectedPeriod === 'week' && (
+          <div className="ios-glass rounded-2xl p-4 shadow-sm slide-up">
+            <h3 className="text-[14px] font-semibold text-slate-800 mb-4">This Week</h3>
+            <div className="flex items-end justify-between gap-2 h-24">
+              {weeklyBreakdown.map((day, index) => {
+                const isToday = index === 3; // Thursday
+                const height = day.time > 0 ? (day.time / maxTime) * 100 : 8;
+                return (
+                  <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
+                    <span className={`text-[10px] font-medium ${day.time > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
+                      {day.label}
+                    </span>
+                    <div 
+                      className={`w-full rounded-lg transition-all ${
+                        day.time > 0 
+                          ? isToday 
+                            ? 'bg-gradient-to-t from-emerald-500 to-emerald-400' 
+                            : 'bg-gradient-to-t from-emerald-400 to-emerald-300'
+                          : 'bg-slate-100'
+                      }`}
+                      style={{ height: `${height}%`, minHeight: '8px' }}
+                    />
+                    <span className={`text-[11px] font-medium ${isToday ? 'text-emerald-600' : 'text-slate-500'}`}>
+                      {day.day}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Milestones */}
+        <div className="ios-glass rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-                <Target className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-[15px] font-semibold text-slate-800">Weekly Goal</p>
-                <p className="text-[12px] text-slate-500">{weeklyGoal.daysLeft} days left</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-[18px] font-bold text-slate-800">{weeklyGoal.current}</p>
-              <p className="text-[12px] text-slate-500">of {weeklyGoal.target}</p>
-            </div>
+            <h3 className="text-[14px] font-semibold text-slate-800">Time Milestones</h3>
+            <span className="text-[11px] text-emerald-600 font-medium bg-emerald-50 px-2 py-1 rounded-full">
+              {milestones.filter(m => m.reached).length}/{milestones.length} Unlocked
+            </span>
           </div>
-          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
-              style={{ width: `${weeklyGoal.percentage}%` }}
-            />
-          </div>
-          <p className="text-[12px] text-purple-600 font-medium mt-2 text-center">
-            {weeklyGoal.percentage >= 100 ? '🎉 Goal achieved!' : `${100 - weeklyGoal.percentage}% more to hit your goal!`}
-          </p>
-        </div>
-      </div>
-
-      {/* Quick Stats Row */}
-      <div className="px-4 mb-5">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="ios-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-[12px] text-slate-500">Weekly Goal</p>
-                <p className="text-[17px] font-bold text-slate-900">67%</p>
-              </div>
-            </div>
-            <div className="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full w-[67%] bg-gradient-to-r from-purple-500 to-blue-500 rounded-full" />
-            </div>
-          </div>
-          
-          <div className="ios-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <span className="text-[20px]">🏆</span>
-              </div>
-              <div>
-                <p className="text-[12px] text-slate-500">Total Saved</p>
-                <p className="text-[17px] font-bold text-slate-900">12h 20m</p>
-              </div>
-            </div>
-            <p className="text-[11px] text-emerald-600 font-medium mt-2">+2h 40m this week</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Milestones */}
-      <div className="px-4 mb-5">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide">Your Achievements</h2>
-          <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-full">
-            <Trophy className="w-3.5 h-3.5 text-amber-600" />
-            <span className="text-[11px] font-semibold text-amber-700">3/4 Unlocked</span>
-          </div>
-        </div>
-        <div className="ios-card p-4 shadow-sm">
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {milestones.map((milestone) => (
               <div 
                 key={milestone.id}
-                className={`flex-shrink-0 w-[88px] text-center ${!milestone.reached ? 'opacity-70' : ''}`}
+                className={`flex-shrink-0 w-[68px] text-center ${!milestone.reached ? 'opacity-60' : ''}`}
               >
-                <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-2xl mb-2 transition-all ${
+                <div className={`w-13 h-13 mx-auto rounded-xl flex items-center justify-center text-xl mb-1.5 ${
                   milestone.reached 
-                    ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30 hover:scale-105 cursor-pointer' 
-                    : 'bg-slate-100 relative overflow-hidden border-2 border-dashed border-slate-200'
-                }`}>
+                    ? 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-md' 
+                    : 'bg-slate-100 border-2 border-dashed border-slate-200 relative overflow-hidden'
+                }`} style={{ width: '52px', height: '52px' }}>
                   {milestone.reached ? (
                     milestone.reward
                   ) : (
                     <>
-                      <span className="text-slate-300 text-xl relative z-10">🔒</span>
-                      <div 
-                        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-purple-400 to-purple-300"
-                        style={{ height: `${milestone.progress}%` }}
-                      />
+                      <span className="relative z-10 text-slate-400">🔒</span>
+                      {milestone.progress && (
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-400 to-emerald-300 opacity-50"
+                          style={{ height: `${milestone.progress}%` }}
+                        />
+                      )}
                     </>
                   )}
                 </div>
-                <p className="text-[12px] font-semibold text-slate-800">{milestone.title}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">{milestone.description}</p>
-                {!milestone.reached && milestone.progress && (
-                  <div className="mt-1 px-2 py-0.5 bg-purple-100 rounded-full">
-                    <p className="text-[10px] text-purple-700 font-bold">{milestone.progress}%</p>
+                <p className="text-[11px] font-semibold text-slate-700">{milestone.title}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Savings */}
+        <div>
+          <h3 className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-3 px-1">Recent Savings</h3>
+          <div className="space-y-2">
+            {recentSavings.map((item, index) => (
+              <div 
+                key={item.id}
+                className="ios-glass rounded-xl p-3 shadow-sm slide-up"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center text-xl">
+                    {item.icon}
                   </div>
-                )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] text-slate-800 font-medium truncate">{item.action}</p>
+                    <span className="text-[12px] text-slate-400">{item.when}</span>
+                  </div>
+                  <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-100">
+                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-[13px] font-bold text-emerald-700">{item.time}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* How It Works */}
+        <div className="ios-glass rounded-2xl p-4 shadow-sm">
+          <h3 className="text-[14px] font-semibold text-slate-800 mb-3">How Time is Calculated</h3>
+          <div className="space-y-2">
+            {[
+              { icon: '⚡', action: 'Complete tasks faster than estimated', example: 'Avg +5-15m' },
+              { icon: '📦', action: 'Batch similar tasks together', example: 'Avg +10-20m' },
+              { icon: '🔄', action: 'Auto-optimized scheduling', example: 'Avg +5-10m' },
+              { icon: '🚗', action: 'Reduced travel/transitions', example: 'Avg +10-30m' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-[13px] text-slate-700">{item.action}</span>
+                </div>
+                <span className="text-[12px] font-medium text-emerald-600">{item.example}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Recent Saves */}
-      <div className="px-4">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide">How You Saved Time</h2>
-          <span className="text-[11px] text-emerald-600 font-medium bg-emerald-50 px-2 py-1 rounded-full">Today +42m</span>
-        </div>
-        <div className="space-y-2.5">
-          {recentSaves.map((save, index) => (
-            <div key={save.id} className="ios-card p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center text-2xl shadow-inner">
-                  {save.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] text-slate-800 font-semibold truncate">{save.action}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[12px] text-slate-400">{save.when}</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-300" />
-                    <span className="text-[11px] bg-gradient-to-r from-purple-500 to-primary text-white px-2 py-0.5 rounded-full font-semibold">+{save.xp} XP</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-[18px] font-bold text-emerald-600">{save.time}</p>
-                  <p className="text-[10px] text-emerald-500">saved</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Share Achievement */}
-      <div className="px-4 mt-5">
-        <button 
-          onClick={() => setShowShareModal(true)}
-          className="w-full ios-card p-4 flex items-center gap-4 shadow-sm active:scale-[0.98] transition-transform"
-        >
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <Share2 className="w-6 h-6 text-white" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="text-[15px] font-semibold text-slate-800">Share your progress</p>
-            <p className="text-[13px] text-slate-500">Brag about your time savings to circles!</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400" />
-        </button>
-      </div>
-
-      {/* Redeem Section */}
-      <div className="px-4 mt-5">
-        <div 
-          onClick={() => {/* Future: Navigate to rewards screen */}}
-          className="ios-card p-4 border-2 border-dashed border-slate-200 cursor-pointer active:scale-[0.98] transition-transform"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-              <Gift className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[15px] font-semibold text-slate-800">Unlock rewards</p>
-              <p className="text-[13px] text-slate-500">Save 24 hours to unlock premium features</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400" />
-          </div>
-        </div>
-      </div>
-
       {/* Share Modal */}
       {showShareModal && (
-        <>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
           <div 
-            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
             onClick={() => setShowShareModal(false)} 
           />
-          <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
-            <div 
-              className="w-full bg-white rounded-t-[32px] p-6 pointer-events-auto"
-              style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}
-            >
-              <div className="w-9 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
-              
-              <h2 className="text-[22px] font-bold text-slate-800 mb-2 text-center">Share Your Progress</h2>
-              <p className="text-[14px] text-slate-500 mb-6 text-center">Show off your time-saving achievements!</p>
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+            
+            <h2 className="text-[20px] font-bold text-slate-900 mb-1 text-center">Share Progress</h2>
+            <p className="text-[13px] text-slate-500 mb-5 text-center">Show off your time savings!</p>
 
-              {/* Share Card Preview */}
-              <div 
-                className="rounded-[20px] p-5 mb-6 text-center"
-                style={{ background: 'linear-gradient(145deg, var(--success-gradient-start) 0%, var(--success-gradient-middle) 50%, var(--success-gradient-end) 100%)' }}
-              >
-                <p className="text-white/80 text-[14px] mb-1">I saved</p>
-                <p className="text-[36px] font-black text-white">{currentStats.saved}</p>
-                <p className="text-white/80 text-[14px] mt-1">this {selectedPeriod} with MYPA! 🎉</p>
-                <div className="flex items-center justify-center gap-4 mt-4">
-                  <div className="text-center">
-                    <p className="text-white text-[18px] font-bold">{currentStats.tasks}</p>
-                    <p className="text-white/70 text-[11px]">Tasks</p>
-                  </div>
-                  <div className="w-px h-8 bg-white/20" />
-                  <div className="text-center">
-                    <p className="text-white text-[18px] font-bold">🔥 {currentStats.streak}</p>
-                    <p className="text-white/70 text-[11px]">Day Streak</p>
-                  </div>
+            {/* Preview Card */}
+            <div className="rounded-2xl p-5 mb-5 text-center" style={{
+              background: 'linear-gradient(145deg, #10b981 0%, #059669 100%)'
+            }}>
+              <p className="text-white/80 text-[13px] mb-1">I saved</p>
+              <p className="text-[32px] font-black text-white">{currentStats.saved}</p>
+              <p className="text-white/80 text-[13px] mt-1">this {selectedPeriod} with MYPA! 🎉</p>
+              <div className="flex items-center justify-center gap-6 mt-4">
+                <div className="text-center">
+                  <p className="text-white text-[18px] font-bold">{currentStats.tasks}</p>
+                  <p className="text-white/70 text-[11px]">Tasks</p>
+                </div>
+                <div className="w-px h-8 bg-white/20" />
+                <div className="text-center">
+                  <p className="text-white text-[18px] font-bold">🔥 {wallet.streak}</p>
+                  <p className="text-white/70 text-[11px]">Streak</p>
                 </div>
               </div>
-
-              {/* Share Options */}
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                <button 
-                  onClick={() => onNavigate?.('daily-life-card')}
-                  className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-100 hover:bg-slate-200 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                    <span className="text-lg">📝</span>
-                  </div>
-                  <span className="text-[12px] font-medium text-slate-700">Daily Card</span>
-                </button>
-                <button 
-                  onClick={() => onNavigate?.('circles')}
-                  className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-100 hover:bg-slate-200 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center">
-                    <span className="text-lg">👥</span>
-                  </div>
-                  <span className="text-[12px] font-medium text-slate-700">Circles</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    // Copy to clipboard simulation
-                    setShowShareModal(false);
-                  }}
-                  className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-slate-100 hover:bg-slate-200 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-                    <span className="text-lg">📋</span>
-                  </div>
-                  <span className="text-[12px] font-medium text-slate-700">Copy Link</span>
-                </button>
-              </div>
-
-              <button 
-                onClick={() => setShowShareModal(false)}
-                className="w-full py-3.5 rounded-full bg-slate-100 text-slate-700 text-[15px] font-semibold hover:bg-slate-200 transition-colors"
-              >
-                Cancel
-              </button>
             </div>
+
+            {/* Share Options */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              {[
+                { icon: '📝', label: 'Daily Card', action: () => onNavigate?.('daily-life-card') },
+                { icon: '👥', label: 'Circles', action: () => onNavigate?.('circles') },
+                { icon: '📋', label: 'Copy', action: () => setShowShareModal(false) },
+              ].map((opt, i) => (
+                <button 
+                  key={i}
+                  onClick={opt.action}
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl bg-slate-100 active:bg-slate-200 transition-colors"
+                >
+                  <span className="text-2xl">{opt.icon}</span>
+                  <span className="text-[12px] font-medium text-slate-700">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setShowShareModal(false)}
+              className="w-full py-3.5 rounded-xl bg-slate-100 text-slate-700 text-[15px] font-semibold active:bg-slate-200 transition-colors"
+            >
+              Cancel
+            </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

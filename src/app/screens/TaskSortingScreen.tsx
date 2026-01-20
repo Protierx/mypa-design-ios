@@ -6,21 +6,22 @@ import {
   MoreVertical,
   CheckCircle,
   Clock,
-  Zap,
   Sparkles,
   Trash2,
   Calendar,
   Bell,
   Target,
   ChevronRight,
-  GripVertical,
   AlertCircle,
   Timer,
-  ListTodo,
   Inbox,
   Star,
-  ArrowUpRight,
-  Filter,
+  ChevronDown,
+  X,
+  Check,
+  MoveRight,
+  Zap,
+  ArrowRight
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 
@@ -103,8 +104,11 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
   ]);
 
   const [showMenuId, setShowMenuId] = useState<number | null>(null);
-  const [showAIHelper, setShowAIHelper] = useState(false);
-  const [showQuickAddOptions, setShowQuickAddOptions] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState<number | null>(null);
+  const [showTimeModal, setShowTimeModal] = useState<number | null>(null);
+  const [showReminderModal, setShowReminderModal] = useState<number | null>(null);
+  const [completedTasks, setCompletedTasks] = useState<number[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filteredItems = items.filter((item) => item.category === activeTab);
@@ -121,15 +125,19 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
         category: activeTab,
         isNew: true,
         createdAt: "now",
+        priority: 'medium',
       };
       setItems([newItem, ...items]);
       setInputValue("");
-      setShowQuickAddOptions(false);
     }
   };
 
-  const handleDone = (id: number) => {
-    setItems(items.filter((item) => item.id !== id));
+  const handleComplete = (id: number) => {
+    setCompletedTasks([...completedTasks, id]);
+    setTimeout(() => {
+      setItems(items.filter((item) => item.id !== id));
+      setCompletedTasks(completedTasks.filter(t => t !== id));
+    }, 500);
     setShowMenuId(null);
   };
 
@@ -141,10 +149,11 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
   const handleMoveCategory = (id: number, newCategory: TabType) => {
     setItems(
       items.map((item) =>
-        item.id === id ? { ...item, category: newCategory } : item
+        item.id === id ? { ...item, category: newCategory, isNew: false } : item
       )
     );
     setShowMenuId(null);
+    setShowMoveModal(null);
   };
 
   const handleToggleStar = (id: number) => {
@@ -155,23 +164,30 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
     );
   };
 
-  const handleSnooze = (id: number) => {
+  const handleSetTime = (id: number, time: string) => {
     setItems(
-      items.map((item) => (item.id === id ? { ...item, category: "later" } : item))
+      items.map((item) =>
+        item.id === id ? { ...item, dueTime: time } : item
+      )
     );
-    setShowMenuId(null);
+    setShowTimeModal(null);
+  };
+
+  const handleSetReminder = (id: number, reminder: string) => {
+    // In real app, would set actual reminder
+    setShowReminderModal(null);
+    // Show confirmation
+  };
+
+  const handleSetPriority = (id: number, priority: 'high' | 'medium' | 'low') => {
+    setItems(
+      items.map((item) =>
+        item.id === id ? { ...item, priority } : item
+      )
+    );
   };
 
   const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case 'high': return 'bg-rose-100 text-rose-700 border-rose-200';
-      case 'medium': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'low': return 'bg-slate-100 text-slate-600 border-slate-200';
-      default: return 'bg-slate-100 text-slate-600 border-slate-200';
-    }
-  };
-
-  const getPriorityDot = (priority?: string) => {
     switch (priority) {
       case 'high': return 'bg-rose-500';
       case 'medium': return 'bg-amber-500';
@@ -180,273 +196,280 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
     }
   };
 
+  const getTabIcon = (tab: TabType) => {
+    switch (tab) {
+      case 'now': return <AlertCircle className="w-4 h-4" />;
+      case 'today': return <Calendar className="w-4 h-4" />;
+      case 'later': return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getTabColor = (tab: TabType) => {
+    switch (tab) {
+      case 'now': return 'text-rose-600 bg-rose-100';
+      case 'today': return 'text-amber-600 bg-amber-100';
+      case 'later': return 'text-blue-600 bg-blue-100';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-ios-bg relative overflow-hidden">
+    <div className="h-screen bg-ios-bg flex flex-col overflow-hidden">
       <IOSStatusBar />
 
       <style>{`
-        .hero-card {
-          background: linear-gradient(145deg, var(--dark-card-start) 0%, var(--dark-card-middle) 50%, var(--dark-card-end) 100%);
+        .ios-glass {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
         }
-        .task-item {
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .task-item:active {
-          transform: scale(0.98);
-        }
-        @keyframes slide-up {
-          from { opacity: 0; transform: translateY(10px); }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .slide-up {
-          animation: slide-up 0.2s ease-out;
+        .slide-up { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes checkmark {
+          0% { transform: scale(0); }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); }
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
+        .checkmark { animation: checkmark 0.3s ease-out forwards; }
+        @keyframes fadeOut {
+          to { opacity: 0; transform: translateX(20px); }
         }
-        .float { animation: float 3s ease-in-out infinite; }
+        .fade-out { animation: fadeOut 0.3s ease-out forwards; }
       `}</style>
 
-      {/* Ambient glows */}
-      <div className="absolute top-32 -right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-80 -left-20 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-ios-bg/80 backdrop-blur-xl">
-        <div className="px-6 pt-4 pb-3">
-          {/* Back + Title */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => onNavigate?.("hub")}
-                className="p-2 rounded-full hover:bg-black/5 transition-colors -ml-2"
-              >
-                <ArrowLeft className="w-6 h-6 text-slate-700" />
-              </button>
-              <div>
-                <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Organize</p>
-                <h1 className="text-[24px] font-bold text-slate-800">Sort Tasks</h1>
-              </div>
-            </div>
-            <button className="p-2 rounded-xl hover:bg-black/5 transition-colors border border-slate-100 bg-white shadow-sm">
-              <Filter className="w-5 h-5 text-slate-600" />
-            </button>
-          </div>
+      <div className="px-4 pt-1 pb-2 relative z-10 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => onNavigate?.('hub')}
+            className="w-9 h-9 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-600" />
+          </button>
+          <h1 className="text-[17px] font-bold text-slate-900">Sort Tasks</h1>
+          <button 
+            onClick={() => setShowAIModal(true)}
+            className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+          >
+            <Sparkles className="w-4 h-4 text-white" />
+          </button>
         </div>
       </div>
 
-      {/* Hero Stats Card */}
-      <div className="px-4 mb-5">
-        <div className="hero-card rounded-[24px] p-5 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-[13px] text-white/60">Total items to sort</p>
-              <p className="text-[32px] font-bold">{totalItems}</p>
+      {/* Stats Summary */}
+      <div className="px-4 mb-3 flex-shrink-0">
+        <div className="ios-glass rounded-xl p-3 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+                <Inbox className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-500">Inbox</p>
+                <p className="text-[20px] font-bold text-slate-900 leading-tight">{totalItems}</p>
+              </div>
             </div>
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <Inbox className="w-7 h-7 text-white" />
-            </div>
+            <button 
+              onClick={() => onNavigate?.('plan')}
+              className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-[12px] font-medium flex items-center gap-1.5 active:scale-95 transition-transform"
+            >
+              <Target className="w-3.5 h-3.5" />
+              Plan
+            </button>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* Category Pills */}
+          <div className="flex gap-1.5">
             <button 
               onClick={() => setActiveTab('now')}
-              className={`p-3 rounded-xl transition-all ${activeTab === 'now' ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'}`}
+              className={`flex-1 py-2 rounded-lg text-[12px] font-medium flex items-center justify-center gap-1 transition-all ${
+                activeTab === 'now' 
+                  ? 'bg-rose-500 text-white shadow-sm' 
+                  : 'bg-rose-50 text-rose-700'
+              }`}
             >
-              <div className="flex items-center gap-1.5 mb-1">
-                <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                <span className="text-[11px] text-white/60 uppercase tracking-wide">Now</span>
-              </div>
-              <p className="text-[20px] font-bold">{nowCount}</p>
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Now</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === 'now' ? 'bg-white/20' : 'bg-rose-200'}`}>{nowCount}</span>
             </button>
             <button 
               onClick={() => setActiveTab('today')}
-              className={`p-3 rounded-xl transition-all ${activeTab === 'today' ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'}`}
+              className={`flex-1 py-2 rounded-lg text-[12px] font-medium flex items-center justify-center gap-1 transition-all ${
+                activeTab === 'today' 
+                  ? 'bg-amber-500 text-white shadow-sm' 
+                  : 'bg-amber-50 text-amber-700'
+              }`}
             >
-              <div className="flex items-center gap-1.5 mb-1">
-                <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[11px] text-white/60 uppercase tracking-wide">Today</span>
-              </div>
-              <p className="text-[20px] font-bold">{todayCount}</p>
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Today</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === 'today' ? 'bg-white/20' : 'bg-amber-200'}`}>{todayCount}</span>
             </button>
             <button 
               onClick={() => setActiveTab('later')}
-              className={`p-3 rounded-xl transition-all ${activeTab === 'later' ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'}`}
+              className={`flex-1 py-2 rounded-lg text-[12px] font-medium flex items-center justify-center gap-1 transition-all ${
+                activeTab === 'later' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
+                  : 'bg-blue-50 text-blue-700'
+              }`}
             >
-              <div className="flex items-center gap-1.5 mb-1">
-                <Clock className="w-3.5 h-3.5 text-blue-400" />
-                <span className="text-[11px] text-white/60 uppercase tracking-wide">Later</span>
-              </div>
-              <p className="text-[20px] font-bold">{laterCount}</p>
+              <Clock className="w-3.5 h-3.5" />
+              <span>Later</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === 'later' ? 'bg-white/20' : 'bg-blue-200'}`}>{laterCount}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Segmented Control - Tabs */}
-      <div className="px-6 mb-4">
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-full">
-          {(["now", "today", "later"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 px-4 py-2 rounded-full text-[13px] font-medium transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === tab
-                  ? "bg-gradient-to-r from-primary to-secondary text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-800"
-              }`}
-            >
-              {tab === 'now' && <AlertCircle className="w-3.5 h-3.5" />}
-              {tab === 'today' && <Calendar className="w-3.5 h-3.5" />}
-              {tab === 'later' && <Clock className="w-3.5 h-3.5" />}
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="px-6 pt-2 pb-32">
-        {/* Quick Capture Bar */}
-        <div className="bg-white rounded-[20px] px-4 py-3 shadow-sm border border-slate-100 mb-4">
-          <div className="flex items-center gap-3">
+      {/* Quick Add */}
+      <div className="px-4 mb-2 flex-shrink-0">
+        <div className="ios-glass rounded-xl shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 p-2">
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${getTabColor(activeTab)}`}>
+              {getTabIcon(activeTab)}
+            </div>
             <input
               ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  handleAddItem();
-                }
+                if (e.key === "Enter") handleAddItem();
               }}
-              onFocus={() => setShowQuickAddOptions(true)}
-              placeholder="✏️ Add task, idea, or reminder..."
-              className="flex-1 outline-none bg-transparent text-slate-800 placeholder:text-slate-400 text-[15px]"
+              placeholder={`Add to ${activeTab}...`}
+              className="flex-1 outline-none bg-transparent text-slate-800 placeholder:text-slate-400 text-[14px]"
             />
-            <button className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-500">
-              <Mic className="w-5 h-5" />
+            <button 
+              className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 active:scale-95"
+              onClick={() => {/* Voice input would go here */}}
+            >
+              <Mic className="w-4 h-4" />
             </button>
             <button
               onClick={handleAddItem}
               disabled={!inputValue.trim()}
-              className={`p-2 rounded-full transition-colors ${inputValue.trim() ? 'bg-gradient-to-r from-primary to-secondary text-white' : 'bg-slate-100 text-slate-400'}`}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 ${
+                inputValue.trim() 
+                  ? 'bg-slate-900 text-white' 
+                  : 'bg-slate-100 text-slate-400'
+              }`}
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* Quick Add Options */}
-          {showQuickAddOptions && inputValue && (
-            <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100 slide-up">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 text-[12px] font-medium">
-                <AlertCircle className="w-3.5 h-3.5" />
-                High priority
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[12px] font-medium">
-                <Clock className="w-3.5 h-3.5" />
-                Set time
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[12px] font-medium">
-                <Bell className="w-3.5 h-3.5" />
-                Remind
-              </button>
-            </div>
-          )}
+      {/* Task List */}
+      <div className="px-4 flex-1 overflow-y-auto pb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+            {activeTab === 'now' ? '⚡ Do Right Now' : activeTab === 'today' ? '📅 For Today' : '📦 Do Later'}
+          </h2>
+          <span className="text-[12px] text-slate-400">{filteredItems.length} items</span>
         </div>
 
-        {/* AI Helper Button */}
-        {filteredItems.length > 0 && (
-          <button
-            onClick={() => setShowAIHelper(true)}
-            className="w-full mb-5 px-4 py-3.5 rounded-[16px] bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 flex items-center justify-between hover:from-purple-100 hover:to-blue-100 transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <div className="text-left">
-                <p className="text-[14px] font-semibold text-slate-800">AI Sort</p>
-                <p className="text-[12px] text-slate-500">Auto-organize into missions</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
-          </button>
-        )}
-
-        {/* Content list */}
         {filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-primary" />
+          <div className="ios-glass rounded-xl p-6 text-center shadow-sm">
+            <div className={`w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center ${getTabColor(activeTab)}`}>
+              {activeTab === 'now' && <CheckCircle className="w-6 h-6" />}
+              {activeTab === 'today' && <Calendar className="w-6 h-6" />}
+              {activeTab === 'later' && <Clock className="w-6 h-6" />}
             </div>
-            <h3 className="text-[18px] font-semibold text-slate-800 mb-2">
-              {activeTab === 'now' ? '🎯 Nothing urgent!' : activeTab === 'today' ? '✨ Today is planned!' : '📦 Later box is empty'}
+            <h3 className="text-[15px] font-semibold text-slate-800 mb-1">
+              {activeTab === 'now' ? 'Nothing urgent!' : activeTab === 'today' ? 'Today is clear!' : 'Later is empty'}
             </h3>
-            <p className="text-[14px] text-slate-500 mb-6 max-w-[260px]">
-              {activeTab === 'now' ? 'Great job staying on top of urgent tasks.' : activeTab === 'today' ? "You've sorted everything for today." : 'Add items you want to tackle someday.'}
+            <p className="text-[13px] text-slate-500 mb-3">
+              {activeTab === 'now' 
+                ? 'No tasks need immediate attention' 
+                : activeTab === 'today' 
+                  ? 'Add tasks you want to do today'
+                  : 'Save tasks for another time'}
             </p>
             <button
               onClick={() => inputRef.current?.focus()}
-              className="px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[14px] font-semibold hover:opacity-90 transition-all"
+              className="px-4 py-2 rounded-lg bg-slate-900 text-white text-[13px] font-medium active:scale-95 transition-transform"
             >
-              Add item to {activeTab}
+              Add Task
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredItems.map((item) => (
-              <div key={item.id} className="relative task-item">
-                <div className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100 hover:border-slate-200 transition-colors">
-                  <div className="flex items-start gap-3">
-                    {/* Drag Handle & Priority Dot */}
-                    <div className="flex flex-col items-center gap-2 pt-1">
-                      <div className={`w-2.5 h-2.5 rounded-full ${getPriorityDot(item.priority)}`} />
-                    </div>
+          <div className="space-y-1.5">
+            {filteredItems.map((item, index) => (
+              <div 
+                key={item.id} 
+                className={`ios-glass rounded-xl shadow-sm overflow-hidden slide-up ${
+                  completedTasks.includes(item.id) ? 'fade-out' : ''
+                }`}
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <div className="p-3">
+                  <div className="flex items-start gap-2.5">
+                    {/* Complete Button */}
+                    <button 
+                      onClick={() => handleComplete(item.id)}
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                        completedTasks.includes(item.id)
+                          ? 'bg-emerald-500 border-emerald-500'
+                          : 'border-slate-300 hover:border-slate-400'
+                      }`}
+                    >
+                      {completedTasks.includes(item.id) && (
+                        <Check className="w-3 h-3 text-white checkmark" />
+                      )}
+                    </button>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="text-[15px] font-medium text-slate-800 leading-tight">{item.title}</h3>
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className={`text-[14px] font-medium leading-tight ${
+                          completedTasks.includes(item.id) ? 'text-slate-400 line-through' : 'text-slate-800'
+                        }`}>
+                          {item.title}
+                        </h3>
+                        <div className="flex items-center flex-shrink-0">
                           <button 
                             onClick={() => handleToggleStar(item.id)}
-                            className={`p-1.5 rounded-full transition-colors ${item.isStarred ? 'text-amber-500' : 'text-slate-300 hover:text-slate-400'}`}
+                            className={`p-1 rounded-md transition-colors active:scale-95 ${
+                              item.isStarred ? 'text-amber-500' : 'text-slate-300 hover:text-slate-400'
+                            }`}
                           >
-                            <Star className="w-4 h-4" fill={item.isStarred ? 'currentColor' : 'none'} />
+                            <Star className="w-3.5 h-3.5" fill={item.isStarred ? 'currentColor' : 'none'} />
                           </button>
                           <button
                             onClick={() => setShowMenuId(showMenuId === item.id ? null : item.id)}
-                            className="p-1.5 rounded-full hover:bg-slate-100 transition-colors text-slate-400"
+                            className="p-1 rounded-md hover:bg-slate-100 transition-colors text-slate-400 active:scale-95"
                           >
-                            <MoreVertical className="w-4 h-4" />
+                            <MoreVertical className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
-                      {/* Meta Info */}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      {/* Meta Tags */}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                        {/* Priority Dot */}
+                        <span className={`w-1.5 h-1.5 rounded-full ${getPriorityColor(item.priority)}`} />
+                        
                         {item.dueTime && (
-                          <span className="flex items-center gap-1 text-[12px] text-rose-600 font-medium bg-rose-50 px-2 py-0.5 rounded-full">
-                            <Clock className="w-3 h-3" />
+                          <span className="flex items-center gap-0.5 text-[10px] text-rose-600 font-medium bg-rose-50 px-1.5 py-0.5 rounded-full">
+                            <Clock className="w-2.5 h-2.5" />
                             {item.dueTime}
                           </span>
                         )}
                         {item.estimatedTime && (
-                          <span className="flex items-center gap-1 text-[12px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                            <Timer className="w-3 h-3" />
+                          <span className="flex items-center gap-0.5 text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                            <Timer className="w-2.5 h-2.5" />
                             ~{item.estimatedTime}
                           </span>
                         )}
                         {item.tags?.map((tag) => (
-                          <span key={tag} className="text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                          <span key={tag} className="text-[10px] text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded-full border border-slate-100">
                             {tag}
                           </span>
                         ))}
                         {item.isNew && (
-                          <span className="text-[10px] text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded-full">
+                          <span className="text-[9px] text-violet-600 font-semibold bg-violet-100 px-1.5 py-0.5 rounded-full">
                             NEW
                           </span>
                         )}
@@ -454,43 +477,66 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
                     </div>
                   </div>
 
-                  {/* Quick Actions Row */}
-                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-50">
+                  {/* Quick Actions */}
+                  <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
                     <button 
-                      onClick={() => handleDone(item.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-[12px] font-medium hover:bg-green-100 transition-colors"
+                      onClick={() => setShowMoveModal(item.id)}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium hover:bg-slate-200 transition-colors active:scale-95"
                     >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Done
+                      <MoveRight className="w-3 h-3" />
+                      Move
+                    </button>
+                    <button 
+                      onClick={() => setShowTimeModal(item.id)}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium hover:bg-slate-200 transition-colors active:scale-95"
+                    >
+                      <Clock className="w-3 h-3" />
+                      Time
+                    </button>
+                    <button 
+                      onClick={() => setShowReminderModal(item.id)}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium hover:bg-slate-200 transition-colors active:scale-95"
+                    >
+                      <Bell className="w-3 h-3" />
+                      Remind
                     </button>
                     <button 
                       onClick={() => {
                         onNavigate?.('plan');
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-600 text-[12px] font-medium hover:bg-slate-100 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md bg-violet-100 text-violet-700 text-[11px] font-medium hover:bg-violet-200 transition-colors active:scale-95 ml-auto"
                     >
-                      <Target className="w-3.5 h-3.5" />
-                      To Plan
-                    </button>
-                    <button 
-                      onClick={() => handleSnooze(item.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 text-slate-600 text-[12px] font-medium hover:bg-slate-100 transition-colors"
-                    >
-                      <Clock className="w-3.5 h-3.5" />
-                      Snooze
+                      <Target className="w-3 h-3" />
+                      Plan
                     </button>
                   </div>
+                </div>
 
-                  {/* Context Menu */}
-                  {showMenuId === item.id && (
+                {/* Context Menu */}
+                {showMenuId === item.id && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMenuId(null)} />
                     <div 
-                      className="absolute right-4 top-14 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 min-w-[200px] overflow-hidden slide-up"
-                      style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.12)' }}
+                      className="absolute right-4 top-12 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 min-w-[200px] overflow-hidden slide-up"
+                      style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}
                     >
                       <div className="p-2">
-                        <button onClick={() => handleDone(item.id)} className="w-full text-left px-4 py-3 text-[14px] text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors">
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                          Mark as Done
+                        <button 
+                          onClick={() => handleComplete(item.id)} 
+                          className="w-full text-left px-4 py-3 text-[14px] text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors"
+                        >
+                          <CheckCircle className="w-5 h-5 text-emerald-500" />
+                          Mark Complete
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setShowMenuId(null);
+                            setShowMoveModal(item.id);
+                          }}
+                          className="w-full text-left px-4 py-3 text-[14px] text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors"
+                        >
+                          <MoveRight className="w-5 h-5 text-blue-500" />
+                          Move to...
                         </button>
                         <button 
                           onClick={() => {
@@ -499,163 +545,277 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
                           }}
                           className="w-full text-left px-4 py-3 text-[14px] text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors"
                         >
-                          <Target className="w-5 h-5 text-blue-600" />
+                          <Target className="w-5 h-5 text-violet-500" />
                           Add to Plan
                         </button>
-                        <button 
-                          onClick={() => {
-                            handleDone(item.id);
-                            // Mark as "mission" for future use
-                          }}
-                          className="w-full text-left px-4 py-3 text-[14px] text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors"
-                        >
-                          <Sparkles className="w-5 h-5 text-purple-600" />
-                          Convert to Mission
-                        </button>
-                        <button 
-                          onClick={() => {
-                            handleSnooze(item.id);
-                          }}
-                          className="w-full text-left px-4 py-3 text-[14px] text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors"
-                        >
-                          <Bell className="w-5 h-5 text-amber-600" />
-                          Set Reminder
-                        </button>
                       </div>
-
+                      
                       <div className="border-t border-slate-100 p-2">
-                        <p className="text-[11px] text-slate-400 uppercase tracking-wide px-4 py-2">Move to</p>
-                        {(["now", "today", "later"] as const).map((cat) =>
-                          cat !== item.category ? (
-                            <button 
-                              key={cat} 
-                              onClick={() => handleMoveCategory(item.id, cat)} 
-                              className="w-full text-left px-4 py-2.5 text-[14px] text-slate-700 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-colors"
+                        <p className="text-[11px] text-slate-400 uppercase tracking-wide px-4 py-2">Priority</p>
+                        <div className="flex gap-2 px-4 pb-2">
+                          {(['high', 'medium', 'low'] as const).map((p) => (
+                            <button
+                              key={p}
+                              onClick={() => handleSetPriority(item.id, p)}
+                              className={`flex-1 py-2 rounded-lg text-[12px] font-medium transition-all active:scale-95 ${
+                                item.priority === p 
+                                  ? p === 'high' ? 'bg-rose-500 text-white' : p === 'medium' ? 'bg-amber-500 text-white' : 'bg-slate-500 text-white'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}
                             >
-                              {cat === 'now' && <AlertCircle className="w-4 h-4 text-rose-500" />}
-                              {cat === 'today' && <Calendar className="w-4 h-4 text-amber-500" />}
-                              {cat === 'later' && <Clock className="w-4 h-4 text-blue-500" />}
-                              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                              {p.charAt(0).toUpperCase() + p.slice(1)}
                             </button>
-                          ) : null
-                        )}
+                          ))}
+                        </div>
                       </div>
 
                       <div className="border-t border-slate-100 p-2">
-                        <button onClick={() => handleDelete(item.id)} className="w-full text-left px-4 py-3 text-[14px] text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-3 transition-colors">
+                        <button 
+                          onClick={() => handleDelete(item.id)} 
+                          className="w-full text-left px-4 py-3 text-[14px] text-rose-600 hover:bg-rose-50 rounded-xl flex items-center gap-3 transition-colors"
+                        >
                           <Trash2 className="w-5 h-5" />
                           Delete
                         </button>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowMenuId(null)}
-        />
+      {/* Move Modal */}
+      {showMoveModal && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowMoveModal(null)} />
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+            <h2 className="text-[18px] font-bold text-slate-900 mb-4">Move Task</h2>
+            
+            <div className="space-y-2">
+              {(['now', 'today', 'later'] as const).map((cat) => {
+                const item = items.find(i => i.id === showMoveModal);
+                const isCurrentCategory = item?.category === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => !isCurrentCategory && handleMoveCategory(showMoveModal, cat)}
+                    disabled={isCurrentCategory}
+                    className={`w-full p-4 rounded-xl flex items-center gap-4 transition-all active:scale-[0.98] ${
+                      isCurrentCategory
+                        ? 'bg-slate-100 opacity-50'
+                        : cat === 'now' ? 'bg-rose-50 hover:bg-rose-100' 
+                          : cat === 'today' ? 'bg-amber-50 hover:bg-amber-100'
+                            : 'bg-blue-50 hover:bg-blue-100'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      cat === 'now' ? 'bg-rose-500 text-white' 
+                        : cat === 'today' ? 'bg-amber-500 text-white' 
+                          : 'bg-blue-500 text-white'
+                    }`}>
+                      {cat === 'now' && <AlertCircle className="w-5 h-5" />}
+                      {cat === 'today' && <Calendar className="w-5 h-5" />}
+                      {cat === 'later' && <Clock className="w-5 h-5" />}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-[15px] font-semibold text-slate-800">
+                        {cat === 'now' ? 'Do Now' : cat === 'today' ? 'Today' : 'Later'}
+                      </p>
+                      <p className="text-[12px] text-slate-500">
+                        {cat === 'now' ? 'Urgent, needs attention' : cat === 'today' ? 'Plan for today' : 'Save for another time'}
+                      </p>
+                    </div>
+                    {isCurrentCategory && (
+                      <span className="text-[12px] text-slate-400 font-medium">Current</span>
+                    )}
+                    {!isCurrentCategory && (
+                      <ArrowRight className="w-5 h-5 text-slate-400" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button 
+              onClick={() => setShowMoveModal(null)}
+              className="w-full mt-4 py-3.5 rounded-xl bg-slate-100 text-slate-700 text-[15px] font-semibold active:bg-slate-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* AI Helper Modal */}
-      {showAIHelper && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" onClick={() => setShowAIHelper(false)} />
-          <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
-            <div 
-              className="w-full bg-white rounded-t-[32px] p-6 pointer-events-auto max-h-[85vh] overflow-y-auto" 
-              style={{ boxShadow: "0 -4px 20px rgba(0,0,0,0.1)" }}
-            >
-              <div className="w-9 h-1 bg-slate-200 rounded-full mx-auto mb-4" />
-              
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-[20px] font-bold text-slate-800">AI Suggested Missions</h2>
-                  <p className="text-[13px] text-slate-500">Based on {items.length} inbox items</p>
-                </div>
-              </div>
-
-              <p className="text-[14px] text-slate-500 mb-5">Group your inbox items into focused missions for better productivity.</p>
-
-              <div className="space-y-3 mb-6">
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-[20px] p-4">
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" defaultChecked className="mt-1 w-5 h-5 rounded-md accent-primary" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">🏥</span>
-                        <p className="text-[15px] font-semibold text-slate-800">Health & Wellness</p>
-                      </div>
-                      <p className="text-[13px] text-slate-600 mb-2">Dentist appointment, Slack wellness check-ins</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">High priority</span>
-                        <span className="text-[11px] text-slate-500">2 tasks • ~30min</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-[20px] p-4">
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" defaultChecked className="mt-1 w-5 h-5 rounded-md accent-primary" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">💼</span>
-                        <p className="text-[15px] font-semibold text-slate-800">Work Admin</p>
-                      </div>
-                      <p className="text-[13px] text-slate-600 mb-2">Q1 metrics review, Book conference flight</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Medium priority</span>
-                        <span className="text-[11px] text-slate-500">2 tasks • ~45min</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-[20px] p-4">
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" className="mt-1 w-5 h-5 rounded-md accent-primary" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">📚</span>
-                        <p className="text-[15px] font-semibold text-slate-800">Learning & Growth</p>
-                      </div>
-                      <p className="text-[13px] text-slate-600 mb-2">React patterns, Home office organization</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">Low priority</span>
-                        <span className="text-[11px] text-slate-500">2 tasks • ~1h30m</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button onClick={() => setShowAIHelper(false)} className="flex-1 px-4 py-3.5 rounded-full text-[15px] font-semibold text-slate-700 hover:bg-slate-100 transition-colors border border-slate-200">Cancel</button>
-                <button 
-                  onClick={() => {
-                    // Move selected items to missions/done
-                    setItems(prev => prev.filter(item => item.category === 'later'));
-                    setShowAIHelper(false);
-                  }}
-                  className="flex-1 px-4 py-3.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[15px] font-semibold hover:opacity-90 transition-all"
+      {/* Time Modal */}
+      {showTimeModal && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowTimeModal(null)} />
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+            <h2 className="text-[18px] font-bold text-slate-900 mb-4">Set Time</h2>
+            
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {['9:00 AM', '12:00 PM', '3:00 PM', '5:00 PM', '7:00 PM', '9:00 PM'].map((time) => (
+                <button
+                  key={time}
+                  onClick={() => handleSetTime(showTimeModal, time)}
+                  className="py-3 rounded-xl bg-slate-100 text-slate-700 text-[14px] font-medium hover:bg-slate-200 transition-colors active:scale-95"
                 >
-                  Create Missions
+                  {time}
                 </button>
+              ))}
+            </div>
+            
+            <button 
+              onClick={() => {
+                handleSetTime(showTimeModal, '');
+                setShowTimeModal(null);
+              }}
+              className="w-full py-3 rounded-xl bg-rose-50 text-rose-600 text-[14px] font-medium hover:bg-rose-100 transition-colors active:scale-95 mb-3"
+            >
+              Clear Time
+            </button>
+
+            <button 
+              onClick={() => setShowTimeModal(null)}
+              className="w-full py-3.5 rounded-xl bg-slate-100 text-slate-700 text-[15px] font-semibold active:bg-slate-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reminder Modal */}
+      {showReminderModal && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowReminderModal(null)} />
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+            <h2 className="text-[18px] font-bold text-slate-900 mb-4">Set Reminder</h2>
+            
+            <div className="space-y-2 mb-4">
+              {[
+                { label: 'In 30 minutes', value: '30m' },
+                { label: 'In 1 hour', value: '1h' },
+                { label: 'In 3 hours', value: '3h' },
+                { label: 'Tomorrow morning', value: 'tomorrow' },
+                { label: 'Next week', value: 'week' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleSetReminder(showReminderModal, option.value)}
+                  className="w-full py-3.5 rounded-xl bg-slate-100 text-slate-700 text-[14px] font-medium hover:bg-slate-200 transition-colors active:scale-95 flex items-center justify-between px-4"
+                >
+                  <span>{option.label}</span>
+                  <Bell className="w-4 h-4 text-slate-400" />
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setShowReminderModal(null)}
+              className="w-full py-3.5 rounded-xl bg-slate-100 text-slate-700 text-[15px] font-semibold active:bg-slate-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* AI Sort Modal */}
+      {showAIModal && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAIModal(false)} />
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+            
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-[18px] font-bold text-slate-900">AI Sort</h2>
+                <p className="text-[13px] text-slate-500">Smart organization suggestions</p>
               </div>
             </div>
+
+            <p className="text-[14px] text-slate-600 mb-5">
+              Based on your {totalItems} tasks, here's how I'd organize them:
+            </p>
+
+            <div className="space-y-3 mb-6">
+              {/* Health Mission */}
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center text-lg">
+                    🏥
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[15px] font-semibold text-slate-800">Health Tasks</p>
+                    <p className="text-[13px] text-slate-500 mb-2">Call dentist</p>
+                    <span className="text-[11px] bg-rose-200 text-rose-700 px-2 py-0.5 rounded-full">Move to Now</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Work Mission */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-lg">
+                    💼
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[15px] font-semibold text-slate-800">Work Admin</p>
+                    <p className="text-[13px] text-slate-500 mb-2">Q1 metrics, Slack, Conference flight</p>
+                    <span className="text-[11px] bg-amber-200 text-amber-700 px-2 py-0.5 rounded-full">Move to Today</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Learning Mission */}
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-lg">
+                    📚
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[15px] font-semibold text-slate-800">Learning & Home</p>
+                    <p className="text-[13px] text-slate-500 mb-2">React patterns, Organize office</p>
+                    <span className="text-[11px] bg-blue-200 text-blue-700 px-2 py-0.5 rounded-full">Keep in Later</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowAIModal(false)}
+                className="flex-1 py-3.5 rounded-xl bg-slate-100 text-slate-700 text-[15px] font-semibold active:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  // Apply AI sorting
+                  setItems(prev => prev.map(item => {
+                    if (item.tags?.includes('Health')) return { ...item, category: 'now' as TabType };
+                    if (item.tags?.includes('Work')) return { ...item, category: 'today' as TabType };
+                    return { ...item, category: 'later' as TabType };
+                  }));
+                  setShowAIModal(false);
+                }}
+                className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[15px] font-semibold active:scale-[0.98] transition-transform"
+              >
+                Apply Sort
+              </button>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Plus, Clock, MoreVertical, Lock, ChevronRight, CheckCircle2, Calendar as CalendarIcon, Sparkles, Play, Target, Trash2, ArrowRight, Check } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Plus, Clock, MoreVertical, Lock, ChevronRight, CheckCircle2, Calendar as CalendarIcon, Sparkles, Play, Pause, Square, Target, Trash2, ArrowRight, Check } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { Calendar } from "../components/ui/calendar";
 import { MYPAOrb } from "../components/MYPAOrb";
@@ -44,6 +44,66 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [swipedTaskId, setSwipedTaskId] = useState<number | null>(null);
   const touchStartX = useRef<number>(0);
+  
+  // Timer state
+  const [activeTimerId, setActiveTimerId] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Timer effect
+  useEffect(() => {
+    if (activeTimerId !== null) {
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [activeTimerId]);
+
+  const startTimer = (taskId: number) => {
+    setActiveTimerId(taskId);
+    setElapsedSeconds(0);
+    setTimerStartTime(new Date());
+  };
+
+  const pauseTimer = () => {
+    setActiveTimerId(null);
+  };
+
+  const resumeTimer = (taskId: number) => {
+    setActiveTimerId(taskId);
+  };
+
+  const stopTimer = (taskId: number) => {
+    setActiveTimerId(null);
+    setElapsedSeconds(0);
+    setTimerStartTime(null);
+  };
+
+  const completeTimedTask = (taskId: number) => {
+    handleCompleteTask(taskId);
+    stopTimer(taskId);
+  };
+
+  const formatTimer = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Computed values
   const completedCount = timeBlocks.filter(b => b.completed).length;
@@ -480,44 +540,95 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
 
         {/* Next Up Card */}
         {nextTask && (
-          <div className="ios-glass rounded-2xl overflow-hidden shadow-sm">
+          <div className={`ios-glass rounded-2xl overflow-hidden shadow-sm ${activeTimerId === nextTask.id ? 'ring-2 ring-emerald-500' : ''}`}>
             <div className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
-                  <Play className="w-5 h-5 text-violet-600" fill="currentColor" />
-                </div>
+                {/* Play/Pause Button */}
+                <button
+                  onClick={() => {
+                    if (activeTimerId === nextTask.id) {
+                      pauseTimer();
+                    } else if (activeTimerId === null) {
+                      startTimer(nextTask.id);
+                    } else {
+                      // Another task is running, switch to this one
+                      stopTimer(activeTimerId);
+                      startTimer(nextTask.id);
+                    }
+                  }}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-95 transition-all ${
+                    activeTimerId === nextTask.id 
+                      ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' 
+                      : 'bg-violet-100'
+                  }`}
+                >
+                  {activeTimerId === nextTask.id ? (
+                    <Pause className="w-5 h-5 text-white" fill="currentColor" />
+                  ) : (
+                    <Play className="w-5 h-5 text-violet-600" fill="currentColor" />
+                  )}
+                </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[11px] font-semibold text-violet-600 uppercase">Up Next</span>
+                    {activeTimerId === nextTask.id ? (
+                      <span className="text-[11px] font-semibold text-emerald-600 uppercase flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Recording
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-violet-600 uppercase">Up Next</span>
+                    )}
                     <span className="text-[11px] text-slate-400">• {nextTask.time}</span>
                   </div>
                   <p className="text-[16px] font-semibold text-slate-900 truncate">{nextTask.title}</p>
+                  {activeTimerId === nextTask.id && (
+                    <p className="text-[20px] font-bold text-emerald-600 tabular-nums mt-1">{formatTimer(elapsedSeconds)}</p>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleCompleteTask(nextTask.id)}
-                  className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:bg-emerald-200 transition-colors"
-                >
-                  <Check className="w-5 h-5 text-emerald-600" />
-                </button>
+                {activeTimerId === nextTask.id ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => stopTimer(nextTask.id)}
+                      className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:bg-slate-200 transition-colors"
+                    >
+                      <Square className="w-4 h-4 text-slate-600" fill="currentColor" />
+                    </button>
+                    <button
+                      onClick={() => completeTimedTask(nextTask.id)}
+                      className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:bg-emerald-200 transition-colors"
+                    >
+                      <Check className="w-5 h-5 text-emerald-600" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleCompleteTask(nextTask.id)}
+                    className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:bg-emerald-200 transition-colors"
+                  >
+                    <Check className="w-5 h-5 text-emerald-600" />
+                  </button>
+                )}
               </div>
             </div>
-            <div className="flex border-t border-slate-100">
-              <button
-                onClick={() => handleMoveToTomorrow(nextTask.id)}
-                className="flex-1 py-2.5 text-[13px] font-medium text-slate-600 active:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-                Tomorrow
-              </button>
-              <div className="w-px bg-slate-100" />
-              <button
-                onClick={() => autoPlan()}
-                className="flex-1 py-2.5 text-[13px] font-medium text-violet-600 active:bg-violet-50 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                Auto Plan
-              </button>
-            </div>
+            {activeTimerId !== nextTask.id && (
+              <div className="flex border-t border-slate-100">
+                <button
+                  onClick={() => handleMoveToTomorrow(nextTask.id)}
+                  className="flex-1 py-2.5 text-[13px] font-medium text-slate-600 active:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  Tomorrow
+                </button>
+                <div className="w-px bg-slate-100" />
+                <button
+                  onClick={() => autoPlan()}
+                  className="flex-1 py-2.5 text-[13px] font-medium text-violet-600 active:bg-violet-50 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Auto Plan
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -577,60 +688,124 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
                   }
                 }}
               >
-                <button
-                  onClick={() => {
-                    if (swipedTaskId === block.id) {
-                      handleDeleteTask(block.id);
-                      setSwipedTaskId(null);
-                    } else {
-                      setExpandedTaskId(expandedTaskId === block.id ? null : block.id);
-                    }
-                  }}
-                  className="w-full p-4 text-left"
-                >
+                <div className="w-full p-4">
                   <div className="flex items-center gap-3">
-                    {/* Completion Toggle */}
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCompleteTask(block.id);
-                      }}
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        block.completed 
-                          ? 'bg-emerald-500 border-emerald-500' 
-                          : 'border-slate-300'
-                      }`}
-                    >
-                      {block.completed && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
+                    {/* Play/Completion Toggle */}
+                    {!block.completed ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (activeTimerId === block.id) {
+                            pauseTimer();
+                          } else if (activeTimerId === null) {
+                            startTimer(block.id);
+                          } else {
+                            stopTimer(activeTimerId);
+                            startTimer(block.id);
+                          }
+                        }}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-95 ${
+                          activeTimerId === block.id 
+                            ? 'bg-emerald-500 shadow-md shadow-emerald-500/30' 
+                            : 'bg-violet-100 hover:bg-violet-200'
+                        }`}
+                      >
+                        {activeTimerId === block.id ? (
+                          <Pause className="w-3.5 h-3.5 text-white" fill="currentColor" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 text-violet-600" fill="currentColor" />
+                        )}
+                      </button>
+                    ) : (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCompleteTask(block.id);
+                        }}
+                        className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 cursor-pointer"
+                      >
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
                     
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
+                    <button
+                      onClick={() => {
+                        if (swipedTaskId === block.id) {
+                          handleDeleteTask(block.id);
+                          setSwipedTaskId(null);
+                        } else {
+                          setExpandedTaskId(expandedTaskId === block.id ? null : block.id);
+                        }
+                      }}
+                      className="flex-1 min-w-0 text-left"
+                    >
                       <div className="flex items-center gap-2">
                         <h3 className={`text-[15px] font-medium ${block.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                           {block.title}
                         </h3>
                         {block.isFixed && <Lock className="w-3 h-3 text-slate-400" />}
+                        {activeTimerId === block.id && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <div className={`w-1.5 h-1.5 rounded-full ${getCategoryDot(block.category)}`} />
-                        <span className="text-[12px] text-slate-500">{block.time}</span>
-                        <span className="text-[12px] text-slate-400">• {formatDuration(block.durationMin)}</span>
+                        {activeTimerId === block.id ? (
+                          <span className="text-[13px] font-bold text-emerald-600 tabular-nums">{formatTimer(elapsedSeconds)}</span>
+                        ) : (
+                          <>
+                            <span className="text-[12px] text-slate-500">{block.time}</span>
+                            <span className="text-[12px] text-slate-400">• {formatDuration(block.durationMin)}</span>
+                          </>
+                        )}
                         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${getCategoryColor(block.category)}`}>
                           {block.category}
                         </span>
                       </div>
-                    </div>
+                    </button>
                     
-                    {/* Chevron */}
-                    <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${expandedTaskId === block.id ? 'rotate-90' : ''}`} />
+                    {/* Right Actions */}
+                    {activeTimerId === block.id ? (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            stopTimer(block.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center active:bg-slate-200"
+                        >
+                          <Square className="w-3 h-3 text-slate-600" fill="currentColor" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            completeTimedTask(block.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center active:bg-emerald-200"
+                        >
+                          <Check className="w-4 h-4 text-emerald-600" />
+                        </button>
+                      </div>
+                    ) : (
+                      <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${expandedTaskId === block.id ? 'rotate-90' : ''}`} />
+                    )}
                   </div>
-                </button>
+                </div>
                 
                 {/* Expanded Actions */}
-                {expandedTaskId === block.id && (
+                {expandedTaskId === block.id && activeTimerId !== block.id && (
                   <div className="px-4 pb-4 pt-0 fade-in">
                     <div className="flex gap-2 pt-2 border-t border-slate-100">
+                      {!block.completed && (
+                        <button
+                          onClick={() => startTimer(block.id)}
+                          className="flex-1 py-2 rounded-xl bg-violet-100 text-violet-700 text-[13px] font-medium active:bg-violet-200 transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <Play className="w-3.5 h-3.5" fill="currentColor" />
+                          Start
+                        </button>
+                      )}
                       <button
                         onClick={() => handleCompleteTask(block.id)}
                         className="flex-1 py-2 rounded-xl bg-emerald-100 text-emerald-700 text-[13px] font-medium active:bg-emerald-200 transition-colors"
