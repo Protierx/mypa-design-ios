@@ -1,178 +1,264 @@
 import {
-  ArrowLeft,
-  MoreVertical,
-  Trash2,
   CheckCircle,
   MessageSquare,
   Bell,
   Users,
-  Heart,
   Clock,
+  Check,
   X,
-  ChevronRight,
+  AlarmClock,
+  ExternalLink,
+  MoreHorizontal,
+  RotateCcw,
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface InboxScreenProps {
   onNavigate?: (screen: string) => void;
 }
 
+type TabType = "all" | "assignments" | "reminders" | "invites";
+type AssignmentStatus = "pending" | "accepted" | "declined";
+
+// Assignment data model
 interface Assignment {
   id: number;
   title: string;
-  assignedByName: string;
-  dueTime?: string;
-  status: "pending" | "accepted" | "completed" | "declined";
+  circleName: string;
+  fromUser: string;
+  dueTime: string;
+  createdAt: string;
+  status: AssignmentStatus;
+  unread: boolean;
 }
 
-type TabType = "all" | "messages" | "reminders" | "invites";
-
-interface NotificationItem {
+// Other inbox items
+interface InboxItem {
   id: number;
+  type: "reminder" | "invite" | "message";
   title: string;
-  subtitle?: string;
-  type: "message" | "reminder" | "invite" | "social";
+  subtitle: string;
+  from?: string;
   time: string;
-  isNew?: boolean;
+  isNew: boolean;
+}
+
+// Toast state
+interface Toast {
+  id: number;
+  message: string;
+  icon: "check" | "x";
+  undoAction: () => void;
 }
 
 export function InboxScreen({ onNavigate }: InboxScreenProps) {
   const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentStatus>("pending");
+  const [toast, setToast] = useState<Toast | null>(null);
   
-  // Assignments assigned to you
+  // Assignments with full data model
   const [assignments, setAssignments] = useState<Assignment[]>([
     {
       id: 1,
       title: "Review Q1 metrics",
-      assignedByName: "Alex",
+      circleName: "Work Team",
+      fromUser: "Alex",
       dueTime: "2:00 PM",
+      createdAt: "5m ago",
       status: "pending",
+      unread: true,
     },
     {
       id: 2,
       title: "Grocery run",
-      assignedByName: "Blake",
+      circleName: "Family",
+      fromUser: "Blake",
       dueTime: "6:00 PM",
+      createdAt: "15m ago",
       status: "pending",
-    },
-  ]);
-
-  const [items, setItems] = useState<NotificationItem[]>([
-    {
-      id: 1,
-      title: "Alice sent you a message",
-      subtitle: "Can we reschedule our call to Thursday?",
-      type: "message",
-      time: "10m ago",
-      isNew: true,
-    },
-    {
-      id: 2,
-      title: "Reminder: Take medication",
-      subtitle: "Daily 8:00 AM",
-      type: "reminder",
-      time: "1h ago",
+      unread: true,
     },
     {
       id: 3,
-      title: "Circle invite from Dev Team",
-      subtitle: "Join the Q1 planning circle",
+      title: "Book team dinner",
+      circleName: "Work Team",
+      fromUser: "Jordan",
+      dueTime: "Tomorrow",
+      createdAt: "1h ago",
+      status: "accepted",
+      unread: false,
+    },
+  ]);
+
+  // Other inbox items (reminders, invites, messages)
+  const [items, setItems] = useState<InboxItem[]>([
+    {
+      id: 101,
+      type: "reminder",
+      title: "Take medication",
+      subtitle: "Daily at 8:00 AM",
+      time: "1h ago",
+      isNew: false,
+    },
+    {
+      id: 102,
       type: "invite",
+      title: "Dev Team",
+      subtitle: "Alex invited you to join",
+      from: "Alex",
       time: "2h ago",
+      isNew: true,
+    },
+    {
+      id: 103,
+      type: "message",
+      title: "Message from Alice",
+      subtitle: "Can we reschedule our call to Thursday?",
+      from: "Alice",
+      time: "3h ago",
       isNew: true,
     },
   ]);
 
-  const [menuId, setMenuId] = useState<number | null>(null);
-  const [assignMenuId, setAssignMenuId] = useState<number | null>(null);
+  // Auto-dismiss toast after 5 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
-  const filtered = items.filter((it) =>
+  // Handle Accept assignment
+  const handleAccept = (id: number) => {
+    const assignment = assignments.find(a => a.id === id);
+    if (!assignment) return;
+
+    // Store previous state for undo
+    const previousStatus = assignment.status;
+    
+    // Update status
+    setAssignments(assignments.map(a => 
+      a.id === id ? { ...a, status: "accepted", unread: false } : a
+    ));
+
+    // Show toast with undo
+    setToast({
+      id: Date.now(),
+      message: `Accepted "${assignment.title}"`,
+      icon: "check",
+      undoAction: () => {
+        setAssignments(prev => prev.map(a => 
+          a.id === id ? { ...a, status: previousStatus, unread: true } : a
+        ));
+        setToast(null);
+      }
+    });
+  };
+
+  // Handle Can't (decline) assignment
+  const handleCant = (id: number) => {
+    const assignment = assignments.find(a => a.id === id);
+    if (!assignment) return;
+
+    const previousStatus = assignment.status;
+    
+    setAssignments(assignments.map(a => 
+      a.id === id ? { ...a, status: "declined", unread: false } : a
+    ));
+
+    setToast({
+      id: Date.now(),
+      message: `Marked Can't`,
+      icon: "x",
+      undoAction: () => {
+        setAssignments(prev => prev.map(a => 
+          a.id === id ? { ...a, status: previousStatus, unread: true } : a
+        ));
+        setToast(null);
+      }
+    });
+  };
+
+  // Handle Reconsider (move back to pending)
+  const handleReconsider = (id: number) => {
+    setAssignments(assignments.map(a => 
+      a.id === id ? { ...a, status: "pending", unread: true } : a
+    ));
+  };
+
+  // Handle Open assignment
+  const handleOpenAssignment = (id: number) => {
+    setAssignments(assignments.map(a => 
+      a.id === id ? { ...a, unread: false } : a
+    ));
+    // In real app: navigate to circle task detail
+  };
+
+  // Other item handlers
+  const handleJoin = (id: number) => {
+    setItems(items.filter((it) => it.id !== id));
+  };
+
+  const handleDeclineInvite = (id: number) => {
+    setItems(items.filter((it) => it.id !== id));
+  };
+
+  const handleOpen = (id: number) => {
+    setItems(items.map((it) => (it.id === id ? { ...it, isNew: false } : it)));
+  };
+
+  const handleSnooze = (id: number) => {
+    setItems(items.filter((it) => it.id !== id));
+  };
+
+  const handleDismiss = (id: number) => {
+    setItems(items.filter((it) => it.id !== id));
+  };
+
+  // Filter assignments by status
+  const filteredAssignments = assignments.filter(a => a.status === assignmentFilter);
+  const declinedCount = assignments.filter(a => a.status === "declined").length;
+
+  // Filter other items by tab
+  const filteredItems = items.filter((it) =>
     activeTab === "all"
       ? true
-      : activeTab === "messages"
-      ? it.type === "message"
       : activeTab === "reminders"
       ? it.type === "reminder"
       : activeTab === "invites"
       ? it.type === "invite"
-      : true
+      : false
   );
 
-  const markRead = (id: number) => {
-    setItems(items.map((it) => (it.id === id ? { ...it, isNew: false } : it)));
-    setMenuId(null);
-  };
+  // Count for "X new" badge - only pending assignments + new invites + new reminders
+  const pendingAssignmentCount = assignments.filter(a => a.status === "pending").length;
+  const newItemsCount = items.filter(i => i.isNew).length;
+  const newCount = pendingAssignmentCount + newItemsCount;
 
-  const remove = (id: number) => {
-    setItems(items.filter((it) => it.id !== id));
-    setMenuId(null);
-  };
-
-  const updateAssignmentStatus = (id: number, status: "accepted" | "completed" | "declined") => {
-    setAssignments(
-      assignments.map((a) => (a.id === id ? { ...a, status } : a))
-    );
-    setAssignMenuId(null);
-  };
-
-  const iconFor = (type: NotificationItem["type"]) => {
+  const iconFor = (type: InboxItem["type"]) => {
     switch (type) {
-      case "message":
-        return <MessageSquare className="w-5 h-5 text-blue-600" />;
       case "reminder":
         return <Bell className="w-5 h-5 text-amber-600" />;
       case "invite":
         return <Users className="w-5 h-5 text-purple-600" />;
-      case "social":
-        return <Heart className="w-5 h-5 text-pink-600" />;
+      case "message":
+        return <MessageSquare className="w-5 h-5 text-blue-600" />;
     }
   };
 
-  const iconBgFor = (type: NotificationItem["type"]) => {
+  const iconBgFor = (type: InboxItem["type"]) => {
     switch (type) {
-      case "message":
-        return "bg-blue-100";
       case "reminder":
         return "bg-amber-100";
       case "invite":
         return "bg-purple-100";
-      case "social":
-        return "bg-pink-100";
+      case "message":
+        return "bg-blue-100";
     }
   };
-
-  const getAssignmentStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-blue-500/10 text-blue-600 border-blue-500/20";
-      case "accepted":
-        return "bg-amber-500/10 text-amber-600 border-amber-500/20";
-      case "completed":
-        return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
-      case "declined":
-        return "bg-red-500/10 text-red-600 border-red-500/20";
-      default:
-        return "bg-slate-100 text-slate-600";
-    }
-  };
-
-  const getAssignmentStatusLabel = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "Pending";
-      case "accepted":
-        return "Accepted";
-      case "completed":
-        return "Done";
-      case "declined":
-        return "Declined";
-      default:
-        return status;
-    }
-  };
-
-  const newCount = items.filter(i => i.isNew).length;
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] pb-28 relative">
@@ -185,10 +271,6 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
           -webkit-backdrop-filter: blur(20px);
           border-radius: 16px;
         }
-        .ios-card:active {
-          transform: scale(0.98);
-          transition: transform 0.15s ease;
-        }
       `}</style>
 
       {/* Header */}
@@ -196,6 +278,7 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
         <div className="flex items-center justify-between mb-1">
           <div>
             <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Inbox</h1>
+            <p className="text-[13px] text-slate-500 mt-0.5">Incoming items needing your attention</p>
           </div>
           {newCount > 0 && (
             <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-full">
@@ -205,9 +288,9 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
           )}
         </div>
 
-        {/* Filter Tabs */}
+        {/* Main Filter Tabs */}
         <div className="flex gap-2 mt-3">
-          {(["all", "messages", "reminders", "invites"] as TabType[]).map((tab) => (
+          {(["all", "assignments", "reminders", "invites"] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -221,190 +304,378 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="px-4 space-y-4">
-        {/* Assigned to You Section */}
-        {assignments.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide">
-                Assigned to you
-              </h2>
-              <span className="text-[12px] font-medium text-slate-400">{assignments.length} tasks</span>
-            </div>
-            <div className="space-y-2.5">
-              {assignments.map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="ios-card p-4 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-md shadow-orange-500/20 flex-shrink-0">
-                        <Clock className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[15px] font-semibold text-slate-900">
-                          {assignment.title}
-                        </h3>
-                        <p className="text-[13px] text-slate-500 mt-0.5">
-                          From <span className="font-medium text-slate-600">{assignment.assignedByName}</span>
-                        </p>
-                        {assignment.dueTime && (
-                          <div className="flex items-center gap-1.5 mt-2">
-                            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${getAssignmentStatusColor(assignment.status)}`}>
-                              {getAssignmentStatusLabel(assignment.status)}
-                            </span>
-                            <span className="text-[12px] text-slate-400">• Due {assignment.dueTime}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="relative flex-shrink-0">
-                      <button
-                        onClick={() =>
-                          setAssignMenuId(
-                            assignMenuId === assignment.id ? null : assignment.id
-                          )
-                        }
-                        className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-400"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      {assignMenuId === assignment.id && (
-                        <div className="absolute right-0 top-10 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 min-w-[140px] overflow-hidden">
-                          {assignment.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() => updateAssignmentStatus(assignment.id, "accepted")}
-                                className="block w-full text-left px-4 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50 border-b border-slate-100"
-                              >
-                                Accept
-                              </button>
-                              <button
-                                onClick={() => updateAssignmentStatus(assignment.id, "declined")}
-                                className="block w-full text-left px-4 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50"
-                              >
-                                Decline
-                              </button>
-                            </>
-                          )}
-                          {assignment.status === "accepted" && (
-                            <button
-                              onClick={() => updateAssignmentStatus(assignment.id, "completed")}
-                              className="block w-full text-left px-4 py-3 text-[14px] font-medium text-emerald-600 hover:bg-emerald-50"
-                            >
-                              Mark done
-                            </button>
-                          )}
-                          {(assignment.status === "completed" || assignment.status === "declined") && (
-                            <button
-                              onClick={() => {
-                                setAssignments(assignments.filter((a) => a.id !== assignment.id));
-                                setAssignMenuId(null);
-                              }}
-                              className="block w-full text-left px-4 py-3 text-[14px] font-medium text-red-600 hover:bg-red-50"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Assignment Status Filter - Only show when on Assignments tab */}
+        {activeTab === "assignments" && (
+          <div className="mt-3 p-1 bg-slate-200/60 rounded-full flex gap-1.5">
+            {(["pending", "accepted", "declined"] as AssignmentStatus[]).map((status) => (
+              <button
+                key={status}
+                onClick={() => setAssignmentFilter(status)}
+                className={`flex-1 py-2 px-3 rounded-full text-[13px] font-semibold transition-all ${
+                  assignmentFilter === status
+                    ? "bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-sm"
+                    : "text-slate-600"
+                }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {status === "pending" && assignments.filter(a => a.status === "pending").length > 0 && (
+                  <span className="ml-1.5 text-[11px] opacity-70">
+                    ({assignments.filter(a => a.status === "pending").length})
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         )}
+      </div>
 
-        {/* Regular Inbox Items */}
-        <div>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide">
-              Notifications
-            </h2>
-          </div>
-          
-          {filtered.length === 0 ? (
-            <div className="ios-card p-8 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-emerald-500" />
-              </div>
-              <h3 className="text-[17px] font-semibold text-slate-900 mb-1">
-                You're all caught up
-              </h3>
-              <p className="text-[14px] text-slate-500 max-w-[200px]">
-                New messages and updates will appear here
-              </p>
-            </div>
-          ) : (
-            <div className="ios-card overflow-hidden shadow-sm">
-              {filtered.map((it, index) => (
-                <div
-                  key={it.id}
-                  className={`p-4 flex items-start gap-3 ${
-                    index < filtered.length - 1 ? "border-b border-slate-100" : ""
-                  } ${it.isNew ? "bg-purple-50/50" : ""}`}
-                >
-                  <div className={`w-11 h-11 rounded-2xl ${iconBgFor(it.type)} flex items-center justify-center flex-shrink-0`}>
-                    {iconFor(it.type)}
+      <div className="px-4 space-y-3">
+        {/* Assignments Section */}
+        {(activeTab === "all" || activeTab === "assignments") && (
+          <>
+            {activeTab === "all" ? (
+              // Show only pending assignments in "All" tab
+              assignments.filter(a => a.status === "pending").length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide px-1">
+                    Assignments
+                  </h2>
+                  {assignments.filter(a => a.status === "pending").map((assignment) => (
+                    <AssignmentCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      onAccept={handleAccept}
+                      onCant={handleCant}
+                      onOpen={handleOpenAssignment}
+                      onReconsider={handleReconsider}
+                    />
+                  ))}
+                </div>
+              )
+            ) : (
+              // Show filtered assignments in "Assignments" tab
+              <>
+                {filteredAssignments.length === 0 ? (
+                  <div className="ios-card p-8 flex flex-col items-center justify-center text-center shadow-sm">
+                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                      <Clock className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-[17px] font-semibold text-slate-900 mb-1">
+                      No {assignmentFilter} assignments
+                    </h3>
+                    <p className="text-[14px] text-slate-500 max-w-[220px]">
+                      {assignmentFilter === "pending" 
+                        ? "New assignments will appear here" 
+                        : assignmentFilter === "accepted"
+                        ? "Assignments you accept will appear here"
+                        : "Assignments you decline will appear here"}
+                    </p>
                   </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredAssignments.map((assignment) => (
+                      <AssignmentCard
+                        key={assignment.id}
+                        assignment={assignment}
+                        onAccept={handleAccept}
+                        onCant={handleCant}
+                        onOpen={handleOpenAssignment}
+                        onReconsider={handleReconsider}
+                      />
+                    ))}
+                  </div>
+                )}
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[15px] font-semibold text-slate-900">
-                          {it.title}
-                        </h3>
-                        {it.subtitle && (
-                          <p className="text-[13px] text-slate-500 mt-0.5 truncate">
-                            {it.subtitle}
+                {/* Show "View declined" link when on Pending filter and there are declined items */}
+                {assignmentFilter === "pending" && declinedCount > 0 && (
+                  <button
+                    onClick={() => setAssignmentFilter("declined")}
+                    className="w-full text-center py-3 text-[13px] text-slate-500 hover:text-slate-700"
+                  >
+                    View declined ({declinedCount})
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Other Items Section (Reminders, Invites, Messages) */}
+        {(activeTab === "all" || activeTab === "reminders" || activeTab === "invites") && (
+          <>
+            {activeTab === "all" && filteredItems.length > 0 && (
+              <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide px-1 mt-4">
+                Notifications
+              </h2>
+            )}
+            
+            {filteredItems.length === 0 && activeTab !== "all" && activeTab !== "assignments" ? (
+              <div className="ios-card p-8 flex flex-col items-center justify-center text-center shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+                  <CheckCircle className="w-8 h-8 text-emerald-500" />
+                </div>
+                <h3 className="text-[17px] font-semibold text-slate-900 mb-1">
+                  All caught up
+                </h3>
+                <p className="text-[14px] text-slate-500 max-w-[220px]">
+                  New {activeTab} will appear here
+                </p>
+              </div>
+            ) : (
+              filteredItems.map((item) => (
+                <div
+                  key={item.id}
+                  className={`ios-card p-4 shadow-sm ${item.isNew ? "ring-2 ring-purple-500/20" : ""}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-11 h-11 rounded-2xl ${iconBgFor(item.type)} flex items-center justify-center flex-shrink-0`}>
+                      {iconFor(item.type)}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-[15px] font-semibold text-slate-900 truncate">
+                              {item.title}
+                            </h3>
+                            {item.isNew && (
+                              <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-[13px] text-slate-500 mt-0.5">
+                            {item.subtitle}
                           </p>
-                        )}
+                        </div>
+                        <span className="text-[11px] text-slate-400 flex-shrink-0">{item.time}</span>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {it.isNew && (
-                          <div className="w-2 h-2 rounded-full bg-purple-500" />
+
+                      <div className="flex items-center gap-2 mt-3">
+                        {item.type === "invite" && (
+                          <>
+                            <button
+                              onClick={() => handleJoin(item.id)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-purple-500 text-white rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                            >
+                              <Users className="w-4 h-4" />
+                              Join
+                            </button>
+                            <button
+                              onClick={() => handleDeclineInvite(item.id)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                            >
+                              Decline
+                            </button>
+                          </>
                         )}
-                        <span className="text-[12px] text-slate-400">{it.time}</span>
+
+                        {item.type === "reminder" && (
+                          <>
+                            <button
+                              onClick={() => handleOpen(item.id)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              Open
+                            </button>
+                            <button
+                              onClick={() => handleSnooze(item.id)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                            >
+                              <AlarmClock className="w-4 h-4" />
+                              Snooze
+                            </button>
+                          </>
+                        )}
+
+                        {item.type === "message" && (
+                          <>
+                            <button
+                              onClick={() => handleOpen(item.id)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 text-white rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              Open
+                            </button>
+                            <button
+                              onClick={() => handleDismiss(item.id)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                            >
+                              Dismiss
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  <div className="relative flex-shrink-0">
-                    <button
-                      onClick={() => setMenuId(menuId === it.id ? null : it.id)}
-                      className="p-1.5 rounded-full hover:bg-slate-100 transition-colors text-slate-400"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-
-                    {menuId === it.id && (
-                      <div className="absolute right-0 top-8 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 min-w-[140px] overflow-hidden">
-                        {it.isNew && (
-                          <button
-                            onClick={() => markRead(it.id)}
-                            className="block w-full text-left px-4 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50 border-b border-slate-100"
-                          >
-                            Mark as read
-                          </button>
-                        )}
-                        <button
-                          onClick={() => remove(it.id)}
-                          className="block w-full text-left px-4 py-3 text-[14px] font-medium text-red-600 hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
-              ))}
+              ))
+            )}
+          </>
+        )}
+
+        {/* Empty state for All tab */}
+        {activeTab === "all" && 
+         assignments.filter(a => a.status === "pending").length === 0 && 
+         filteredItems.length === 0 && (
+          <div className="ios-card p-8 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-emerald-500" />
             </div>
-          )}
+            <h3 className="text-[17px] font-semibold text-slate-900 mb-1">
+              You're all caught up
+            </h3>
+            <p className="text-[14px] text-slate-500 max-w-[220px]">
+              New assignments, reminders, and invites will appear here
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-32 left-4 right-4 z-[100] flex justify-center pointer-events-none">
+          <div className="bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 pointer-events-auto max-w-[340px]">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+              toast.icon === "check" ? "bg-emerald-500" : "bg-red-500"
+            }`}>
+              {toast.icon === "check" ? (
+                <Check className="w-4 h-4 text-white" />
+              ) : (
+                <X className="w-4 h-4 text-white" />
+              )}
+            </div>
+            <span className="text-[14px] font-medium flex-1">{toast.message}</span>
+            <button
+              onClick={toast.undoAction}
+              className="text-[14px] font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Assignment Card Component
+interface AssignmentCardProps {
+  assignment: Assignment;
+  onAccept: (id: number) => void;
+  onCant: (id: number) => void;
+  onOpen: (id: number) => void;
+  onReconsider: (id: number) => void;
+}
+
+function AssignmentCard({ assignment, onAccept, onCant, onOpen, onReconsider }: AssignmentCardProps) {
+  const [showMenu, setShowMenu] = useState(false);
+
+  return (
+    <div className={`ios-card p-4 shadow-sm ${assignment.unread ? "ring-2 ring-purple-500/20" : ""}`}>
+      <div className="flex items-start gap-3">
+        {/* Icon */}
+        <div className="w-11 h-11 rounded-2xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+          <Clock className="w-5 h-5 text-orange-600" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-[15px] font-semibold text-slate-900 truncate">
+                  {assignment.title}
+                </h3>
+                {assignment.unread && (
+                  <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />
+                )}
+              </div>
+              <p className="text-[13px] text-slate-500 mt-0.5">
+                Circle: {assignment.circleName}
+              </p>
+              <p className="text-[12px] text-slate-400 mt-1">
+                From <span className="font-medium text-slate-500">{assignment.fromUser}</span>
+                <span> · Due {assignment.dueTime}</span>
+              </p>
+            </div>
+            <span className="text-[11px] text-slate-400 flex-shrink-0">{assignment.createdAt}</span>
+          </div>
+
+          {/* Actions based on status */}
+          <div className="flex items-center gap-2 mt-3">
+            {assignment.status === "pending" && (
+              <>
+                <button
+                  onClick={() => onAccept(assignment.id)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                >
+                  <Check className="w-4 h-4" />
+                  Accept
+                </button>
+                <button
+                  onClick={() => onCant(assignment.id)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                >
+                  <X className="w-4 h-4" />
+                  Can't
+                </button>
+              </>
+            )}
+
+            {assignment.status === "accepted" && (
+              <>
+                <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-[12px] font-semibold">
+                  Accepted
+                </span>
+                <button
+                  onClick={() => onOpen(assignment.id)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open
+                </button>
+                <div className="relative ml-auto">
+                  <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="p-2 rounded-full hover:bg-slate-100 text-slate-400"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                  {showMenu && (
+                    <div className="absolute right-0 top-10 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 min-w-[160px] overflow-hidden">
+                      <button
+                        onClick={() => {
+                          onReconsider(assignment.id);
+                          setShowMenu(false);
+                        }}
+                        className="flex items-center gap-2 w-full text-left px-4 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Move to Pending
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {assignment.status === "declined" && (
+              <>
+                <span className="px-3 py-1.5 bg-red-100 text-red-700 rounded-full text-[12px] font-semibold">
+                  Declined
+                </span>
+                <button
+                  onClick={() => onReconsider(assignment.id)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-[13px] font-semibold active:scale-95 transition-transform"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reconsider
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
