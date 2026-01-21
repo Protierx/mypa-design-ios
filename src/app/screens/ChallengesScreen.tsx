@@ -20,7 +20,8 @@ import {
   ChevronDown,
   X,
   Check,
-  Users
+  Users,
+  Calendar
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 
@@ -307,6 +308,27 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
               {tab.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Context-Aware Quick Access */}
+      <div className="px-4 mb-4">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onNavigate?.('plan')}
+            className="ios-glass rounded-xl p-2.5 shadow-sm flex items-center gap-2 active:scale-95 transition-transform hover:bg-blue-50"
+          >
+            <Calendar className="w-4 h-4 text-blue-600" />
+            <p className="text-[12px] font-semibold text-slate-900">My Plan</p>
+          </button>
+          
+          <button
+            onClick={() => onNavigate?.('wallet')}
+            className="ios-glass rounded-xl p-2.5 shadow-sm flex items-center gap-2 active:scale-95 transition-transform hover:bg-emerald-50"
+          >
+            <Zap className="w-4 h-4 text-emerald-600" />
+            <p className="text-[12px] font-semibold text-slate-900">View Rewards</p>
+          </button>
         </div>
       </div>
 

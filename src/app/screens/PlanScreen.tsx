@@ -1,59 +1,202 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Clock, MoreVertical, Lock, ChevronRight, CheckCircle2, Calendar as CalendarIcon, Sparkles, Play, Pause, Square, Target, Trash2, ArrowRight, Check } from "lucide-react";
+import { Plus, Clock, ChevronRight, Calendar as CalendarIcon, Sparkles, Play, Pause, Square, Trash2, Check, Mic, MicOff, ChevronDown, RotateCcw, ArrowRight, Zap, Target } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { Calendar } from "../components/ui/calendar";
-import { MYPAOrb } from "../components/MYPAOrb";
 
 interface PlanScreenProps {
   onNavigate?: (screen: string) => void;
 }
 
+interface Task {
+  id: number;
+  date: string;
+  time: string;
+  duration: string;
+  durationMin: number;
+  title: string;
+  category: string;
+  priority: 'High' | 'Normal' | 'Low';
+  completed: boolean;
+  isFixed: boolean;
+}
+
+interface FocusSession {
+  id: number;
+  taskId: number;
+  taskTitle: string;
+  category: string;
+  date: string;
+  startTime: string;
+  elapsedSeconds: number;
+  targetSeconds: number;
+  percentComplete: number;
+  wasCompleted: boolean;
+  wasAbandoned: boolean;
+}
+
+interface FocusStats {
+  totalSessions: number;
+  completedSessions: number;
+  abandonedSessions: number;
+  totalFocusMinutes: number;
+  currentStreak: number;
+  bestStreak: number;
+  averageCompletion: number;
+  lastSessionDate: string | null;
+}
+
+// Helper to get focus sessions from localStorage
+const getStoredSessions = (): FocusSession[] => {
+  try {
+    const stored = localStorage.getItem('focusSessions');
+    if (stored) return JSON.parse(stored);
+  } catch (e) {
+    console.error('Error reading stored sessions', e);
+  }
+  return [];
+};
+
+// Helper to save sessions to localStorage
+const saveSessionsToStorage = (sessions: FocusSession[]) => {
+  try {
+    localStorage.setItem('focusSessions', JSON.stringify(sessions));
+  } catch (e) {
+    console.error('Error saving sessions', e);
+  }
+};
+
+// Helper to get focus stats from localStorage
+const getStoredStats = (): FocusStats => {
+  try {
+    const stored = localStorage.getItem('focusStats');
+    if (stored) return JSON.parse(stored);
+  } catch (e) {
+    console.error('Error reading stored stats', e);
+  }
+  return {
+    totalSessions: 0,
+    completedSessions: 0,
+    abandonedSessions: 0,
+    totalFocusMinutes: 0,
+    currentStreak: 0,
+    bestStreak: 0,
+    averageCompletion: 0,
+    lastSessionDate: null,
+  };
+};
+
+// Helper to save stats to localStorage
+const saveStatsToStorage = (stats: FocusStats) => {
+  try {
+    localStorage.setItem('focusStats', JSON.stringify(stats));
+  } catch (e) {
+    console.error('Error saving stats', e);
+  }
+};
+
+// Helper to get tasks from localStorage
+const getStoredTasks = (): Task[] | null => {
+  try {
+    const stored = localStorage.getItem('planTasks');
+    if (stored) return JSON.parse(stored);
+  } catch (e) {
+    console.error('Error reading stored tasks', e);
+  }
+  return null;
+};
+
+// Helper to save tasks to localStorage
+const saveTasksToStorage = (tasks: Task[]) => {
+  try {
+    localStorage.setItem('planTasks', JSON.stringify(tasks));
+  } catch (e) {
+    console.error('Error saving tasks', e);
+  }
+};
+
 export function PlanScreen({ onNavigate }: PlanScreenProps) {
-  const [timeBlocks, setTimeBlocks] = useState(() => {
+  const [tasks, setTasks] = useState<Task[]>(() => {
     const todayStr = new Date().toISOString().split('T')[0];
+    const storedTasks = getStoredTasks();
+    if (storedTasks && storedTasks.length > 0) return storedTasks;
+    
     return [
-      { id: 1, date: todayStr, time: '9:00 AM', duration: '1h', durationMin: 60, durationMax: 60, title: 'Team standup', category: 'Work', isOverdue: false, isFixed: true, priority: 'High' as const, completed: true },
-      { id: 2, date: todayStr, time: '11:00 AM', duration: '2h', durationMin: 120, durationMax: 120, title: 'Deep work: Design review', category: 'Work', isOverdue: false, isFixed: false, priority: 'Normal' as const, completed: true },
-      { id: 3, date: todayStr, time: '2:00 PM', duration: '30m', durationMin: 30, durationMax: 30, title: 'Lunch break', category: 'Personal', isOverdue: false, isFixed: false, priority: 'Low' as const, completed: false },
-      { id: 4, date: todayStr, time: '3:00 PM', duration: '1h', durationMin: 60, durationMax: 60, title: 'Team sync', category: 'Work', isOverdue: true, isFixed: true, priority: 'High' as const, completed: false },
-      { id: 5, date: todayStr, time: '5:00 PM', duration: '45m', durationMin: 45, durationMax: 45, title: 'Gym session', category: 'Health', isOverdue: false, isFixed: false, priority: 'Low' as const, completed: false },
+      { id: 1, date: todayStr, time: '9:00 AM', duration: '30m', durationMin: 30, title: 'Morning planning', category: 'Personal', priority: 'Normal', completed: true, isFixed: false },
+      { id: 2, date: todayStr, time: '10:00 AM', duration: '1h', durationMin: 60, title: 'Review Q1 metrics', category: 'Work', priority: 'High', completed: false, isFixed: false },
+      { id: 3, date: todayStr, time: '2:00 PM', duration: '45m', durationMin: 45, title: 'Gym session', category: 'Health', priority: 'Normal', completed: false, isFixed: true },
     ];
   });
 
+  // UI State
   const [isAdding, setIsAdding] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('Personal');
-  const [newDuration, setNewDuration] = useState('30m');
-  const [newDurationMin, setNewDurationMin] = useState(30);
-  const [newDurationMax, setNewDurationMax] = useState(30);
-  const [newPriority, setNewPriority] = useState<'High' | 'Normal' | 'Low'>('Normal');
-  const [newFixed, setNewFixed] = useState(false);
-
-  const [showMonthView, setShowMonthView] = useState(false);
-  const [visibleMonth, setVisibleMonth] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [openActionMenuId, setOpenActionMenuId] = useState<number | null>(null);
-  const [showSmartFixMenu, setShowSmartFixMenu] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
-  const [previousState, setPreviousState] = useState<typeof timeBlocks | null>(null);
-  const [autoplanSummary, setAutoplanSummary] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editField, setEditField] = useState<'time' | 'duration' | 'priority' | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [showAutoplanConfirm, setShowAutoplanConfirm] = useState(false);
-  const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
-  const [swipedTaskId, setSwipedTaskId] = useState<number | null>(null);
-  const touchStartX = useRef<number>(0);
+  // Swipe state
+  const [swipeStates, setSwipeStates] = useState<Record<number, number>>({});
+  const touchStartX = useRef<Record<number, number>>({});
+  const touchStartY = useRef<Record<number, number>>({});
   
   // Timer state
   const [activeTimerId, setActiveTimerId] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [timerStartTime, setTimerStartTime] = useState<Date | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Focus session tracking
+  const [focusSessions, setFocusSessions] = useState<FocusSession[]>(getStoredSessions);
+  const [focusStats, setFocusStats] = useState<FocusStats>(getStoredStats);
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [showSessionSummary, setShowSessionSummary] = useState<FocusSession | null>(null);
+  const sessionStartTime = useRef<string | null>(null);
 
-  // Timer effect
+  // New task state
+  const [newTitle, setNewTitle] = useState('');
+  const [newCategory, setNewCategory] = useState('Personal');
+  const [newDuration, setNewDuration] = useState('30m');
+
+  // Check for pending tasks from Brain Dump
   useEffect(() => {
-    if (activeTimerId !== null) {
+    const checkForNewTasks = () => {
+      try {
+        const pendingTasks = localStorage.getItem('pendingPlanTasks');
+        if (pendingTasks) {
+          const pending = JSON.parse(pendingTasks);
+          if (pending && pending.length > 0) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const newTasks = pending.map((task: any, index: number) => ({
+              id: Date.now() + index,
+              date: todayStr,
+              time: task.suggestedTime || '10:00 AM',
+              duration: task.estimatedTime || '30m',
+              durationMin: parseDuration(task.estimatedTime || '30m'),
+              title: task.title,
+              category: mapCategory(task.aiCategory),
+              priority: mapPriority(task.aiPriority),
+              completed: false,
+              isFixed: false,
+            }));
+            setTasks(prev => [...prev, ...newTasks]);
+            localStorage.removeItem('pendingPlanTasks');
+          }
+        }
+      } catch (e) {
+        console.error('Error checking for new tasks', e);
+      }
+    };
+    checkForNewTasks();
+    const interval = setInterval(checkForNewTasks, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Save tasks whenever they change
+  useEffect(() => {
+    saveTasksToStorage(tasks);
+  }, [tasks]);
+
+  // Timer effect - only runs when recording
+  useEffect(() => {
+    if (activeTimerId !== null && isRecording) {
       timerRef.current = setInterval(() => {
         setElapsedSeconds(prev => prev + 1);
       }, 1000);
@@ -64,88 +207,31 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
       }
     }
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [activeTimerId]);
+  }, [activeTimerId, isRecording]);
 
-  const startTimer = (taskId: number) => {
-    setActiveTimerId(taskId);
-    setElapsedSeconds(0);
-    setTimerStartTime(new Date());
-  };
-
-  const pauseTimer = () => {
-    setActiveTimerId(null);
-  };
-
-  const resumeTimer = (taskId: number) => {
-    setActiveTimerId(taskId);
-  };
-
-  const stopTimer = (taskId: number) => {
-    setActiveTimerId(null);
-    setElapsedSeconds(0);
-    setTimerStartTime(null);
-  };
-
-  const completeTimedTask = (taskId: number) => {
-    handleCompleteTask(taskId);
-    stopTimer(taskId);
-  };
-
-  const formatTimer = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    if (hrs > 0) {
-      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  // Helpers
+  const parseDuration = (dur: string): number => {
+    if (dur.includes('h')) {
+      const parts = dur.split('h');
+      return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
     }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return parseInt(dur) || 30;
   };
 
-  // Computed values
-  const completedCount = timeBlocks.filter(b => b.completed).length;
-  const totalCount = timeBlocks.length;
-  const totalMinutes = timeBlocks.reduce((sum, b) => sum + b.durationMin, 0);
-  const completedMinutes = timeBlocks.filter(b => b.completed).reduce((sum, b) => sum + b.durationMin, 0);
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const nextTask = timeBlocks.find(b => !b.completed);
-
-  
-  // Capacity planning helpers
-  const FREE_TIME_MINUTES = 9 * 60; // 9am-6pm = 9 hours = 540 minutes
-  
-  const getCapacityForDate = (dateStr: string) => {
-    const tasksForDate = timeBlocks.filter(b => b.date === dateStr && !b.completed);
-    const plannedMinutes = tasksForDate.reduce((sum, task) => sum + (task.durationMin || parseDurationToMinutes(task.duration)), 0);
-    const difference = FREE_TIME_MINUTES - plannedMinutes;
-    return {
-      free: FREE_TIME_MINUTES,
-      planned: plannedMinutes,
-      difference,
-      isOverCapacity: plannedMinutes > FREE_TIME_MINUTES
+  const mapCategory = (cat?: string): string => {
+    const map: Record<string, string> = {
+      work: 'Work', health: 'Health', learning: 'Learning',
+      finance: 'Finance', social: 'Social', home: 'Home'
     };
+    return map[cat || ''] || 'Personal';
   };
 
-  const getSmartFixSuggestion = (dateStr: string) => {
-    const tasksForDate = timeBlocks.filter(b => b.date === dateStr && !b.completed && !b.isFixed);
-    if (tasksForDate.length === 0) return null;
-    
-    // Sort by priority: Low → Normal → High (we want to move/split the least important)
-    const sortedByPriority = [...tasksForDate].sort((a, b) => {
-      const priorityOrder = { Low: 0, Normal: 1, High: 2 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
-    });
-    
-    const candidate = sortedByPriority[0];
-    if (!candidate) return null;
-    
-    return {
-      task: candidate,
-      action: 'move' // 'move' to tomorrow or 'split' into smaller pieces
-    };
+  const mapPriority = (pri?: string): 'High' | 'Normal' | 'Low' => {
+    if (pri === 'urgent' || pri === 'important') return 'High';
+    if (pri === 'low') return 'Low';
+    return 'Normal';
   };
 
   const formatDuration = (min: number) => {
@@ -156,727 +242,834 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
     return `${m}m`;
   };
 
-  const formatDurationRange = (min: number, max: number) => {
-    if (min === max) return formatDuration(min);
-    return `${formatDuration(min)}–${formatDuration(max)}`;
+  const formatTimer = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getCategoryDot = (category: string) => {
-    switch (category) {
-      case 'Work': return 'bg-blue-500';
-      case 'Health': return 'bg-emerald-500';
-      case 'Personal': return 'bg-purple-500';
-      default: return 'bg-slate-400';
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Work':
-        return 'bg-blue-100 text-blue-700';
-      case 'Health':
-        return 'bg-green-100 text-green-700';
-      case 'Personal':
-        return 'bg-purple-100 text-purple-700';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
-  };
-
-  const formatDate = (d: Date) => d.toISOString().split('T')[0];
-
-  const parseDurationToMinutes = (dur: string) => {
-    if (!dur) return 0;
-    if (dur.includes('h')) return parseFloat(dur) * 60;
-    if (dur.includes('m')) return parseFloat(dur.replace('m',''));
-    return 0;
-  };
-
-  const timeStringToDate = (timeStr: string) => {
-    const [time, ampm] = timeStr.split(' ');
-    const [hh, mm] = time.split(':').map(Number);
-    let h = hh % 12;
-    if (ampm === 'PM') h += 12;
-    const d = new Date();
-    d.setHours(h, mm, 0, 0);
-    return d;
-  };
-
-  const formatCurrentTime = () => {
-    const d = new Date();
-    const hours = d.getHours();
-    const minutes = d.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const h = ((hours + 11) % 12) + 1; // convert to 1-12
-    const mm = minutes < 10 ? `0${minutes}` : minutes;
-    return `${h}:${mm} ${ampm}`;
-  };
-
-  const handleAdd = () => {
-    if (!newTitle.trim()) return;
-    const dateForBlock = selectedDate ? formatDate(selectedDate) : formatDate(new Date());
-    const newBlock = {
-      id: Date.now(),
-      date: dateForBlock,
-      time: formatCurrentTime(),
-      duration: newDuration,
-      durationMin: newDurationMin,
-      durationMax: newDurationMax,
-      title: newTitle.trim(),
-      category: newCategory || 'Personal',
-      isOverdue: false,
-      isFixed: newFixed,
-      priority: newPriority,
-      completed: false,
+  const getCategoryStyle = (category: string) => {
+    const styles: Record<string, { bg: string; text: string; dot: string }> = {
+      Work: { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500' },
+      Health: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+      Personal: { bg: 'bg-violet-100', text: 'text-violet-700', dot: 'bg-violet-500' },
+      Learning: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
     };
-    setTimeBlocks(prev => [newBlock, ...prev]);
-    setNewTitle('');
-    setNewCategory('');
-    setNewDuration('30m');
-    setNewDurationMin(30);
-    setNewDurationMax(30);
-    setNewPriority('Normal');
-    setNewFixed(false);
-    setIsAdding(false);
-    setSelectedDate(null);
+    return styles[category] || styles.Personal;
   };
 
-  const handleCancel = () => {
-    setIsAdding(false);
-    setNewTitle('');
-    setNewCategory('');
-    setNewDuration('30m');
-    setNewDurationMin(30);
-    setNewDurationMax(30);
-    setNewPriority('Normal');
-    setNewFixed(false);
-    setSelectedDate(null);
+  // Computed
+  const todayStr = selectedDate.toISOString().split('T')[0];
+  const todayTasks = tasks.filter(t => t.date === todayStr);
+  const completedCount = todayTasks.filter(t => t.completed).length;
+  const totalCount = todayTasks.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const nextTask = todayTasks.find(t => !t.completed);
+  const totalMinutes = todayTasks.reduce((sum, t) => sum + t.durationMin, 0);
+  const completedMinutes = todayTasks.filter(t => t.completed).reduce((sum, t) => sum + t.durationMin, 0);
+
+  // Swipe handlers
+  const handleTouchStart = (taskId: number, e: React.TouchEvent) => {
+    touchStartX.current[taskId] = e.touches[0].clientX;
+    touchStartY.current[taskId] = e.touches[0].clientY;
   };
 
-  const autoPlan = () => {
-    const now = new Date();
-    const todayStr = formatDate(new Date());
+  const handleTouchMove = (taskId: number, e: React.TouchEvent) => {
+    const startX = touchStartX.current[taskId];
+    const startY = touchStartY.current[taskId];
+    if (startX === undefined) return;
 
-    // Save state for undo
-    setPreviousState(JSON.parse(JSON.stringify(timeBlocks)));
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - startX;
+    const diffY = Math.abs(currentY - startY);
 
-    // Fixed events: never move
-    const fixedEvents = timeBlocks.filter(b => b.date === todayStr && b.isFixed);
+    // Only allow horizontal swipe if not scrolling vertically
+    if (diffY > 30) return;
 
-    // Flexible slots: available time periods (non-fixed tasks that could be rearranged)
-    const flexibleSlots = timeBlocks
-      .filter(b => b.date === todayStr && !b.isFixed)
-      .sort((a, b) => timeStringToDate(a.time).getTime() - timeStringToDate(b.time).getTime());
+    // Clamp swipe between -100 (delete) and 100 (complete)
+    const clampedDiff = Math.max(-100, Math.min(100, diffX));
+    setSwipeStates(prev => ({ ...prev, [taskId]: clampedDiff }));
+  };
 
-    if (flexibleSlots.length === 0) {
-      setAutoplanSummary('No flexible tasks to auto-plan for today.');
-      setShowAutoplanConfirm(true);
-      return;
+  const handleTouchEnd = (taskId: number) => {
+    const swipeDistance = swipeStates[taskId] || 0;
+    
+    if (swipeDistance > 60) {
+      // Swipe right - Complete
+      handleComplete(taskId);
+    } else if (swipeDistance < -60) {
+      // Swipe left - Delete
+      handleDelete(taskId);
     }
+    
+    // Reset swipe state
+    setSwipeStates(prev => ({ ...prev, [taskId]: 0 }));
+    delete touchStartX.current[taskId];
+    delete touchStartY.current[taskId];
+  };
 
-    // Separate flexible tasks by priority, keeping original order within each group
-    const priorityGroups = {
-      High: flexibleSlots.filter(t => t.priority === 'High'),
-      Normal: flexibleSlots.filter(t => t.priority === 'Normal'),
-      Low: flexibleSlots.filter(t => t.priority === 'Low'),
-    };
-
-    // Build the ordered task list: High → Normal → Low (respecting original order within each priority)
-    const orderedTasks = [...priorityGroups.High, ...priorityGroups.Normal, ...priorityGroups.Low];
-
-    // Assign ordered tasks to earliest available slots
-    const assignments: Array<{ taskId: number; time: string }> = [];
-    const exceeding: typeof orderedTasks = [];
-
-    for (let i = 0; i < orderedTasks.length; i++) {
-      if (i < flexibleSlots.length) {
-        assignments.push({ taskId: orderedTasks[i].id, time: flexibleSlots[i].time });
-      } else {
-        exceeding.push(orderedTasks[i]);
-      }
+  // Task actions
+  const handleComplete = (id: number) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    if (activeTimerId === id) {
+      setActiveTimerId(null);
+      setElapsedSeconds(0);
     }
-
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = formatDate(tomorrow);
-
-    // Apply the rearrangement to state
-    const newState = timeBlocks.map(b => {
-      // Fixed items never move
-      if (b.isFixed) return b;
-
-      // Reassign flexible task to new slot time
-      const assign = assignments.find(a => a.taskId === b.id);
-      if (assign) return { ...b, time: assign.time };
-
-      // Tasks that don't fit go to tomorrow
-      if (exceeding.find(e => e.id === b.id)) return { ...b, date: tomorrowStr };
-
-      return b;
-    });
-
-    setTimeBlocks(newState);
-
-    // Summary: count kept High priority and tasks moved
-    const keptHigh = assignments.filter(a => {
-      const t = orderedTasks.find(t => t.id === a.taskId);
-      return t && t.priority === 'High';
-    }).length;
-    const movedCount = exceeding.length;
-
-    const summary = `Reordered: High → Normal → Low.\nKept ${keptHigh} High priority tasks. Moved ${movedCount} tasks to tomorrow.`;
-    setAutoplanSummary(summary);
-    setShowAutoplanConfirm(true);
   };
 
-  const handleUndoAutoplan = () => {
-    if (previousState) {
-      setTimeBlocks(previousState);
-      setPreviousState(null);
+  const handleDelete = (id: number) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    if (activeTimerId === id) {
+      setActiveTimerId(null);
+      setElapsedSeconds(0);
     }
-    setAutoplanSummary(null);
-    setShowAutoplanConfirm(false);
-  };
-
-  const handleAcceptAutoplan = () => {
-    setAutoplanSummary(null);
-    setShowAutoplanConfirm(false);
-    setPreviousState(null);
-  };
-
-  const handleCompleteTask = (id: number) => {
-    setTimeBlocks(prev => prev.map(b => b.id === id ? { ...b, completed: !b.completed } : b));
-    setOpenActionMenuId(null);
-  };
-
-  const handleDeleteTask = (id: number) => {
-    setTimeBlocks(prev => prev.filter(b => b.id !== id));
-    setOpenActionMenuId(null);
-  };
-
-  const handleShareTask = (id: number) => {
-    const task = timeBlocks.find(b => b.id === id);
-    if (task) {
-      alert(`Share "${task.title}" to Circles?\n\nThis will allow you to share your achievement with a friend or family member.`);
-    }
-    setOpenActionMenuId(null);
-  };
-
-  const handleToggleLock = (id: number) => {
-    setTimeBlocks(prev => prev.map(b => b.id === id ? { ...b, isFixed: !b.isFixed } : b));
-    setOpenActionMenuId(null);
   };
 
   const handleMoveToTomorrow = (id: number) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = formatDate(tomorrow);
-    setTimeBlocks(prev => prev.map(b => b.id === id ? { ...b, date: tomorrowStr } : b));
-    setOpenActionMenuId(null);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, date: tomorrowStr } : t));
   };
 
-  const handleAutoFit = (taskId: number) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = formatDate(tomorrow);
+  const startTimer = (taskId: number) => {
+    setActiveTimerId(taskId);
+    setElapsedSeconds(0);
+    setIsRecording(true);
+    sessionStartTime.current = new Date().toISOString();
+  };
+
+  const pauseTimer = () => {
+    // Pausing doesn't end the session, just pauses
+    setIsRecording(false);
+  };
+  
+  const resumeTimer = () => {
+    setIsRecording(true);
+  };
+
+  const saveSession = (wasCompleted: boolean, wasAbandoned: boolean) => {
+    if (activeTimerId === null || elapsedSeconds < 5) return; // Don't save sessions < 5 seconds
     
-    setTimeBlocks(prev => prev.map(b => 
-      b.id === taskId ? { ...b, date: tomorrowStr } : b
-    ));
-    setShowSmartFixMenu(false);
-  };
-
-  const startEditField = (id: number, field: 'time' | 'duration' | 'priority') => {
-    const task = timeBlocks.find(b => b.id === id);
+    const task = tasks.find(t => t.id === activeTimerId);
     if (!task) return;
-    setEditingId(id);
-    setEditField(field);
-    setEditValue(field === 'priority' ? task.priority : field === 'time' ? task.time : task.duration);
-    setOpenActionMenuId(null);
+    
+    const targetSeconds = task.durationMin * 60;
+    const percentComplete = Math.min(Math.round((elapsedSeconds / targetSeconds) * 100), 100);
+    const today = new Date().toISOString().split('T')[0];
+    
+    const newSession: FocusSession = {
+      id: Date.now(),
+      taskId: activeTimerId,
+      taskTitle: task.title,
+      category: task.category,
+      date: today,
+      startTime: sessionStartTime.current || new Date().toISOString(),
+      elapsedSeconds,
+      targetSeconds,
+      percentComplete,
+      wasCompleted,
+      wasAbandoned,
+    };
+    
+    const updatedSessions = [newSession, ...focusSessions].slice(0, 50); // Keep last 50 sessions
+    setFocusSessions(updatedSessions);
+    saveSessionsToStorage(updatedSessions);
+    
+    // Update stats
+    const isNewDay = focusStats.lastSessionDate !== today;
+    const isConsecutiveDay = focusStats.lastSessionDate === getYesterdayStr();
+    
+    const newStats: FocusStats = {
+      totalSessions: focusStats.totalSessions + 1,
+      completedSessions: focusStats.completedSessions + (wasCompleted ? 1 : 0),
+      abandonedSessions: focusStats.abandonedSessions + (wasAbandoned ? 1 : 0),
+      totalFocusMinutes: focusStats.totalFocusMinutes + Math.round(elapsedSeconds / 60),
+      currentStreak: wasCompleted 
+        ? (isConsecutiveDay || !isNewDay ? focusStats.currentStreak + 1 : 1)
+        : (wasAbandoned && percentComplete < 25 ? 0 : focusStats.currentStreak),
+      bestStreak: Math.max(
+        focusStats.bestStreak, 
+        wasCompleted ? (isConsecutiveDay || !isNewDay ? focusStats.currentStreak + 1 : 1) : focusStats.currentStreak
+      ),
+      averageCompletion: Math.round(
+        ((focusStats.averageCompletion * focusStats.totalSessions) + percentComplete) / (focusStats.totalSessions + 1)
+      ),
+      lastSessionDate: today,
+    };
+    
+    setFocusStats(newStats);
+    saveStatsToStorage(newStats);
+    
+    // Show session summary
+    setShowSessionSummary(newSession);
+    
+    return newSession;
+  };
+  
+  const getYesterdayStr = () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0];
   };
 
-  const saveEdit = (id: number) => {
-    if (!editField || !editValue.trim()) {
-      setEditingId(null);
-      setEditField(null);
+  const stopTimer = (confirmed = false) => {
+    if (!confirmed && elapsedSeconds > 30) {
+      // Show confirmation if more than 30 seconds elapsed
+      setShowAbandonConfirm(true);
       return;
     }
-    setTimeBlocks(prev => prev.map(b => {
-      if (b.id === id) {
-        if (editField === 'time') return { ...b, time: editValue };
-        if (editField === 'duration') return { ...b, duration: editValue };
-        if (editField === 'priority') return { ...b, priority: editValue as 'High' | 'Normal' | 'Low' };
-      }
-      return b;
-    }));
-    setEditingId(null);
-    setEditField(null);
+    
+    const task = tasks.find(t => t.id === activeTimerId);
+    const targetSeconds = (task?.durationMin || 30) * 60;
+    const percentComplete = Math.round((elapsedSeconds / targetSeconds) * 100);
+    
+    // Save as abandoned if stopped before 80% complete
+    if (elapsedSeconds >= 5) {
+      saveSession(percentComplete >= 80, percentComplete < 80);
+    }
+    
+    setActiveTimerId(null);
+    setElapsedSeconds(0);
+    setIsRecording(false);
+    setShowAbandonConfirm(false);
+    sessionStartTime.current = null;
   };
 
-  const cycleTaskPriority = (id: number) => {
-    const nextPriority = { High: 'Normal', Normal: 'Low', Low: 'High' } as const;
-    setTimeBlocks(prev => prev.map(b => {
-      if (b.id === id) return { ...b, priority: nextPriority[b.priority] };
-      return b;
-    }));
+  const completeTimedTask = (taskId: number) => {
+    saveSession(true, false);
+    handleComplete(taskId);
+    setActiveTimerId(null);
+    setElapsedSeconds(0);
+    setIsRecording(false);
+    sessionStartTime.current = null;
   };
+
+  const handleAddTask = () => {
+    if (!newTitle.trim()) return;
+    const newTask: Task = {
+      id: Date.now(),
+      date: todayStr,
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+      duration: newDuration,
+      durationMin: parseDuration(newDuration),
+      title: newTitle.trim(),
+      category: newCategory,
+      priority: 'Normal',
+      completed: false,
+      isFixed: false,
+    };
+    setTasks(prev => [newTask, ...prev]);
+    setNewTitle('');
+    setNewCategory('Personal');
+    setNewDuration('30m');
+    setIsAdding(false);
+  };
+
+  // Time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return { text: 'Good Morning', emoji: '\u2600\uFE0F' };
+    if (hour < 17) return { text: 'Good Afternoon', emoji: '\u26C5' };
+    if (hour < 21) return { text: 'Good Evening', emoji: '\uD83C\uDF05' };
+    return { text: 'Good Night', emoji: '\uD83C\uDF19' };
+  };
+
+  const greeting = getGreeting();
 
   return (
-    <div className="min-h-screen bg-ios-bg pb-28 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-28 relative">
       <IOSStatusBar />
       
       <style>{`
-        .ios-glass {
+        .glass {
           background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
         }
-        .task-card {
-          background: rgba(255, 255, 255, 0.92);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          transition: all 0.2s ease;
-        }
-        .task-card.swiped {
-          transform: translateX(-80px);
-        }
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(8px); }
+          from { opacity: 0; transform: translateY(16px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .slide-up { animation: slideUp 0.3s ease-out forwards; }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes pulse-recording {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.15); opacity: 0.8; }
         }
-        .fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes waveform {
+          0%, 100% { height: 4px; }
+          50% { height: 16px; }
+        }
+        @keyframes confetti {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(80px) rotate(720deg); opacity: 0; }
+        }
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); opacity: 0.6; }
+          50% { transform: scale(1.08); opacity: 1; }
+        }
+        @keyframes ring-pulse {
+          0%, 100% { filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4)); }
+          50% { filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.8)); }
+        }
+        @keyframes milestone-pop {
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.3); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        .slide-up { animation: slideUp 0.35s ease-out forwards; }
+        .pulse-recording { animation: pulse-recording 1.5s ease-in-out infinite; }
+        .wave-bar { animation: waveform 0.6s ease-in-out infinite; }
+        .breathe { animation: breathe 4s ease-in-out infinite; }
+        .ring-pulse { animation: ring-pulse 2s ease-in-out infinite; }
+        .milestone-pop { animation: milestone-pop 0.4s ease-out forwards; }
+        .float { animation: float 3s ease-in-out infinite; }
+        .confetti { animation: confetti 1.5s ease-out forwards; }
+        .task-swipe {
+          transition: transform 0.15s ease-out;
+        }
+        .swipe-hint {
+          transition: opacity 0.2s ease;
+        }
       `}</style>
-      
+
       {/* Header */}
-      <div className="px-5 pt-2 pb-3 relative z-10">
-        <div className="flex items-center justify-between">
+      <div className="px-5 pt-3 pb-2">
+        <div className="flex items-center justify-between mb-1">
           <div>
-            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Plan</h1>
-            <p className="text-[13px] text-slate-500 font-medium">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{greeting.emoji}</span>
+              <span className="text-[13px] text-slate-500 font-medium">{greeting.text}</span>
+            </div>
+            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Your Plan</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowMonthView(!showMonthView)}
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 transition-all ${showMonthView ? 'bg-slate-900 text-white' : 'ios-glass shadow-sm text-slate-600'}`}
+              onClick={() => setShowCalendar(!showCalendar)}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 ${
+                showCalendar ? 'bg-slate-900 text-white' : 'glass shadow-sm text-slate-600'
+              }`}
             >
               <CalendarIcon className="w-5 h-5" />
             </button>
             <button
               onClick={() => setIsAdding(true)}
-              className="w-11 h-11 rounded-2xl bg-slate-900 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+              className="w-10 h-10 rounded-2xl bg-violet-600 flex items-center justify-center shadow-lg shadow-violet-600/30 active:scale-95 transition-transform"
             >
               <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
             </button>
           </div>
         </div>
+        
+        {/* Date Selector */}
+        <button 
+          onClick={() => setShowCalendar(!showCalendar)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 mt-1"
+        >
+          <span className="text-[13px] font-medium text-slate-700">
+            {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${showCalendar ? 'rotate-180' : ''}`} />
+        </button>
       </div>
 
-      {/* Calendar View (collapsible) */}
-      {showMonthView && (
-        <div className="px-4 mb-4 relative z-10">
-          <div className="ios-glass rounded-2xl p-4 shadow-sm">
+      {/* Calendar */}
+      {showCalendar && (
+        <div className="px-4 mb-4 slide-up">
+          <div className="glass rounded-2xl p-4 shadow-lg">
             <Calendar
-              month={visibleMonth}
-              onMonthChange={setVisibleMonth}
+              month={selectedDate}
+              onMonthChange={setSelectedDate}
               onDayClick={(day: Date) => {
                 setSelectedDate(day);
-                setVisibleMonth(day);
-                setIsAdding(true);
+                setShowCalendar(false);
               }}
-              selected={selectedDate || undefined}
+              selected={selectedDate}
             />
           </div>
         </div>
       )}
 
-      <div className="px-4 space-y-3 relative z-10">
+      <div className="px-4 space-y-3">
         
-        {/* Progress Card - Compact */}
-        <div className="ios-glass rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            {/* Progress Info */}
-            <div className="flex items-center gap-4">
-              {/* Circular Progress */}
-              <div className="relative w-14 h-14">
-                <svg className="w-14 h-14 transform -rotate-90">
-                  <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="4" fill="none" />
-                  <circle
-                    cx="28" cy="28" r="24"
-                    stroke="#10b981"
-                    strokeWidth="4"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 24 * (completedCount / Math.max(totalCount, 1))} ${2 * Math.PI * 24}`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[14px] font-bold text-slate-900">{progressPercent}%</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-[18px] font-bold text-slate-900">{completedCount} of {totalCount}</p>
-                <p className="text-[13px] text-slate-500">tasks completed</p>
+        {/* Progress Card */}
+        <div className="glass rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            {/* Progress Ring */}
+            <div className="relative w-16 h-16 flex-shrink-0">
+              <svg className="w-16 h-16 transform -rotate-90">
+                <circle cx="32" cy="32" r="28" stroke="#e2e8f0" strokeWidth="5" fill="none" />
+                <circle
+                  cx="32" cy="32" r="28"
+                  stroke="url(#progressGrad)"
+                  strokeWidth="5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 28 * (progressPercent / 100)} ${2 * Math.PI * 28}`}
+                  className="transition-all duration-700"
+                />
+                <defs>
+                  <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#06b6d4" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[16px] font-bold text-slate-900">{progressPercent}%</span>
               </div>
             </div>
             
-            {/* Time Stats */}
-            <div className="flex gap-4">
-              <div className="text-right">
-                <p className="text-[16px] font-bold text-emerald-600">{formatDuration(completedMinutes)}</p>
-                <p className="text-[11px] text-slate-500">Done</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[16px] font-bold text-slate-900">{formatDuration(totalMinutes - completedMinutes)}</p>
-                <p className="text-[11px] text-slate-500">Left</p>
-              </div>
+            {/* Stats */}
+            <div className="flex-1">
+              <p className="text-[18px] font-bold text-slate-900">{completedCount} of {totalCount} done</p>
+              <p className="text-[12px] text-slate-500 mt-0.5">
+                {formatDuration(completedMinutes)} completed • {formatDuration(totalMinutes - completedMinutes)} left
+              </p>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="flex flex-col gap-1.5">
+              <button
+                onClick={() => onNavigate?.('sort')}
+                className="px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-[11px] font-semibold active:scale-95 transition-transform flex items-center gap-1"
+              >
+                <Sparkles className="w-3 h-3" />
+                Dump
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Next Up Card */}
-        {nextTask && (
-          <div className={`ios-glass rounded-2xl overflow-hidden shadow-sm ${activeTimerId === nextTask.id ? 'ring-2 ring-emerald-500' : ''}`}>
-            <div className="p-4">
-              <div className="flex items-center gap-3">
-                {/* Play/Pause Button */}
-                <button
-                  onClick={() => {
-                    if (activeTimerId === nextTask.id) {
-                      pauseTimer();
-                    } else if (activeTimerId === null) {
-                      startTimer(nextTask.id);
-                    } else {
-                      // Another task is running, switch to this one
-                      stopTimer(activeTimerId);
-                      startTimer(nextTask.id);
-                    }
-                  }}
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-95 transition-all ${
-                    activeTimerId === nextTask.id 
-                      ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' 
-                      : 'bg-violet-100'
-                  }`}
-                >
-                  {activeTimerId === nextTask.id ? (
-                    <Pause className="w-5 h-5 text-white" fill="currentColor" />
-                  ) : (
-                    <Play className="w-5 h-5 text-violet-600" fill="currentColor" />
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    {activeTimerId === nextTask.id ? (
-                      <span className="text-[11px] font-semibold text-emerald-600 uppercase flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Recording
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-semibold text-violet-600 uppercase">Up Next</span>
-                    )}
-                    <span className="text-[11px] text-slate-400">• {nextTask.time}</span>
-                  </div>
-                  <p className="text-[16px] font-semibold text-slate-900 truncate">{nextTask.title}</p>
-                  {activeTimerId === nextTask.id && (
-                    <p className="text-[20px] font-bold text-emerald-600 tabular-nums mt-1">{formatTimer(elapsedSeconds)}</p>
-                  )}
+        {/* Focus Session Card - Premium Timer Experience */}
+        {activeTimerId !== null && (() => {
+          const activeTask = tasks.find(t => t.id === activeTimerId);
+          const taskDurationSec = (activeTask?.durationMin || 30) * 60;
+          const progressPct = Math.min((elapsedSeconds / taskDurationSec) * 100, 100);
+          const remainingSec = Math.max(taskDurationSec - elapsedSeconds, 0);
+          const isOvertime = elapsedSeconds > taskDurationSec;
+          const milestone25 = progressPct >= 25;
+          const milestone50 = progressPct >= 50;
+          const milestone75 = progressPct >= 75;
+          const milestone100 = progressPct >= 100;
+          
+          const getMotivationalMessage = () => {
+            if (isOvertime) return { text: 'Overtime! Wrap it up', emoji: '🔥' };
+            if (progressPct >= 90) return { text: 'Almost there!', emoji: '🏁' };
+            if (progressPct >= 75) return { text: 'Final stretch!', emoji: '💪' };
+            if (progressPct >= 50) return { text: 'Halfway done!', emoji: '⭐' };
+            if (progressPct >= 25) return { text: 'Great momentum!', emoji: '🚀' };
+            return { text: 'Stay focused', emoji: '🧘' };
+          };
+          const motivation = getMotivationalMessage();
+          
+          const formatRemaining = (sec: number) => {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+          };
+          
+          const circumference = 2 * Math.PI * 54;
+          const strokeDashoffset = circumference - (progressPct / 100) * circumference;
+          
+          return (
+            <div className="rounded-3xl overflow-hidden shadow-2xl slide-up relative">
+              {/* Animated Background */}
+              <div className={`absolute inset-0 ${isOvertime ? 'bg-gradient-to-br from-orange-500 via-red-500 to-pink-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500'}`}>
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 rounded-full blur-3xl breathe" />
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/20 rounded-full blur-3xl breathe" style={{ animationDelay: '2s' }} />
                 </div>
-                {activeTimerId === nextTask.id ? (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => stopTimer(nextTask.id)}
-                      className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:bg-slate-200 transition-colors"
-                    >
-                      <Square className="w-4 h-4 text-slate-600" fill="currentColor" />
-                    </button>
-                    <button
-                      onClick={() => completeTimedTask(nextTask.id)}
-                      className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:bg-emerald-200 transition-colors"
-                    >
-                      <Check className="w-5 h-5 text-emerald-600" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleCompleteTask(nextTask.id)}
-                    className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:bg-emerald-200 transition-colors"
-                  >
-                    <Check className="w-5 h-5 text-emerald-600" />
-                  </button>
-                )}
-              </div>
-            </div>
-            {activeTimerId !== nextTask.id && (
-              <div className="flex border-t border-slate-100">
-                <button
-                  onClick={() => handleMoveToTomorrow(nextTask.id)}
-                  className="flex-1 py-2.5 text-[13px] font-medium text-slate-600 active:bg-slate-50 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                  Tomorrow
-                </button>
-                <div className="w-px bg-slate-100" />
-                <button
-                  onClick={() => autoPlan()}
-                  className="flex-1 py-2.5 text-[13px] font-medium text-violet-600 active:bg-violet-50 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Auto Plan
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Auto Plan Confirmation */}
-        {showAutoplanConfirm && autoplanSummary && (
-          <div className="ios-glass rounded-2xl p-4 shadow-sm border border-violet-200 bg-violet-50/50">
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-4 h-4 text-violet-600" />
-              </div>
-              <div className="text-[13px] text-slate-700 font-medium whitespace-pre-line flex-1">{autoplanSummary}</div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={handleUndoAutoplan} className="px-4 py-2 rounded-xl text-[13px] text-slate-600 bg-white shadow-sm active:bg-slate-50">
-                Undo
-              </button>
-              <button onClick={handleAcceptAutoplan} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-[13px] font-medium active:scale-95 transition-transform">
-                Accept
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Section Header */}
-        <div className="flex items-center justify-between pt-1">
-          <h2 className="text-[15px] font-semibold text-slate-900">Today's Tasks</h2>
-          <span className="text-[12px] text-slate-500">{timeBlocks.length} tasks</span>
-        </div>
-
-        {/* Task List */}
-        <div className="space-y-2">
-          {timeBlocks.map((block, index) => (
-            <div
-              key={block.id}
-              className="relative slide-up"
-              style={{ animationDelay: `${index * 0.03}s` }}
-            >
-              {/* Swipe Actions Background */}
-              <div className="absolute inset-y-0 right-0 w-20 flex items-center justify-center rounded-r-2xl bg-red-500">
-                <Trash2 className="w-5 h-5 text-white" />
               </div>
               
-              {/* Task Card */}
-              <div
-                className={`task-card rounded-2xl shadow-sm relative ${block.completed ? 'opacity-50' : ''} ${swipedTaskId === block.id ? 'swiped' : ''}`}
-                onTouchStart={(e) => {
-                  touchStartX.current = e.touches[0].clientX;
-                }}
-                onTouchMove={(e) => {
-                  const diff = touchStartX.current - e.touches[0].clientX;
-                  if (diff > 50) setSwipedTaskId(block.id);
-                  else if (diff < -20) setSwipedTaskId(null);
-                }}
-                onTouchEnd={() => {
-                  if (swipedTaskId === block.id) {
-                    // Could trigger delete after a delay
-                  }
-                }}
-              >
-                <div className="w-full p-4">
-                  <div className="flex items-center gap-3">
-                    {/* Play/Completion Toggle */}
-                    {!block.completed ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (activeTimerId === block.id) {
-                            pauseTimer();
-                          } else if (activeTimerId === null) {
-                            startTimer(block.id);
-                          } else {
-                            stopTimer(activeTimerId);
-                            startTimer(block.id);
-                          }
-                        }}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-95 ${
-                          activeTimerId === block.id 
-                            ? 'bg-emerald-500 shadow-md shadow-emerald-500/30' 
-                            : 'bg-violet-100 hover:bg-violet-200'
-                        }`}
-                      >
-                        {activeTimerId === block.id ? (
-                          <Pause className="w-3.5 h-3.5 text-white" fill="currentColor" />
-                        ) : (
-                          <Play className="w-3.5 h-3.5 text-violet-600" fill="currentColor" />
-                        )}
-                      </button>
+              <div className="relative p-5">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    {isRecording ? (
+                      <div className={`w-2.5 h-2.5 rounded-full ${isOvertime ? 'bg-orange-200' : 'bg-white'} pulse-recording`} />
                     ) : (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCompleteTask(block.id);
-                        }}
-                        className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 cursor-pointer"
-                      >
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
                     )}
-                    
-                    {/* Content */}
-                    <button
-                      onClick={() => {
-                        if (swipedTaskId === block.id) {
-                          handleDeleteTask(block.id);
-                          setSwipedTaskId(null);
-                        } else {
-                          setExpandedTaskId(expandedTaskId === block.id ? null : block.id);
-                        }
-                      }}
-                      className="flex-1 min-w-0 text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        <h3 className={`text-[15px] font-medium ${block.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                          {block.title}
-                        </h3>
-                        {block.isFixed && <Lock className="w-3 h-3 text-slate-400" />}
-                        {activeTimerId === block.id && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <div className={`w-1.5 h-1.5 rounded-full ${getCategoryDot(block.category)}`} />
-                        {activeTimerId === block.id ? (
-                          <span className="text-[13px] font-bold text-emerald-600 tabular-nums">{formatTimer(elapsedSeconds)}</span>
-                        ) : (
-                          <>
-                            <span className="text-[12px] text-slate-500">{block.time}</span>
-                            <span className="text-[12px] text-slate-400">• {formatDuration(block.durationMin)}</span>
-                          </>
-                        )}
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${getCategoryColor(block.category)}`}>
-                          {block.category}
-                        </span>
-                      </div>
-                    </button>
-                    
-                    {/* Right Actions */}
-                    {activeTimerId === block.id ? (
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            stopTimer(block.id);
-                          }}
-                          className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center active:bg-slate-200"
-                        >
-                          <Square className="w-3 h-3 text-slate-600" fill="currentColor" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            completeTimedTask(block.id);
-                          }}
-                          className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center active:bg-emerald-200"
-                        >
-                          <Check className="w-4 h-4 text-emerald-600" />
-                        </button>
-                      </div>
-                    ) : (
-                      <ChevronRight className={`w-4 h-4 text-slate-300 transition-transform ${expandedTaskId === block.id ? 'rotate-90' : ''}`} />
+                    <span className="text-white/90 text-[11px] font-bold uppercase tracking-wider">
+                      {isRecording ? 'Focus Session' : 'Paused'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur">
+                    {focusStats.currentStreak > 0 && (
+                      <>
+                        <span className="text-sm">🔥</span>
+                        <span className="text-white text-[11px] font-bold">{focusStats.currentStreak}</span>
+                        <div className="w-px h-3 bg-white/30 mx-1" />
+                      </>
                     )}
+                    <span className="text-lg">{motivation.emoji}</span>
+                    <span className="text-white text-[11px] font-medium">{motivation.text}</span>
                   </div>
                 </div>
                 
-                {/* Expanded Actions */}
-                {expandedTaskId === block.id && activeTimerId !== block.id && (
-                  <div className="px-4 pb-4 pt-0 fade-in">
-                    <div className="flex gap-2 pt-2 border-t border-slate-100">
-                      {!block.completed && (
-                        <button
-                          onClick={() => startTimer(block.id)}
-                          className="flex-1 py-2 rounded-xl bg-violet-100 text-violet-700 text-[13px] font-medium active:bg-violet-200 transition-colors flex items-center justify-center gap-1.5"
-                        >
-                          <Play className="w-3.5 h-3.5" fill="currentColor" />
-                          Start
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleCompleteTask(block.id)}
-                        className="flex-1 py-2 rounded-xl bg-emerald-100 text-emerald-700 text-[13px] font-medium active:bg-emerald-200 transition-colors"
-                      >
-                        {block.completed ? 'Undo' : 'Complete'}
-                      </button>
-                      <button
-                        onClick={() => handleMoveToTomorrow(block.id)}
-                        className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-700 text-[13px] font-medium active:bg-slate-200 transition-colors"
-                      >
-                        Tomorrow
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTask(block.id)}
-                        className="py-2 px-4 rounded-xl bg-red-100 text-red-600 text-[13px] font-medium active:bg-red-200 transition-colors"
-                      >
-                        Delete
-                      </button>
+                {/* Task Title */}
+                <p className="text-white font-semibold text-[15px] text-center mb-5 truncate px-4">
+                  {activeTask?.title}
+                </p>
+                
+                {/* Central Progress Ring */}
+                <div className="flex justify-center mb-5">
+                  <div className="relative">
+                    {/* Glow Effect */}
+                    <div className={`absolute inset-0 rounded-full ${isOvertime ? 'bg-orange-400/30' : 'bg-emerald-400/30'} blur-xl breathe`} />
+                    
+                    {/* Progress Ring */}
+                    <svg className="w-36 h-36 transform -rotate-90 ring-pulse" viewBox="0 0 120 120">
+                      {/* Background Ring */}
+                      <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="8" />
+                      
+                      {/* Progress Ring */}
+                      <circle
+                        cx="60" cy="60" r="54"
+                        fill="none"
+                        stroke={isOvertime ? "#fbbf24" : "white"}
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        className="transition-all duration-500"
+                      />
+                      
+                      {/* Milestone Markers */}
+                      {[25, 50, 75, 100].map((pct) => {
+                        const angle = ((pct / 100) * 360 - 90) * (Math.PI / 180);
+                        const x = 60 + 54 * Math.cos(angle);
+                        const y = 60 + 54 * Math.sin(angle);
+                        const reached = progressPct >= pct;
+                        return (
+                          <circle
+                            key={pct}
+                            cx={x} cy={y} r={reached ? 5 : 3}
+                            fill={reached ? 'white' : 'rgba(255,255,255,0.4)'}
+                            className={reached ? 'milestone-pop' : ''}
+                          />
+                        );
+                      })}
+                    </svg>
+                    
+                    {/* Center Content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <p className="text-[11px] text-white/70 font-medium mb-0.5">
+                        {isOvertime ? 'OVERTIME' : 'REMAINING'}
+                      </p>
+                      <p className={`text-[32px] font-bold text-white tabular-nums leading-none ${isOvertime ? 'text-yellow-200' : ''}`}>
+                        {isOvertime ? '+' : ''}{formatRemaining(isOvertime ? elapsedSeconds - taskDurationSec : remainingSec)}
+                      </p>
                     </div>
                   </div>
-                )}
+                </div>
+                
+                {/* Time Stats Bar */}
+                <div className="flex items-center justify-center gap-6 mb-5">
+                  <div className="text-center">
+                    <p className="text-[10px] text-white/60 uppercase tracking-wide">Elapsed</p>
+                    <p className="text-[18px] font-bold text-white tabular-nums">{formatTimer(elapsedSeconds)}</p>
+                  </div>
+                  <div className="w-px h-8 bg-white/20" />
+                  <div className="text-center">
+                    <p className="text-[10px] text-white/60 uppercase tracking-wide">Target</p>
+                    <p className="text-[18px] font-bold text-white tabular-nums">{activeTask?.duration}</p>
+                  </div>
+                  <div className="w-px h-8 bg-white/20" />
+                  <div className="text-center">
+                    <p className="text-[10px] text-white/60 uppercase tracking-wide">Progress</p>
+                    <p className="text-[18px] font-bold text-white tabular-nums">{Math.round(progressPct)}%</p>
+                  </div>
+                </div>
+                
+                {/* Milestone Badges */}
+                <div className="flex items-center justify-center gap-2 mb-5">
+                  {[
+                    { pct: 25, reached: milestone25, label: '25%' },
+                    { pct: 50, reached: milestone50, label: '50%' },
+                    { pct: 75, reached: milestone75, label: '75%' },
+                    { pct: 100, reached: milestone100, label: '✓' },
+                  ].map(({ pct, reached, label }) => (
+                    <div
+                      key={pct}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-[12px] font-bold transition-all duration-300 ${
+                        reached 
+                          ? 'bg-white text-emerald-600 shadow-lg scale-100' 
+                          : 'bg-white/10 text-white/40 scale-90'
+                      }`}
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Control Buttons */}
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    onClick={() => stopTimer(false)}
+                    className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center active:scale-95 transition-all hover:bg-white/25"
+                  >
+                    <Square className="w-5 h-5 text-white" fill="currentColor" />
+                  </button>
+                  <button
+                    onClick={isRecording ? pauseTimer : resumeTimer}
+                    className="w-18 h-18 rounded-full bg-white flex items-center justify-center active:scale-95 transition-all shadow-xl shadow-black/20 float"
+                    style={{ width: '72px', height: '72px' }}
+                  >
+                    {isRecording ? (
+                      <Pause className={`w-8 h-8 ${isOvertime ? 'text-orange-500' : 'text-emerald-600'}`} fill="currentColor" />
+                    ) : (
+                      <Play className={`w-8 h-8 ${isOvertime ? 'text-orange-500' : 'text-emerald-600'} ml-1`} fill="currentColor" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => completeTimedTask(activeTimerId)}
+                    className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center active:scale-95 transition-all hover:bg-white/25"
+                  >
+                    <Check className="w-6 h-6 text-white" strokeWidth={3} />
+                  </button>
+                </div>
               </div>
             </div>
-          ))}
+          );
+        })()}
+
+        {/* Next Task Card - Only show when not recording */}
+        {nextTask && activeTimerId === null && (
+          <div className="glass rounded-2xl p-4 shadow-sm border-l-4 border-violet-500 slide-up">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => startTimer(nextTask.id)}
+                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30 active:scale-95 transition-transform"
+              >
+                <Play className="w-6 h-6 text-white ml-0.5" fill="currentColor" />
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-violet-600 uppercase">Up Next</p>
+                <p className="text-[16px] font-semibold text-slate-900 truncate">{nextTask.title}</p>
+                <p className="text-[12px] text-slate-500">{nextTask.time} • {nextTask.duration}</p>
+              </div>
+              <button
+                onClick={() => handleComplete(nextTask.id)}
+                className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:scale-95 transition-transform"
+              >
+                <Check className="w-5 h-5 text-emerald-600" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Swipe Instructions */}
+        {todayTasks.length > 0 && (
+          <div className="flex items-center justify-center gap-6 py-2">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+              <ArrowRight className="w-3 h-3 rotate-180" />
+              <span>Swipe left to delete</span>
+            </div>
+            <div className="w-px h-3 bg-slate-200" />
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+              <span>Swipe right to complete</span>
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </div>
+        )}
+
+        {/* Task List */}
+        <div className="space-y-2">
+          {todayTasks.map((task, index) => {
+            const swipeDistance = swipeStates[task.id] || 0;
+            const catStyle = getCategoryStyle(task.category);
+            const isSwipingRight = swipeDistance > 20;
+            const isSwipingLeft = swipeDistance < -20;
+            
+            return (
+              <div
+                key={task.id}
+                className="relative slide-up overflow-hidden rounded-2xl"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                {/* Swipe Background - Complete (Right) */}
+                <div 
+                  className={`absolute inset-y-0 left-0 w-24 flex items-center justify-start pl-4 rounded-l-2xl transition-colors ${
+                    isSwipingRight ? 'bg-emerald-500' : 'bg-emerald-100'
+                  }`}
+                >
+                  <Check className={`w-6 h-6 ${isSwipingRight ? 'text-white' : 'text-emerald-500'}`} />
+                </div>
+                
+                {/* Swipe Background - Delete (Left) */}
+                <div 
+                  className={`absolute inset-y-0 right-0 w-24 flex items-center justify-end pr-4 rounded-r-2xl transition-colors ${
+                    isSwipingLeft ? 'bg-red-500' : 'bg-red-100'
+                  }`}
+                >
+                  <Trash2 className={`w-6 h-6 ${isSwipingLeft ? 'text-white' : 'text-red-500'}`} />
+                </div>
+                
+                {/* Task Card */}
+                <div
+                  className={`glass rounded-2xl shadow-sm relative task-swipe ${task.completed ? 'opacity-60' : ''}`}
+                  style={{ transform: `translateX(${swipeDistance}px)` }}
+                  onTouchStart={(e) => handleTouchStart(task.id, e)}
+                  onTouchMove={(e) => handleTouchMove(task.id, e)}
+                  onTouchEnd={() => handleTouchEnd(task.id)}
+                >
+                  <div className="p-4 flex items-center gap-3">
+                    {/* Start/Complete Button */}
+                    {!task.completed ? (
+                      <button
+                        onClick={() => {
+                          if (activeTimerId === task.id) {
+                            pauseTimer();
+                          } else {
+                            if (activeTimerId) stopTimer();
+                            startTimer(task.id);
+                          }
+                        }}
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-95 transition-all ${
+                          activeTimerId === task.id
+                            ? 'bg-emerald-500 shadow-md shadow-emerald-500/30'
+                            : 'bg-violet-100'
+                        }`}
+                      >
+                        {activeTimerId === task.id ? (
+                          <Pause className="w-5 h-5 text-white" fill="currentColor" />
+                        ) : (
+                          <Play className="w-5 h-5 text-violet-600" fill="currentColor" />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleComplete(task.id)}
+                        className="w-11 h-11 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0 active:scale-95"
+                      >
+                        <Check className="w-5 h-5 text-white" strokeWidth={3} />
+                      </button>
+                    )}
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-[15px] font-medium ${task.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                          {task.title}
+                        </h3>
+                        {task.priority === 'High' && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-600">!</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className={`w-1.5 h-1.5 rounded-full ${catStyle.dot}`} />
+                        <span className="text-[12px] text-slate-500">{task.time}</span>
+                        <span className="text-[12px] text-slate-400">•</span>
+                        <span className="text-[12px] text-slate-500">{task.duration}</span>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${catStyle.bg} ${catStyle.text}`}>
+                          {task.category}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Move to Tomorrow */}
+                    {!task.completed && (
+                      <button
+                        onClick={() => handleMoveToTomorrow(task.id)}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
+                      >
+                        <ArrowRight className="w-4 h-4 text-slate-400" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Ask MYPA */}
-        <button
-          onClick={() => onNavigate?.('ask')}
-          className="w-full ios-glass rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
-        >
-          <MYPAOrb size="sm" showGlow={false} />
-          <div className="flex-1 text-left">
-            <p className="text-[14px] font-semibold text-slate-900">Ask MYPA</p>
-            <p className="text-[12px] text-slate-500">"Move gym to tomorrow"</p>
+        {/* Empty State */}
+        {todayTasks.length === 0 && (
+          <div className="glass rounded-2xl p-8 shadow-sm text-center slide-up">
+            <div className="w-16 h-16 rounded-2xl bg-violet-100 mx-auto mb-4 flex items-center justify-center">
+              <Target className="w-8 h-8 text-violet-500" />
+            </div>
+            <h3 className="text-[18px] font-bold text-slate-900 mb-1">No tasks for today</h3>
+            <p className="text-[13px] text-slate-500 mb-5">Add tasks or use Brain Dump to get organized</p>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => setIsAdding(true)}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-[14px] font-semibold active:scale-95 transition-transform"
+              >
+                Add Task
+              </button>
+              <button
+                onClick={() => onNavigate?.('sort')}
+                className="px-5 py-2.5 rounded-xl bg-violet-100 text-violet-700 text-[14px] font-semibold active:scale-95 transition-transform flex items-center gap-1.5"
+              >
+                <Sparkles className="w-4 h-4" />
+                Brain Dump
+              </button>
+            </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-300" />
-        </button>
+        )}
+
+        {/* All Complete Celebration */}
+        {totalCount > 0 && completedCount === totalCount && (
+          <div className="glass rounded-2xl p-6 shadow-sm text-center relative overflow-hidden slide-up">
+            <div className="absolute top-2 left-4 text-[20px] confetti" style={{ animationDelay: '0s' }}>🎉</div>
+            <div className="absolute top-3 right-6 text-[16px] confetti" style={{ animationDelay: '0.2s' }}>✨</div>
+            <div className="absolute top-1 left-1/3 text-[14px] confetti" style={{ animationDelay: '0.4s' }}>⭐</div>
+            
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 mx-auto mb-3 flex items-center justify-center shadow-lg">
+              <Check className="w-8 h-8 text-white" strokeWidth={3} />
+            </div>
+            <h3 className="text-[18px] font-bold text-slate-900 mb-1">You crushed it! 🎊</h3>
+            <p className="text-[13px] text-slate-500 mb-4">All {totalCount} tasks completed</p>
+            <button
+              onClick={() => onNavigate?.('challenges')}
+              className="px-5 py-2.5 rounded-xl bg-emerald-100 text-emerald-700 text-[13px] font-semibold active:scale-95 transition-transform"
+            >
+              View XP Earned +{completedCount * 25}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add Task Modal */}
       {isAdding && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center">
           <div 
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm fade-in"
-            onClick={handleCancel}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsAdding(false)}
           />
           
-          <div className="relative w-full max-w-[390px] bg-white rounded-t-[24px] p-6 pb-10 shadow-2xl">
-            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[28px] p-6 pb-10 shadow-2xl slide-up">
+            <div className="w-10 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
 
-            <h2 className="text-[20px] font-bold text-slate-900 mb-5">Add Task</h2>
+            <h2 className="text-[22px] font-bold text-slate-900 mb-5">Add Task</h2>
 
-            {/* Title Input */}
+            {/* Title Input - Large Touch Target */}
             <input
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               placeholder="What do you need to do?"
-              className="w-full px-4 py-3.5 rounded-xl bg-slate-100 outline-none text-slate-900 placeholder:text-slate-400 text-[15px] mb-4"
+              className="w-full px-4 py-4 rounded-xl bg-slate-100 outline-none text-slate-900 placeholder:text-slate-400 text-[16px] mb-5"
               autoFocus
             />
 
-            {/* Category Selector */}
-            <div className="mb-4">
+            {/* Category - Horizontal Scroll */}
+            <div className="mb-5">
               <label className="text-[12px] text-slate-500 font-semibold uppercase tracking-wide block mb-2">Category</label>
-              <div className="flex gap-2">
-                {['Work', 'Personal', 'Health'].map(cat => (
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+                {['Personal', 'Work', 'Health', 'Learning'].map(cat => (
                   <button
                     key={cat}
                     onClick={() => setNewCategory(cat)}
-                    className={`flex-1 px-4 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
+                    className={`px-5 py-3 rounded-xl text-[14px] font-medium whitespace-nowrap transition-all active:scale-95 ${
                       newCategory === cat 
                         ? 'bg-slate-900 text-white' 
                         : 'bg-slate-100 text-slate-600'
@@ -888,51 +1081,208 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
               </div>
             </div>
 
-            {/* Duration Selector */}
+            {/* Duration - Large Buttons */}
             <div className="mb-6">
               <label className="text-[12px] text-slate-500 font-semibold uppercase tracking-wide block mb-2">Duration</label>
-              <div className="flex gap-2">
-                {[
-                  { dur: '15m', min: 15 },
-                  { dur: '30m', min: 30 },
-                  { dur: '1h', min: 60 },
-                  { dur: '2h', min: 120 }
-                ].map(opt => (
+              <div className="grid grid-cols-4 gap-2">
+                {['15m', '30m', '1h', '2h'].map(dur => (
                   <button
-                    key={opt.dur}
-                    onClick={() => {
-                      setNewDuration(opt.dur);
-                      setNewDurationMin(opt.min);
-                      setNewDurationMax(opt.min);
-                    }}
-                    className={`flex-1 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-                      newDuration === opt.dur
-                        ? 'bg-slate-900 text-white'
+                    key={dur}
+                    onClick={() => setNewDuration(dur)}
+                    className={`py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-95 ${
+                      newDuration === dur
+                        ? 'bg-violet-600 text-white'
                         : 'bg-slate-100 text-slate-600'
                     }`}
                   >
-                    {opt.dur}
+                    {dur}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Actions - Large Touch Targets */}
             <div className="flex gap-3">
               <button 
-                onClick={handleCancel}
-                className="flex-1 py-3.5 rounded-xl text-[15px] font-semibold text-slate-700 bg-slate-100 active:bg-slate-200 transition-colors"
+                onClick={() => setIsAdding(false)}
+                className="flex-1 py-4 rounded-xl text-[16px] font-semibold text-slate-700 bg-slate-100 active:bg-slate-200 transition-colors"
               >
                 Cancel
               </button>
               <button 
-                onClick={handleAdd}
+                onClick={handleAddTask}
                 disabled={!newTitle.trim()}
-                className="flex-1 py-3.5 rounded-xl bg-slate-900 text-white text-[15px] font-semibold disabled:opacity-40 active:scale-[0.98] transition-transform"
+                className="flex-1 py-4 rounded-xl bg-violet-600 text-white text-[16px] font-semibold disabled:opacity-40 active:scale-[0.98] transition-transform"
               >
                 Add Task
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Abandon Session Confirmation Modal */}
+      {showAbandonConfirm && activeTimerId !== null && (() => {
+        const task = tasks.find(t => t.id === activeTimerId);
+        const targetSeconds = (task?.durationMin || 30) * 60;
+        const percentComplete = Math.round((elapsedSeconds / targetSeconds) * 100);
+        const isLowProgress = percentComplete < 25;
+        
+        return (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAbandonConfirm(false)} />
+            <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 slide-up">
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-4">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${isLowProgress ? 'bg-red-100' : 'bg-amber-100'}`}>
+                  <span className="text-3xl">{isLowProgress ? '⚠️' : '🤔'}</span>
+                </div>
+              </div>
+              
+              <h3 className="text-[20px] font-bold text-slate-900 text-center mb-2">
+                {isLowProgress ? 'Leaving So Soon?' : 'End Session Early?'}
+              </h3>
+              
+              <p className="text-[14px] text-slate-500 text-center mb-4">
+                {isLowProgress 
+                  ? `You're only ${percentComplete}% through. Abandoning now will break your streak.`
+                  : `You've completed ${percentComplete}% of this task. Keep going?`
+                }
+              </p>
+              
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${percentComplete < 25 ? 'bg-red-500' : percentComplete < 50 ? 'bg-amber-500' : percentComplete < 75 ? 'bg-emerald-400' : 'bg-emerald-500'}`}
+                    style={{ width: `${percentComplete}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1 text-[11px] text-slate-400">
+                  <span>{formatTimer(elapsedSeconds)} elapsed</span>
+                  <span>{formatTimer(targetSeconds - elapsedSeconds)} remaining</span>
+                </div>
+              </div>
+              
+              {/* Accountability Stats */}
+              {focusStats.currentStreak > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 flex items-center gap-3">
+                  <span className="text-2xl">🔥</span>
+                  <div>
+                    <p className="text-[13px] font-semibold text-amber-800">
+                      {focusStats.currentStreak} session streak at risk!
+                    </p>
+                    <p className="text-[11px] text-amber-600">
+                      Don't break your momentum
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowAbandonConfirm(false)}
+                  className="flex-1 py-4 rounded-xl bg-emerald-500 text-white text-[16px] font-bold active:scale-[0.98] transition-transform"
+                >
+                  Keep Going 💪
+                </button>
+                <button 
+                  onClick={() => stopTimer(true)}
+                  className="flex-1 py-4 rounded-xl bg-slate-100 text-slate-600 text-[16px] font-semibold active:bg-slate-200 transition-colors"
+                >
+                  End Session
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Session Summary Modal */}
+      {showSessionSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSessionSummary(null)} />
+          <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 slide-up">
+            {/* Result Icon */}
+            <div className="flex justify-center mb-4">
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
+                showSessionSummary.wasCompleted 
+                  ? 'bg-gradient-to-br from-emerald-400 to-teal-500' 
+                  : showSessionSummary.percentComplete >= 50 
+                    ? 'bg-gradient-to-br from-amber-400 to-orange-500'
+                    : 'bg-gradient-to-br from-slate-300 to-slate-400'
+              }`}>
+                <span className="text-4xl">
+                  {showSessionSummary.wasCompleted ? '🎉' : showSessionSummary.percentComplete >= 50 ? '👍' : '😔'}
+                </span>
+              </div>
+            </div>
+            
+            <h3 className="text-[22px] font-bold text-slate-900 text-center mb-1">
+              {showSessionSummary.wasCompleted 
+                ? 'Great Work!' 
+                : showSessionSummary.percentComplete >= 50 
+                  ? 'Good Effort!'
+                  : 'Session Ended'
+              }
+            </h3>
+            
+            <p className="text-[14px] text-slate-500 text-center mb-5">
+              {showSessionSummary.taskTitle}
+            </p>
+            
+            {/* Session Stats Grid */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-slate-50 rounded-xl p-3 text-center">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Time</p>
+                <p className="text-[18px] font-bold text-slate-900">{formatTimer(showSessionSummary.elapsedSeconds)}</p>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 text-center">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Progress</p>
+                <p className={`text-[18px] font-bold ${showSessionSummary.percentComplete >= 80 ? 'text-emerald-600' : showSessionSummary.percentComplete >= 50 ? 'text-amber-600' : 'text-slate-600'}`}>
+                  {showSessionSummary.percentComplete}%
+                </p>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 text-center">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Status</p>
+                <p className="text-[14px] font-bold text-slate-900">
+                  {showSessionSummary.wasCompleted ? '✅' : showSessionSummary.wasAbandoned ? '❌' : '⏸️'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Streak & Stats Update */}
+            <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 mb-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🔥</span>
+                  <div>
+                    <p className="text-[13px] font-bold text-violet-900">
+                      {focusStats.currentStreak} Session Streak
+                    </p>
+                    <p className="text-[11px] text-violet-600">
+                      Best: {focusStats.bestStreak} • Avg: {focusStats.averageCompletion}%
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] text-violet-600">Total Focus</p>
+                  <p className="text-[14px] font-bold text-violet-900">
+                    {focusStats.totalFocusMinutes >= 60 
+                      ? `${Math.floor(focusStats.totalFocusMinutes / 60)}h ${focusStats.totalFocusMinutes % 60}m`
+                      : `${focusStats.totalFocusMinutes}m`
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowSessionSummary(null)}
+              className="w-full py-4 rounded-xl bg-slate-900 text-white text-[16px] font-bold active:scale-[0.98] transition-transform"
+            >
+              Continue
+            </button>
           </div>
         </div>
       )}

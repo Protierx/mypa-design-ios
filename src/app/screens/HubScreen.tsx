@@ -1,4 +1,4 @@
-import { Calendar, Inbox, Trophy, Clock, CheckCircle2, Wallet, Sparkles, ChevronRight, Bell, Zap, Sun, Moon, CloudSun, Target, ArrowRight, MessageCircle, Check, Flame, X, Volume2 } from "lucide-react";
+import { Calendar, Inbox, Trophy, Clock, CheckCircle2, Wallet, Sparkles, ChevronRight, Zap, Sun, Moon, CloudSun, Target, ArrowRight, MessageCircle, Check, Flame, X, Volume2, Award, TrendingUp, Play, Star, Gift, Mic, ArrowUpRight, Pause, SkipForward, Brain, Timer, Rocket } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState, useEffect, useRef } from "react";
 import "../../styles/cards.css";
@@ -8,47 +8,110 @@ interface HubScreenProps {
   onVoiceClick?: () => void;
 }
 
+interface Achievement {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  unlockedToday: boolean;
+}
+
 export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
-  const [greeting, setGreeting] = useState({ text: '', icon: Sun, period: 'day' });
-  const [completedPriorities, setCompletedPriorities] = useState<number[]>([]);
+  const [greeting, setGreeting] = useState({ text: '', emoji: '☀️', period: 'day', timeOfDay: 'morning' });
+  const [completedTasks, setCompletedTasks] = useState<number[]>([]);
   const [showBriefing, setShowBriefing] = useState(false);
   const [briefingStep, setBriefingStep] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [xpEarned, setXpEarned] = useState(0);
+  const [showXpPopup, setShowXpPopup] = useState(false);
+  const [lastXpGain, setLastXpGain] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeInsightIndex, setActiveInsightIndex] = useState(0);
+  const [orbHovered, setOrbHovered] = useState(false);
   const briefingTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Daily briefing content
-  const briefingItems = [
-    { icon: '👋', text: `${greeting.text}, Alex! Here's your day at a glance.`, delay: 2000 },
-    { icon: '📋', text: `You have ${7 - 4} tasks remaining today. 2 are marked as priority.`, delay: 2500 },
-    { icon: '🏋️', text: 'Reminder: Gym session at 6:00 PM today.', delay: 2000 },
-    { icon: '🔥', text: `Amazing! You're on a 7-day streak. Keep it going!`, delay: 2000 },
-    { icon: '⚡', text: `You've saved 42 minutes this week. That's 67% more efficient!`, delay: 2500 },
-    { icon: '✨', text: 'Ready to make today great? Let\'s do this!', delay: 2000 },
-  ];
-
-  // Dynamic greeting based on time
+  // Live clock
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setGreeting({ text: 'Good morning', icon: Sun, period: 'morning' });
-    } else if (hour < 17) {
-      setGreeting({ text: 'Good afternoon', icon: CloudSun, period: 'afternoon' });
-    } else {
-      setGreeting({ text: 'Good evening', icon: Moon, period: 'evening' });
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load localStorage data
+  useEffect(() => {
+    const stored = localStorage.getItem('hubData');
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        setXpEarned(data.xpEarned || 0);
+      } catch (e) {
+        console.error('Error loading hub data:', e);
+      }
     }
   }, []);
 
-  // Start briefing animation
+  // Dynamic greeting
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting({ text: 'Good morning', emoji: '☀️', period: 'morning', timeOfDay: 'morning' });
+    } else if (hour < 17) {
+      setGreeting({ text: 'Good afternoon', emoji: '🌤️', period: 'afternoon', timeOfDay: 'afternoon' });
+    } else if (hour < 21) {
+      setGreeting({ text: 'Good evening', emoji: '🌅', period: 'evening', timeOfDay: 'evening' });
+    } else {
+      setGreeting({ text: 'Good night', emoji: '🌙', period: 'night', timeOfDay: 'night' });
+    }
+  }, []);
+
+  // Rotating insights
+  const insights = [
+    { icon: '🎯', text: "Peak focus hours: 9-11am", color: 'blue' },
+    { icon: '⚡', text: "You're 67% more productive today", color: 'emerald' },
+    { icon: '��', text: '7-day streak active!', color: 'orange' },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveInsightIndex(prev => (prev + 1) % insights.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Briefing items
+  const briefingItems = [
+    { icon: '👋', text: greeting.text + "! I'm MYPA, your AI life organizer. Let me brief you.", delay: 2500 },
+    { icon: '📊', text: 'You have 3 tasks remaining today, with 2 marked priority. Very achievable!', delay: 3000 },
+    { icon: '⏰', text: "Your peak focus window is 9-11am. I've scheduled your hardest tasks then.", delay: 2800 },
+    { icon: '🎯', text: 'Next up: "Review Q1 metrics" at 5PM. You usually finish these in 15 mins.', delay: 2800 },
+    { icon: '📈', text: "Exciting! You're 67% above last week. Your consistency is remarkable!", delay: 2500 },
+    { icon: '🔥', text: 'Your 7-day streak gives you 1.5x XP multiplier. Push to 14 days!', delay: 2300 },
+    { icon: '🚀', text: "With your pace, you'll hit 85% completion. Ready to make it 100%?", delay: 2500 },
+  ];
+
   const startBriefing = () => {
     setShowBriefing(true);
     setBriefingStep(0);
     setIsSpeaking(true);
     playBriefingSequence(0);
+    
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(briefingItems[0].text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
+      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.log('Speech synthesis not available');
+      }
+    }
   };
 
   const playBriefingSequence = (step: number) => {
     if (step >= briefingItems.length) {
       setIsSpeaking(false);
+      const bonusXp = 10;
+      awardXp(bonusXp);
       return;
     }
     setBriefingStep(step);
@@ -62,9 +125,19 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
     setShowBriefing(false);
     setBriefingStep(0);
     setIsSpeaking(false);
-    if (briefingTimer.current) {
-      clearTimeout(briefingTimer.current);
-    }
+    if (briefingTimer.current) clearTimeout(briefingTimer.current);
+    window.speechSynthesis?.cancel();
+  };
+
+  const awardXp = (amount: number) => {
+    setLastXpGain(amount);
+    setShowXpPopup(true);
+    setXpEarned(prev => {
+      const newXp = prev + amount;
+      localStorage.setItem('hubData', JSON.stringify({ xpEarned: newXp }));
+      return newXp;
+    });
+    setTimeout(() => setShowXpPopup(false), 2000);
   };
 
   // Today's data
@@ -73,268 +146,418 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
     userName: 'Alex',
     streak: 7,
     level: 12,
-    xp: 2460,
-    xpToNext: 340,
-    tasksCompleted: 4,
+    xp: 2460 + xpEarned,
+    xpToNext: 340 - xpEarned,
+    tasksCompleted: 4 + completedTasks.length,
     totalTasks: 7,
     timeSaved: 42,
     focusMinutes: 180,
-    mood: 'great',
   };
 
-  // Priority items for today
-  const priorityItems = [
-    { id: 1, type: 'event', title: 'Gym Session', time: '6:00 PM', icon: '🏋️', urgent: true },
-    { id: 2, type: 'task', title: 'Review Q1 metrics', time: 'By 5 PM', icon: '📊', urgent: true },
-    { id: 3, type: 'reminder', title: 'Call Mom', time: 'Evening', icon: '📞', urgent: false },
+  const progressPercent = Math.round((today.tasksCompleted / today.totalTasks) * 100);
+
+  // Priority tasks
+  const tasks = [
+    { id: 1, title: 'Review Q1 metrics', time: '5:00 PM', icon: '📊', category: 'Work', duration: '15m', priority: true },
+    { id: 2, title: 'Gym Session', time: '6:00 PM', icon: '🏋️', category: 'Health', duration: '1h', priority: true },
+    { id: 3, title: 'Call Mom', time: 'Evening', icon: '📞', category: 'Personal', duration: '15m', priority: false },
   ];
 
-  // Insights/nudges from MYPA
-  const insight = {
-    message: "You're crushing it! 67% more productive than last week.",
-    type: 'positive',
-  };
+  // Achievements
+  const recentAchievements = [
+    { id: 1, icon: '🌅', name: 'Early Bird', new: true },
+    { id: 2, icon: '🔥', name: '7-Day Streak', new: true },
+    { id: 3, icon: '⚡', name: 'Speed Runner', new: false },
+  ];
 
-  const GreetingIcon = greeting.icon;
+  const formattedTime = currentTime.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
 
   return (
-    <div className="min-h-screen bg-ios-bg pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 pb-24 relative overflow-hidden">
       <IOSStatusBar />
       
       <style>{`
-        .ios-glass {
-          background: rgba(255, 255, 255, 0.85);
+        @keyframes float { 
+          0%, 100% { transform: translateY(0px); } 
+          50% { transform: translateY(-8px); } 
+        }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1); }
+          50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.5), 0 0 60px rgba(139, 92, 246, 0.2); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        @keyframes slide-up { 
+          from { opacity: 0; transform: translateY(12px); } 
+          to { opacity: 1; transform: translateY(0); } 
+        }
+        @keyframes scale-in { 
+          from { opacity: 0; transform: scale(0.9); } 
+          to { opacity: 1; transform: scale(1); } 
+        }
+        @keyframes badge-bounce {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+        @keyframes xp-float {
+          0% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-40px); }
+        }
+        @keyframes progress-fill {
+          from { stroke-dashoffset: 251; }
+        }
+        @keyframes ripple {
+          0% { transform: scale(1); opacity: 0.5; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        @keyframes waveform {
+          0%, 100% { height: 8px; }
+          50% { height: 24px; }
+        }
+        @keyframes orb-breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+        }
+        @keyframes gradient-shift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .float { animation: float 4s ease-in-out infinite; }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        .shimmer { 
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+          background-size: 200% 100%;
+          animation: shimmer 2s infinite;
+        }
+        .slide-up { animation: slide-up 0.4s ease-out forwards; }
+        .scale-in { animation: scale-in 0.3s ease-out forwards; }
+        .badge-bounce { animation: badge-bounce 2s ease-in-out infinite; }
+        .xp-float { animation: xp-float 1.5s ease-out forwards; }
+        .ripple { animation: ripple 1s ease-out infinite; }
+        .wave-bar { animation: waveform 0.5s ease-in-out infinite; }
+        .orb-breathe { animation: orb-breathe 4s ease-in-out infinite; }
+        .gradient-shift {
+          background-size: 200% 200%;
+          animation: gradient-shift 8s ease infinite;
+        }
+        .glass {
+          background: rgba(255, 255, 255, 0.8);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
         }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
+        .glass-dark {
+          background: rgba(15, 23, 42, 0.9);
+          backdrop-filter: blur(30px);
+          -webkit-backdrop-filter: blur(30px);
         }
-        .slide-up { animation: slideUp 0.3s ease-out forwards; }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .fade-in { animation: fadeIn 0.2s ease-out forwards; }
-        @keyframes orbPulse {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
-          50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(139, 92, 246, 0.2); }
-        }
-        .orb-pulse { animation: orbPulse 2s ease-in-out infinite; }
-        @keyframes orbSpeak {
-          0%, 100% { transform: scale(1); }
-          25% { transform: scale(1.1); }
-          50% { transform: scale(0.95); }
-          75% { transform: scale(1.08); }
-        }
-        .orb-speaking { animation: orbSpeak 0.6s ease-in-out infinite; }
-        @keyframes waveform {
-          0%, 100% { height: 8px; }
-          50% { height: 20px; }
-        }
-        .wave-bar { animation: waveform 0.5s ease-in-out infinite; }
-        @keyframes typeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .type-in { animation: typeIn 0.4s ease-out forwards; }
       `}</style>
-      
-      {/* Header Section */}
-      <div className="relative px-5 pt-2 pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <GreetingIcon className="w-4 h-4 text-amber-500" />
-              <span className="text-[13px] text-slate-500 font-medium">{greeting.text}</span>
-            </div>
-            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">{today.userName}</h1>
+
+      {/* Ambient Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 -right-20 w-64 h-64 bg-violet-200/30 rounded-full blur-3xl" />
+        <div className="absolute top-60 -left-20 w-48 h-48 bg-blue-200/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-40 right-10 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl" />
+      </div>
+
+      {/* XP Popup */}
+      {showXpPopup && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 xp-float">
+          <div className="px-4 py-2 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold shadow-xl flex items-center gap-2">
+            <Star className="w-4 h-4" />
+            +{lastXpGain} XP
+          </div>
+        </div>
+      )}
+
+      {/* Header - Premium Hero Section */}
+      <div className="relative px-5 pt-3 pb-4">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{greeting.emoji}</span>
+            <span className="text-[13px] text-slate-500 font-medium">{formattedTime}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onNavigate?.('profile')}
-              className="relative w-11 h-11 rounded-2xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+              onClick={() => onNavigate?.('inbox')}
+              className="relative w-10 h-10 rounded-2xl glass shadow-sm flex items-center justify-center active:scale-95 transition-all"
             >
-              <Bell className="w-5 h-5 text-slate-600" />
-              <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+              <Inbox className="w-5 h-5 text-slate-600" />
+              <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-[9px] font-bold text-white">3</span>
+              </div>
             </button>
             <button
               onClick={() => onNavigate?.('profile')}
-              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+              className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30 active:scale-95 transition-all"
             >
-              <span className="text-[16px] font-bold text-white">{today.userName[0]}</span>
+              <span className="text-[15px] font-bold text-white">{today.userName[0]}</span>
             </button>
+          </div>
+        </div>
+
+        {/* Greeting Hero */}
+        <div className="mb-2">
+          <p className="text-[14px] text-slate-500 font-medium">{greeting.text}</p>
+          <h1 className="text-[32px] font-bold text-slate-900 tracking-tight leading-tight">{today.userName}</h1>
+        </div>
+
+        {/* Live Insight Ticker */}
+        <div className="flex items-center gap-2 py-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 border border-violet-200/50">
+            <span className="text-sm">{insights[activeInsightIndex].icon}</span>
+            <span className="text-[12px] font-medium text-violet-700">{insights[activeInsightIndex].text}</span>
           </div>
         </div>
       </div>
 
-      <div className="px-4 space-y-3">
+      <div className="px-4 space-y-4 relative z-10">
         
-        {/* Daily Briefing Orb Card */}
-        <button
-          onClick={startBriefing}
-          className="w-full ios-glass rounded-2xl p-4 shadow-sm flex items-center gap-4 active:scale-[0.98] transition-transform"
+        {/* MYPA AI Orb - The Star of the Show */}
+        <div 
+          className="relative rounded-3xl overflow-hidden shadow-xl"
+          style={{
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)'
+          }}
         >
-          <div className="relative">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg orb-pulse">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
-              <Volume2 className="w-3 h-3 text-white" />
-            </div>
-          </div>
-          <div className="flex-1 text-left">
-            <p className="text-[16px] font-semibold text-slate-900">Daily Briefing</p>
-            <p className="text-[13px] text-slate-500">Tap to hear your day summary</p>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-1 h-3 bg-violet-400 rounded-full" />
-            <div className="w-1 h-5 bg-violet-500 rounded-full" />
-            <div className="w-1 h-4 bg-violet-400 rounded-full" />
-          </div>
-        </button>
-        
-        {/* Compact Progress Card */}
-        <div className="ios-glass rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            {/* Progress Ring & Stats */}
-            <div className="flex items-center gap-4">
-              <div className="relative w-14 h-14">
-                <svg className="w-14 h-14 transform -rotate-90">
-                  <circle cx="28" cy="28" r="24" stroke="#e2e8f0" strokeWidth="4" fill="none" />
-                  <circle
-                    cx="28" cy="28" r="24"
-                    stroke="#10b981"
-                    strokeWidth="4"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 24 * (today.tasksCompleted / today.totalTasks)} ${2 * Math.PI * 24}`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[14px] font-bold text-slate-900">{Math.round((today.tasksCompleted / today.totalTasks) * 100)}%</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-[18px] font-bold text-slate-900">{today.tasksCompleted} of {today.totalTasks}</p>
-                <p className="text-[13px] text-slate-500">tasks done today</p>
-              </div>
-            </div>
-            
-            {/* Quick Stats */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-orange-100">
-                <Flame className="w-4 h-4 text-orange-500" />
-                <span className="text-[14px] font-bold text-orange-600">{today.streak}</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-violet-100">
-                <Zap className="w-4 h-4 text-violet-500" />
-                <span className="text-[14px] font-bold text-violet-600">{today.level}</span>
-              </div>
-            </div>
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-violet-500/20 to-transparent" />
+            <div className="absolute bottom-0 right-0 w-2/3 h-2/3 bg-gradient-to-tl from-purple-500/20 to-transparent" />
           </div>
           
-          {/* XP Progress */}
-          <div className="mt-3 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[12px] text-slate-500">Level {today.level} Progress</span>
-              <span className="text-[12px] font-medium text-violet-600">{today.xpToNext} XP to next</span>
+          <div className="relative p-5">
+            <div className="flex items-center gap-4">
+              {/* Animated Orb */}
+              <button
+                onClick={startBriefing}
+                onMouseEnter={() => setOrbHovered(true)}
+                onMouseLeave={() => setOrbHovered(false)}
+                className="relative flex-shrink-0 active:scale-95 transition-transform"
+              >
+                {/* Outer rings */}
+                <div className="absolute inset-0 rounded-full bg-violet-400/20 ripple" />
+                <div className={`absolute -inset-2 rounded-full border border-violet-400/30 ${orbHovered ? 'scale-110' : ''} transition-transform`} />
+                
+                {/* Main orb */}
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg pulse-glow orb-breathe">
+                  <div className="absolute inset-1 rounded-full bg-gradient-to-br from-white/30 to-transparent" />
+                  <Sparkles className="w-7 h-7 text-white relative z-10" />
+                </div>
+              </button>
+
+              {/* Content */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-white font-semibold text-[15px]">MYPA</span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-violet-400/30 text-violet-200">AI</span>
+                </div>
+                <p className="text-violet-200/80 text-[13px] leading-snug">Your daily briefing is ready. Tap to hear your personalized summary.</p>
+              </div>
+
+              {/* Play Button */}
+              <button
+                onClick={startBriefing}
+                className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+              >
+                <Play className="w-5 h-5 text-violet-600 ml-0.5" />
+              </button>
             </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all"
-                style={{ width: `${((today.xp % 500) / 500) * 100}%` }}
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
-            <Clock className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-            <p className="text-[16px] font-bold text-slate-900">+{today.timeSaved}m</p>
-            <p className="text-[10px] text-slate-500">Saved</p>
-          </div>
-          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
-            <Target className="w-4 h-4 text-blue-500 mx-auto mb-1" />
-            <p className="text-[16px] font-bold text-slate-900">{today.focusMinutes}m</p>
-            <p className="text-[10px] text-slate-500">Focus</p>
-          </div>
-          <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
-            <Trophy className="w-4 h-4 text-amber-500 mx-auto mb-1" />
-            <p className="text-[16px] font-bold text-slate-900">#3</p>
-            <p className="text-[10px] text-slate-500">Rank</p>
           </div>
         </div>
 
-        {/* Priority Focus Section */}
-        <div>
-          <div className="flex items-center justify-between px-1 mb-2">
-            <h3 className="text-[15px] font-semibold text-slate-900">Priority Focus</h3>
+        {/* Progress Dashboard - Premium Card */}
+        <div className="glass rounded-3xl p-4 shadow-lg border border-white/50">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-bold text-slate-900">Today's Progress</h2>
+            <span className="text-[12px] text-slate-500">{today.date}</span>
+          </div>
+
+          <div className="flex items-center gap-5">
+            {/* Animated Progress Ring */}
+            <div className="relative w-24 h-24 flex-shrink-0">
+              <svg className="w-24 h-24 transform -rotate-90">
+                <circle cx="48" cy="48" r="40" stroke="#e2e8f0" strokeWidth="8" fill="none" />
+                <circle
+                  cx="48" cy="48" r="40"
+                  stroke="url(#progressGradient)"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray="251"
+                  strokeDashoffset={251 - (251 * progressPercent / 100)}
+                  className="transition-all duration-1000"
+                  style={{ animation: 'progress-fill 1.5s ease-out' }}
+                />
+                <defs>
+                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#06b6d4" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[24px] font-bold text-slate-900">{progressPercent}%</span>
+                <span className="text-[10px] text-slate-500 font-medium">COMPLETE</span>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="flex-1 grid grid-cols-2 gap-3">
+              <div className="text-center p-2 rounded-xl bg-emerald-50">
+                <p className="text-[20px] font-bold text-emerald-600">{today.tasksCompleted}</p>
+                <p className="text-[10px] text-emerald-600/70 font-medium">DONE</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-blue-50">
+                <p className="text-[20px] font-bold text-blue-600">{today.totalTasks - today.tasksCompleted}</p>
+                <p className="text-[10px] text-blue-600/70 font-medium">LEFT</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-violet-50">
+                <p className="text-[20px] font-bold text-violet-600">{today.focusMinutes}m</p>
+                <p className="text-[10px] text-violet-600/70 font-medium">FOCUS</p>
+              </div>
+              <div className="text-center p-2 rounded-xl bg-amber-50">
+                <p className="text-[20px] font-bold text-amber-600">{today.timeSaved}m</p>
+                <p className="text-[10px] text-amber-600/70 font-medium">SAVED</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Streak & Level Row - Gamification Spotlight */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Streak Card */}
+          <div className="glass rounded-2xl p-4 shadow-md border border-orange-200/50 bg-gradient-to-br from-orange-50/50 to-transparent relative overflow-hidden">
+            <div className="absolute -top-4 -right-4 text-[60px] opacity-10">🔥</div>
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl badge-bounce">🔥</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500 text-white">1.5x XP</span>
+              </div>
+              <p className="text-[28px] font-bold text-slate-900 leading-none">{today.streak}</p>
+              <p className="text-[11px] text-slate-500 font-medium mt-1">Day Streak</p>
+            </div>
+          </div>
+
+          {/* Level Card */}
+          <div className="glass rounded-2xl p-4 shadow-md border border-violet-200/50 bg-gradient-to-br from-violet-50/50 to-transparent relative overflow-hidden">
+            <div className="absolute -top-4 -right-4 text-[60px] opacity-10">⭐</div>
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">⭐</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500 text-white">{today.xpToNext > 0 ? today.xpToNext : 0} to next</span>
+              </div>
+              <p className="text-[28px] font-bold text-slate-900 leading-none">Lv {today.level}</p>
+              <p className="text-[11px] text-slate-500 font-medium mt-1">{today.xp.toLocaleString()} XP</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Achievements Banner */}
+        <div className="glass rounded-2xl p-3 shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-bold text-slate-600 uppercase tracking-wide">Recent Achievements</span>
             <button 
-              onClick={() => onNavigate?.('plan')}
-              className="text-[13px] font-medium text-violet-600 flex items-center gap-0.5"
+              onClick={() => onNavigate?.('challenges')}
+              className="text-[11px] font-medium text-violet-600 flex items-center gap-0.5"
             >
-              All tasks <ChevronRight className="w-4 h-4" />
+              View all <ChevronRight className="w-3 h-3" />
             </button>
           </div>
-          
+          <div className="flex gap-2">
+            {recentAchievements.map((badge, idx) => (
+              <div
+                key={badge.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl ${
+                  badge.new 
+                    ? 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm' 
+                    : 'bg-slate-50 border border-slate-200'
+                } scale-in`}
+                style={{ animationDelay: `${idx * 0.1}s` }}
+              >
+                <span className="text-lg">{badge.icon}</span>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-800">{badge.name}</p>
+                  {badge.new && <span className="text-[8px] font-bold text-amber-600">NEW!</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Priority Tasks - Clean List */}
+        <div>
+          <div className="flex items-center justify-between px-1 mb-3">
+            <h3 className="text-[15px] font-bold text-slate-900">Up Next</h3>
+            <button 
+              onClick={() => onNavigate?.('plan')}
+              className="text-[12px] font-medium text-violet-600 flex items-center gap-0.5"
+            >
+              See plan <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <div className="space-y-2">
-            {priorityItems.map((item, index) => {
-              const isCompleted = completedPriorities.includes(item.id);
+            {tasks.map((task, index) => {
+              const isCompleted = completedTasks.includes(task.id);
               return (
                 <div
-                  key={item.id}
-                  className={`ios-glass rounded-2xl shadow-sm overflow-hidden slide-up ${isCompleted ? 'opacity-50' : ''}`}
-                  style={{ animationDelay: `${index * 0.05}s` }}
+                  key={task.id}
+                  className={`glass rounded-2xl shadow-sm overflow-hidden slide-up transition-all ${
+                    isCompleted ? 'opacity-60 scale-[0.98]' : ''
+                  } ${task.priority && !isCompleted ? 'border-l-4 border-violet-500' : ''}`}
+                  style={{ animationDelay: `${index * 0.08}s` }}
                 >
                   <div className="p-3 flex items-center gap-3">
                     {/* Check Button */}
                     <button
                       onClick={() => {
                         if (isCompleted) {
-                          setCompletedPriorities(prev => prev.filter(id => id !== item.id));
+                          setCompletedTasks(prev => prev.filter(id => id !== task.id));
                         } else {
-                          setCompletedPriorities(prev => [...prev, item.id]);
+                          setCompletedTasks(prev => [...prev, task.id]);
+                          awardXp(50);
                         }
                       }}
-                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all active:scale-90 ${
                         isCompleted 
-                          ? 'bg-emerald-500 border-emerald-500' 
-                          : 'border-slate-300'
+                          ? 'bg-emerald-500 border-emerald-500 shadow-sm shadow-emerald-500/30' 
+                          : 'border-slate-300 hover:border-violet-400'
                       }`}
                     >
-                      {isCompleted && <Check className="w-4 h-4 text-white" />}
+                      {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
                     </button>
                     
                     {/* Icon */}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-                      item.urgent && !isCompleted
-                        ? 'bg-rose-100' 
-                        : 'bg-slate-100'
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${
+                      task.priority && !isCompleted ? 'bg-violet-100' : 'bg-slate-100'
                     }`}>
-                      {item.icon}
+                      {task.icon}
                     </div>
                     
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[15px] font-medium ${isCompleted ? 'line-through text-slate-400' : 'text-slate-900'}`}>{item.title}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[12px] text-slate-500">{item.time}</span>
-                        {item.urgent && !isCompleted && (
-                          <span className="text-[9px] font-bold text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded">PRIORITY</span>
-                        )}
+                      <p className={`text-[14px] font-medium ${isCompleted ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                        {task.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] text-slate-500">{task.time}</span>
+                        <span className="text-[11px] text-slate-400">•</span>
+                        <span className="text-[11px] text-slate-500">{task.duration}</span>
                       </div>
                     </div>
                     
-                    {/* Navigate */}
+                    {/* Action */}
                     <button
                       onClick={() => onNavigate?.('plan')}
-                      className="p-2 -mr-1 rounded-xl active:bg-slate-100 transition-colors"
+                      className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-colors"
                     >
-                      <ChevronRight className="w-5 h-5 text-slate-300" />
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
                     </button>
                   </div>
                 </div>
@@ -343,210 +566,166 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
           </div>
         </div>
 
-        {/* Quick Actions Grid */}
+        {/* Quick Actions - Premium Grid */}
         <div>
-          <h3 className="text-[15px] font-semibold text-slate-900 px-1 mb-2">Quick Actions</h3>
+          <h3 className="text-[13px] font-bold text-slate-600 uppercase tracking-wide px-1 mb-3">Quick Actions</h3>
           <div className="grid grid-cols-4 gap-2">
-            <button
-              onClick={() => onNavigate?.('plan')}
-              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform"
-            >
-              <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center mx-auto mb-1.5">
-                <Calendar className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-[11px] font-medium text-slate-700">Plan</p>
-            </button>
-
-            <button
-              onClick={() => onNavigate?.('inbox')}
-              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform relative"
-            >
-              <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-[9px] font-bold text-white">2</span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center mx-auto mb-1.5">
-                <Inbox className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-[11px] font-medium text-slate-700">Inbox</p>
-            </button>
-
-            <button
-              onClick={() => onNavigate?.('challenges')}
-              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform"
-            >
-              <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center mx-auto mb-1.5">
-                <Trophy className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-[11px] font-medium text-slate-700">Challenges</p>
-            </button>
-
-            <button
-              onClick={() => onNavigate?.('wallet')}
-              className="ios-glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-transform"
-            >
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center mx-auto mb-1.5">
-                <Wallet className="w-5 h-5 text-white" />
-              </div>
-              <p className="text-[11px] font-medium text-slate-700">Wallet</p>
-            </button>
+            {[
+              { icon: Calendar, label: 'Plan', color: 'from-blue-500 to-cyan-500', screen: 'plan' },
+              { icon: Brain, label: 'Dump', color: 'from-slate-700 to-slate-900', screen: 'sort' },
+              { icon: Trophy, label: 'Compete', color: 'from-orange-500 to-amber-500', screen: 'challenges' },
+              { icon: Wallet, label: 'Wallet', color: 'from-emerald-500 to-teal-500', screen: 'wallet' },
+            ].map((action, idx) => (
+              <button
+                key={action.label}
+                onClick={() => onNavigate?.(action.screen)}
+                className="glass rounded-2xl p-3 text-center shadow-sm active:scale-95 transition-all hover:shadow-md scale-in"
+                style={{ animationDelay: `${idx * 0.05}s` }}
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center mx-auto mb-1.5 shadow-sm`}>
+                  <action.icon className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-[11px] font-semibold text-slate-700">{action.label}</p>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Secondary Actions */}
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => onNavigate?.('sort')}
-            className="ios-glass rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
-          >
-            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-white" />
-            </div>
-            <div className="text-left flex-1">
-              <p className="text-[14px] font-semibold text-slate-900">Sort Tasks</p>
-              <p className="text-[11px] text-slate-500">6 pending</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => onNavigate?.('daily-life-card')}
-            className="ios-glass rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform relative overflow-hidden"
-          >
-            <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-violet-500">
-              <span className="text-[9px] font-bold text-white">+50 XP</span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center">
-              <span className="text-[18px]">📤</span>
-            </div>
-            <div className="text-left flex-1">
-              <p className="text-[14px] font-semibold text-slate-900">Share Day</p>
-              <p className="text-[11px] text-slate-500">To circles</p>
-            </div>
-          </button>
-        </div>
-
-        {/* Talk to MYPA */}
+        {/* Ask MYPA CTA */}
         <button
           onClick={() => onVoiceClick?.()}
-          className="w-full ios-glass rounded-2xl p-4 shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
+          className="w-full rounded-2xl p-4 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 shadow-lg shadow-violet-500/25 flex items-center justify-center gap-3 active:scale-[0.98] transition-all gradient-shift relative overflow-hidden"
         >
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 text-white" />
+          <div className="absolute inset-0 shimmer" />
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+            <Mic className="w-5 h-5 text-white" />
           </div>
-          <div className="flex-1 text-left">
-            <p className="text-[15px] font-semibold text-slate-900">Talk to MYPA</p>
-            <p className="text-[12px] text-slate-500">Ask anything or get help</p>
+          <div className="text-left">
+            <p className="text-white font-semibold text-[15px]">Ask MYPA Anything</p>
+            <p className="text-white/70 text-[12px]">"What should I focus on next?"</p>
           </div>
-          <ArrowRight className="w-5 h-5 text-slate-400" />
+          <ArrowUpRight className="w-5 h-5 text-white/70 ml-auto" />
         </button>
 
-        {/* Reset Day */}
+        {/* Reset Day Link */}
         <button
           onClick={() => onNavigate?.('reset')}
           className="w-full py-2 text-center"
         >
-          <span className="text-[13px] text-slate-500">Overwhelmed? <span className="text-violet-600 font-medium">Reset day</span></span>
+          <span className="text-[12px] text-slate-400">Overwhelmed? <span className="text-violet-500 font-medium">Reset your day</span></span>
         </button>
       </div>
 
-      {/* Daily Briefing Overlay */}
+      {/* AI Briefing Overlay */}
       {showBriefing && (
         <div className="fixed inset-0 z-[9999] flex flex-col">
-          {/* Dark gradient background */}
           <div 
-            className="absolute inset-0 fade-in"
+            className="absolute inset-0"
             style={{
               background: 'radial-gradient(ellipse at 50% 30%, #1e1b4b 0%, #0f0a1e 40%, #030014 100%)'
             }}
           />
           
-          {/* Close button */}
+          {/* Close */}
           <button
             onClick={closeBriefing}
             className="absolute top-14 right-5 z-10 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform"
           >
             <X className="w-5 h-5 text-white/80" />
           </button>
+
+          {/* Skip */}
+          <button
+            onClick={() => {
+              if (briefingTimer.current) clearTimeout(briefingTimer.current);
+              if (briefingStep < briefingItems.length - 1) {
+                playBriefingSequence(briefingItems.length - 1);
+              }
+            }}
+            className="absolute top-14 left-5 z-10 px-3 py-2 rounded-full bg-white/10 backdrop-blur-md flex items-center gap-1 active:scale-95 transition-transform"
+          >
+            <SkipForward className="w-4 h-4 text-white/80" />
+            <span className="text-[12px] text-white/80 font-medium">Skip</span>
+          </button>
           
-          {/* Main content */}
           <div className="relative flex-1 flex flex-col items-center justify-center px-6">
-            
             {/* Speaking Orb */}
             <div className="relative mb-8">
-              {/* Outer glow rings */}
-              <div className={`absolute inset-0 rounded-full bg-violet-500/20 ${isSpeaking ? 'animate-ping' : ''}`} style={{ animationDuration: '1.5s' }} />
-              <div className={`absolute -inset-4 rounded-full bg-violet-500/10 ${isSpeaking ? 'animate-pulse' : ''}`} />
+              <div className={`absolute -inset-8 rounded-full bg-violet-500/10 ${isSpeaking ? 'animate-ping' : ''}`} style={{ animationDuration: '2s' }} />
+              <div className={`absolute -inset-4 rounded-full bg-violet-500/20 ${isSpeaking ? 'animate-pulse' : ''}`} />
               
-              {/* Main orb */}
-              <div className={`relative w-32 h-32 rounded-full bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-violet-500/50 ${isSpeaking ? 'orb-speaking' : 'orb-pulse'}`}>
-                {/* Inner glow */}
+              <div className={`relative w-28 h-28 rounded-full bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-violet-500/50 ${isSpeaking ? 'scale-105' : 'orb-breathe'} transition-transform`}>
                 <div className="absolute inset-2 rounded-full bg-gradient-to-br from-white/30 to-transparent" />
                 
-                {/* Waveform bars when speaking */}
                 {isSpeaking ? (
                   <div className="flex items-center gap-1">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className="w-2 bg-white rounded-full wave-bar"
-                        style={{ 
-                          animationDelay: `${i * 0.1}s`,
-                          height: '12px'
-                        }}
+                        className="w-1.5 bg-white rounded-full wave-bar"
+                        style={{ animationDelay: `${i * 0.1}s`, height: '12px' }}
                       />
                     ))}
                   </div>
                 ) : (
-                  <Sparkles className="w-14 h-14 text-white" />
+                  <Sparkles className="w-12 h-12 text-white" />
                 )}
               </div>
             </div>
             
-            {/* MYPA Label */}
-            <p className="text-violet-300 text-[14px] font-semibold uppercase tracking-widest mb-6">MYPA</p>
+            <p className="text-violet-300 text-[13px] font-semibold uppercase tracking-widest mb-6">AI Life Organizer</p>
             
             {/* Briefing Messages */}
-            <div className="w-full max-w-sm min-h-[120px] flex flex-col items-center justify-center">
-              {briefingItems.slice(0, briefingStep + 1).map((item, index) => (
-                <div
-                  key={index}
-                  className={`w-full bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-3 type-in ${index === briefingStep ? 'border border-violet-400/30' : 'opacity-50'}`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-[24px]">{item.icon}</span>
-                    <p className="text-white text-[15px] font-medium leading-relaxed flex-1">{item.text}</p>
+            <div className="w-full max-w-sm min-h-[160px]">
+              {briefingItems.slice(Math.max(0, briefingStep - 1), briefingStep + 1).map((item, index) => {
+                const actualIndex = Math.max(0, briefingStep - 1) + index;
+                const isCurrent = actualIndex === briefingStep;
+                return (
+                  <div
+                    key={actualIndex}
+                    className={`w-full bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-3 transition-all duration-300 ${
+                      isCurrent ? 'border border-violet-400/50 scale-100 opacity-100' : 'scale-95 opacity-40'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-[22px] flex-shrink-0">{item.icon}</span>
+                      <p className="text-white text-[14px] font-medium leading-relaxed">{item.text}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             
-            {/* Progress dots */}
+            {/* Progress */}
             <div className="flex items-center gap-2 mt-4">
               {briefingItems.map((_, index) => (
                 <div
                   key={index}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index <= briefingStep 
-                      ? 'bg-violet-400 w-3' 
-                      : 'bg-white/20'
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    index <= briefingStep ? 'bg-violet-400 w-4' : 'bg-white/20 w-2'
                   }`}
                 />
               ))}
             </div>
           </div>
           
-          {/* Bottom action */}
           <div className="relative p-6 pb-10">
             <button
               onClick={closeBriefing}
-              className="w-full py-4 rounded-2xl bg-white text-slate-900 text-[16px] font-semibold active:scale-[0.98] transition-transform"
+              className="w-full py-4 rounded-2xl bg-white text-slate-900 text-[16px] font-bold active:scale-[0.98] transition-transform shadow-xl flex items-center justify-center gap-2"
             >
-              {briefingStep >= briefingItems.length - 1 ? "Let's go!" : 'Skip briefing'}
+              {briefingStep >= briefingItems.length - 1 ? (
+                <>
+                  <Rocket className="w-5 h-5" />
+                  Let's Crush Today!
+                </>
+              ) : (
+                'Close Briefing'
+              )}
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

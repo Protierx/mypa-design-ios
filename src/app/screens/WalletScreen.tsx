@@ -184,6 +184,27 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
         </div>
       </div>
 
+      {/* Context-Aware Quick Access */}
+      <div className="px-4 mb-4">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onNavigate?.('plan')}
+            className="ios-glass rounded-xl p-2.5 shadow-sm flex items-center gap-2 active:scale-95 transition-transform hover:bg-blue-50"
+          >
+            <Calendar className="w-4 h-4 text-blue-600" />
+            <p className="text-[12px] font-semibold text-slate-900">Plan</p>
+          </button>
+          
+          <button
+            onClick={() => onNavigate?.('challenges')}
+            className="ios-glass rounded-xl p-2.5 shadow-sm flex items-center gap-2 active:scale-95 transition-transform hover:bg-orange-50"
+          >
+            <Trophy className="w-4 h-4 text-orange-600" />
+            <p className="text-[12px] font-semibold text-slate-900">Challenges</p>
+          </button>
+        </div>
+      </div>
+
       <div className="px-4 space-y-4">
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
