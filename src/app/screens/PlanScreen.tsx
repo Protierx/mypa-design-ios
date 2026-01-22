@@ -154,8 +154,12 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('Personal');
   const [newDuration, setNewDuration] = useState('30m');
+  
+  // Track highlighted (newly added) task
+  const [highlightedTaskTitle, setHighlightedTaskTitle] = useState<string | null>(null);
+  const [showAddedBanner, setShowAddedBanner] = useState<string | null>(null);
 
-  // Check for pending tasks from Brain Dump
+  // Check for pending tasks from Brain Dump or Inbox
   useEffect(() => {
     const checkForNewTasks = () => {
       try {
@@ -175,9 +179,25 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
               priority: mapPriority(task.aiPriority),
               completed: false,
               isFixed: false,
+              assignedBy: task.assignedBy, // Track who assigned it
             }));
             setTasks(prev => [...prev, ...newTasks]);
             localStorage.removeItem('pendingPlanTasks');
+            
+            // Check for highlight flag
+            const highlightFlag = localStorage.getItem('highlightNewTask');
+            if (highlightFlag) {
+              const highlight = JSON.parse(highlightFlag);
+              setHighlightedTaskTitle(highlight.title);
+              setShowAddedBanner(highlight.title);
+              localStorage.removeItem('highlightNewTask');
+              
+              // Clear highlight after 5 seconds
+              setTimeout(() => {
+                setHighlightedTaskTitle(null);
+                setShowAddedBanner(null);
+              }, 5000);
+            }
           }
         }
       } catch (e) {
@@ -881,6 +901,21 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
           </div>
         )}
 
+        {/* Added from Inbox Banner */}
+        {showAddedBanner && (
+          <div className="mb-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-4 shadow-lg shadow-emerald-500/20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <Check className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-semibold text-[14px]">Task Added Successfully!</p>
+                <p className="text-white/80 text-[12px]">"{showAddedBanner}" is now in your plan</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Task List */}
         <div className="space-y-2">
           {todayTasks.map((task, index) => {
@@ -888,13 +923,21 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
             const catStyle = getCategoryStyle(task.category);
             const isSwipingRight = swipeDistance > 20;
             const isSwipingLeft = swipeDistance < -20;
+            const isHighlighted = highlightedTaskTitle === task.title;
             
             return (
               <div
                 key={task.id}
-                className="relative slide-up overflow-hidden rounded-2xl"
+                className={`relative slide-up overflow-hidden rounded-2xl ${isHighlighted ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}`}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
+                {/* Newly Added Badge */}
+                {isHighlighted && (
+                  <div className="absolute top-0 right-0 z-10 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-xl rounded-tr-2xl">
+                    NEW
+                  </div>
+                )}
+                
                 {/* Swipe Background - Complete (Right) */}
                 <div 
                   className={`absolute inset-y-0 left-0 w-24 flex items-center justify-start pl-4 rounded-l-2xl transition-colors ${

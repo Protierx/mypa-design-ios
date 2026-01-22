@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  MoreVertical,
   Trash2,
   CheckCircle,
   MessageSquare,
@@ -13,6 +12,13 @@ import {
   Sparkles,
   Inbox,
   Zap,
+  Reply,
+  AlarmClock,
+  CheckCheck,
+  UserPlus,
+  Eye,
+  Calendar,
+  ArrowRight,
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState, useEffect } from "react";
@@ -26,7 +32,9 @@ interface Assignment {
   title: string;
   assignedByName: string;
   dueTime?: string;
+  dueDate?: string;
   status: "pending" | "accepted" | "completed" | "declined";
+  category?: string;
 }
 
 type TabType = "all" | "messages" | "reminders" | "invites";
@@ -38,10 +46,13 @@ interface NotificationItem {
   type: "message" | "reminder" | "invite" | "social";
   time: string;
   isNew?: boolean;
+  circleName?: string;
+  senderName?: string;
 }
 
 export function InboxScreen({ onNavigate }: InboxScreenProps) {
   const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [actionFeedback, setActionFeedback] = useState<{ id: number; message: string; type: 'success' | 'info' } | null>(null);
   
   // Assignments assigned to you
   const [assignments, setAssignments] = useState<Assignment[]>([
@@ -50,14 +61,18 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
       title: "Review Q1 metrics",
       assignedByName: "Alex",
       dueTime: "2:00 PM",
+      dueDate: "Today",
       status: "pending",
+      category: "Work",
     },
     {
       id: 2,
       title: "Grocery run",
       assignedByName: "Blake",
       dueTime: "6:00 PM",
+      dueDate: "Today",
       status: "pending",
+      category: "Errands",
     },
   ]);
 
@@ -69,6 +84,8 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
       type: "message",
       time: "10m ago",
       isNew: true,
+      senderName: "Alice",
+      circleName: "Family",
     },
     {
       id: 2,
@@ -84,11 +101,18 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
       type: "invite",
       time: "2h ago",
       isNew: true,
+      circleName: "Dev Team",
     },
   ]);
 
   const [menuId, setMenuId] = useState<number | null>(null);
-  const [assignMenuId, setAssignMenuId] = useState<number | null>(null);
+  const [snoozedItems, setSnoozedItems] = useState<Set<number>>(new Set());
+
+  // Show feedback message briefly
+  const showFeedback = (id: number, message: string, type: 'success' | 'info' = 'success') => {
+    setActionFeedback({ id, message, type });
+    setTimeout(() => setActionFeedback(null), 2000);
+  };
 
   const filtered = items.filter((it) =>
     activeTab === "all"
@@ -112,11 +136,174 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
     setMenuId(null);
   };
 
-  const updateAssignmentStatus = (id: number, status: "accepted" | "completed" | "declined") => {
-    setAssignments(
-      assignments.map((a) => (a.id === id ? { ...a, status } : a))
-    );
-    setAssignMenuId(null);
+  const snoozeItem = (id: number) => {
+    setSnoozedItems(prev => new Set(prev).add(id));
+    showFeedback(id, "Snoozed for 1 hour", 'info');
+    // Remove from view after snooze feedback
+    setTimeout(() => {
+      setItems(items.filter((it) => it.id !== id));
+      setSnoozedItems(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 1500);
+  };
+
+  // Accept circle invite - removes from inbox and navigates to circles
+  const acceptInvite = (id: number) => {
+    const invite = items.find(it => it.id === id);
+    const circleName = invite?.circleName || 'circle';
+    
+    // Store the pending circle join action for CirclesScreen to pick up
+    try {
+      const pendingCircleAction = {
+        action: 'join',
+        circleName: circleName,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('pendingCircleAction', JSON.stringify(pendingCircleAction));
+    } catch (e) {
+      console.error('Error storing circle action', e);
+    }
+    
+    showFeedback(id, `Joining ${circleName}...`, 'success');
+    setTimeout(() => {
+      remove(id);
+      onNavigate?.("circles");
+    }, 1000);
+  };
+
+  // Decline circle invite - removes from inbox
+  const declineInvite = (id: number) => {
+    showFeedback(id, "Invite declined", 'info');
+    setTimeout(() => remove(id), 800);
+  };
+
+  // Handle message reply - mark as read and navigate to conversation
+  const handleMessageReply = (id: number) => {
+    const message = items.find(it => it.id === id);
+    markRead(id);
+    
+    // Store the pending message action for CircleHomeScreen to pick up
+    try {
+      const pendingMessageAction = {
+        action: 'reply',
+        senderName: message?.senderName || 'Unknown',
+        messagePreview: message?.subtitle || '',
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('pendingMessageAction', JSON.stringify(pendingMessageAction));
+    } catch (e) {
+      console.error('Error storing message action', e);
+    }
+    
+    // Navigate to circle-home where the conversation happens
+    onNavigate?.("circle-home");
+  };
+
+  // Handle message archive - remove from inbox
+  const handleMessageArchive = (id: number) => {
+    showFeedback(id, "Archived", 'info');
+    setTimeout(() => remove(id), 600);
+  };
+
+  // Handle reminder complete - remove and optionally go to plan
+  const handleReminderDone = (id: number) => {
+    const reminder = items.find(it => it.id === id);
+    
+    // Mark the reminder as completed and optionally remove from any linked tasks
+    try {
+      const completedReminder = {
+        action: 'completed',
+        title: reminder?.title || 'Reminder',
+        completedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('lastCompletedReminder', JSON.stringify(completedReminder));
+    } catch (e) {
+      console.error('Error storing reminder completion', e);
+    }
+    
+    showFeedback(id, "Marked complete ✓", 'success');
+    setTimeout(() => remove(id), 800);
+  };
+
+  // Handle social notification view
+  const handleSocialView = (id: number) => {
+    markRead(id);
+    onNavigate?.("circles");
+  };
+
+  // Accept assignment - adds to Plan and removes from inbox
+  const acceptAssignment = (id: number) => {
+    const assignment = assignments.find(a => a.id === id);
+    if (assignment) {
+      // Use pendingPlanTasks which PlanScreen already monitors
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const pendingTask = {
+          title: assignment.title,
+          suggestedTime: assignment.dueTime || '12:00 PM',
+          estimatedTime: '30m',
+          aiCategory: assignment.category?.toLowerCase() || 'work',
+          aiPriority: 'important',
+          assignedBy: assignment.assignedByName,
+          source: 'inbox-assignment',
+        };
+        
+        // Get existing pending tasks and add this one
+        const existingPending = localStorage.getItem('pendingPlanTasks');
+        const pendingTasks = existingPending ? JSON.parse(existingPending) : [];
+        pendingTasks.push(pendingTask);
+        localStorage.setItem('pendingPlanTasks', JSON.stringify(pendingTasks));
+        
+        // Also store a highlight flag so PlanScreen can highlight the new task
+        localStorage.setItem('highlightNewTask', JSON.stringify({
+          title: assignment.title,
+          timestamp: Date.now(),
+        }));
+      } catch (e) {
+        console.error('Error adding task to plan', e);
+      }
+      
+      showFeedback(assignment.id, "Adding to your Plan...", 'success');
+      // Update status and auto-remove after feedback
+      setAssignments(assignments.map(a => 
+        a.id === id ? { ...a, status: 'accepted' as const } : a
+      ));
+      setTimeout(() => {
+        setAssignments(prev => prev.filter(a => a.id !== id));
+        onNavigate?.("plan");
+      }, 1200);
+    }
+  };
+
+  // Decline assignment - notifies assigner and removes
+  const declineAssignment = (id: number) => {
+    const assignment = assignments.find(a => a.id === id);
+    showFeedback(id, `Declined - ${assignment?.assignedByName} notified`, 'info');
+    setAssignments(assignments.map(a => 
+      a.id === id ? { ...a, status: 'declined' as const } : a
+    ));
+    setTimeout(() => {
+      setAssignments(prev => prev.filter(a => a.id !== id));
+    }, 1500);
+  };
+
+  // Complete assignment - marks done and removes
+  const completeAssignment = (id: number) => {
+    showFeedback(id, "Completed! Great job 🎉", 'success');
+    setAssignments(assignments.map(a => 
+      a.id === id ? { ...a, status: 'completed' as const } : a
+    ));
+    setTimeout(() => {
+      setAssignments(prev => prev.filter(a => a.id !== id));
+    }, 1500);
+  };
+
+  // View assignment in Plan
+  const viewAssignmentInPlan = (id: number) => {
+    onNavigate?.("plan");
   };
 
   const iconFor = (type: NotificationItem["type"]) => {
@@ -297,80 +484,80 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
                   key={assignment.id}
                   className="ios-card p-4 shadow-sm"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-md shadow-orange-500/20 flex-shrink-0">
-                        <Clock className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[15px] font-semibold text-slate-900">
-                          {assignment.title}
-                        </h3>
-                        <p className="text-[13px] text-slate-500 mt-0.5">
-                          From <span className="font-medium text-slate-600">{assignment.assignedByName}</span>
-                        </p>
-                        {assignment.dueTime && (
-                          <div className="flex items-center gap-1.5 mt-2">
-                            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${getAssignmentStatusColor(assignment.status)}`}>
-                              {getAssignmentStatusLabel(assignment.status)}
-                            </span>
-                            <span className="text-[12px] text-slate-400">• Due {assignment.dueTime}</span>
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-md shadow-orange-500/20 flex-shrink-0">
+                      <Clock className="w-5 h-5 text-white" />
                     </div>
-                    <div className="relative flex-shrink-0">
-                      <button
-                        onClick={() =>
-                          setAssignMenuId(
-                            assignMenuId === assignment.id ? null : assignment.id
-                          )
-                        }
-                        className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-400"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      {assignMenuId === assignment.id && (
-                        <div className="absolute right-0 top-10 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 min-w-[140px] overflow-hidden">
-                          {assignment.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() => updateAssignmentStatus(assignment.id, "accepted")}
-                                className="block w-full text-left px-4 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50 border-b border-slate-100"
-                              >
-                                Accept
-                              </button>
-                              <button
-                                onClick={() => updateAssignmentStatus(assignment.id, "declined")}
-                                className="block w-full text-left px-4 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50"
-                              >
-                                Decline
-                              </button>
-                            </>
-                          )}
-                          {assignment.status === "accepted" && (
-                            <button
-                              onClick={() => updateAssignmentStatus(assignment.id, "completed")}
-                              className="block w-full text-left px-4 py-3 text-[14px] font-medium text-emerald-600 hover:bg-emerald-50"
-                            >
-                              Mark done
-                            </button>
-                          )}
-                          {(assignment.status === "completed" || assignment.status === "declined") && (
-                            <button
-                              onClick={() => {
-                                setAssignments(assignments.filter((a) => a.id !== assignment.id));
-                                setAssignMenuId(null);
-                              }}
-                              className="block w-full text-left px-4 py-3 text-[14px] font-medium text-red-600 hover:bg-red-50"
-                            >
-                              Remove
-                            </button>
-                          )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[15px] font-semibold text-slate-900">
+                        {assignment.title}
+                      </h3>
+                      <p className="text-[13px] text-slate-500 mt-0.5">
+                        From <span className="font-medium text-slate-600">{assignment.assignedByName}</span>
+                      </p>
+                      {assignment.dueTime && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${getAssignmentStatusColor(assignment.status)}`}>
+                            {getAssignmentStatusLabel(assignment.status)}
+                          </span>
+                          <span className="text-[12px] text-slate-400">• Due {assignment.dueTime}</span>
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                    {/* Show feedback message if active */}
+                    {actionFeedback?.id === assignment.id ? (
+                      <div className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl ${
+                        actionFeedback.type === 'success' 
+                          ? 'bg-emerald-50 text-emerald-600' 
+                          : 'bg-slate-100 text-slate-600'
+                      } text-[13px] font-semibold`}>
+                        {actionFeedback.type === 'success' && <CheckCircle className="w-4 h-4" />}
+                        {actionFeedback.message}
+                      </div>
+                    ) : (
+                      <>
+                        {assignment.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => acceptAssignment(assignment.id)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-600 text-[13px] font-semibold hover:bg-emerald-100 transition-colors"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Accept & Add to Plan
+                            </button>
+                            <button
+                              onClick={() => declineAssignment(assignment.id)}
+                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 text-slate-500 text-[13px] font-semibold hover:bg-red-50 hover:text-red-500 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              Decline
+                            </button>
+                          </>
+                        )}
+                        {assignment.status === "accepted" && (
+                          <>
+                            <button
+                              onClick={() => completeAssignment(assignment.id)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-600 text-[13px] font-semibold hover:bg-emerald-100 transition-colors"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Mark Complete
+                            </button>
+                            <button
+                              onClick={() => viewAssignmentInPlan(assignment.id)}
+                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-blue-50 text-blue-600 text-[13px] font-semibold hover:bg-blue-100 transition-colors"
+                            >
+                              <Calendar className="w-3.5 h-3.5" />
+                              View in Plan
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -404,6 +591,23 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
                   +10 XP for staying organized
                 </p>
               </div>
+              {/* Navigation shortcuts when inbox is empty */}
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => onNavigate?.("plan")}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-600 text-[13px] font-semibold hover:bg-blue-100 transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  View Plan
+                </button>
+                <button
+                  onClick={() => onNavigate?.("circles")}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50 text-purple-600 text-[13px] font-semibold hover:bg-purple-100 transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                  Circles
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -414,58 +618,165 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-start gap-3">
-                  <div className={`w-11 h-11 rounded-2xl ${iconBgFor(it.type)} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                    {iconFor(it.type)}
-                  </div>
+                    <div className={`w-11 h-11 rounded-2xl ${iconBgFor(it.type)} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                      {iconFor(it.type)}
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[15px] font-semibold text-slate-900">
-                          {it.title}
-                        </h3>
-                        {it.subtitle && (
-                          <p className="text-[13px] text-slate-500 mt-0.5 truncate">
-                            {it.subtitle}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {it.isNew && (
-                          <div className="w-2 h-2 rounded-full bg-purple-500" />
-                        )}
-                        <span className="text-[12px] text-slate-400">{it.time}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-[15px] font-semibold text-slate-900">
+                            {it.title}
+                          </h3>
+                          {it.subtitle && (
+                            <p className="text-[13px] text-slate-500 mt-0.5 truncate">
+                              {it.subtitle}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {it.isNew && (
+                            <div className="w-2 h-2 rounded-full bg-purple-500" />
+                          )}
+                          <span className="text-[12px] text-slate-400">{it.time}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="relative flex-shrink-0">
-                    <button
-                      onClick={() => setMenuId(menuId === it.id ? null : it.id)}
-                      className="p-1.5 rounded-full hover:bg-slate-100 transition-colors text-slate-400"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-
-                    {menuId === it.id && (
-                      <div className="absolute right-0 top-8 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 min-w-[140px] overflow-hidden">
-                        {it.isNew && (
-                          <button
-                            onClick={() => markRead(it.id)}
-                            className="block w-full text-left px-4 py-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50 border-b border-slate-100"
-                          >
-                            Mark as read
-                          </button>
-                        )}
-                        <button
-                          onClick={() => remove(it.id)}
-                          className="block w-full text-left px-4 py-3 text-[14px] font-medium text-red-600 hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
+                  {/* Contextual Action Buttons */}
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                    {/* Show feedback if active for this item */}
+                    {actionFeedback?.id === it.id ? (
+                      <div className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl ${
+                        actionFeedback.type === 'success' 
+                          ? 'bg-emerald-50 text-emerald-600' 
+                          : 'bg-slate-100 text-slate-600'
+                      } text-[13px] font-semibold`}>
+                        {actionFeedback.type === 'success' && <CheckCircle className="w-4 h-4" />}
+                        {actionFeedback.message}
                       </div>
+                    ) : (
+                      <>
+                        {it.type === "message" && (
+                          <>
+                            <button
+                              onClick={() => handleMessageReply(it.id)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-blue-50 text-blue-600 text-[13px] font-semibold hover:bg-blue-100 transition-colors"
+                            >
+                              <Reply className="w-3.5 h-3.5" />
+                              Reply
+                            </button>
+                            {it.isNew && (
+                              <button
+                                onClick={() => markRead(it.id)}
+                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 text-slate-600 text-[13px] font-semibold hover:bg-slate-200 transition-colors"
+                              >
+                                <CheckCheck className="w-3.5 h-3.5" />
+                                Read
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleMessageArchive(it.id)}
+                              className="flex items-center justify-center p-2.5 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+
+                        {it.type === "reminder" && (
+                          <>
+                            <button
+                              onClick={() => handleReminderDone(it.id)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-600 text-[13px] font-semibold hover:bg-emerald-100 transition-colors"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Done
+                            </button>
+                            <button
+                              onClick={() => snoozeItem(it.id)}
+                              disabled={snoozedItems.has(it.id)}
+                              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-[13px] font-semibold transition-colors ${
+                                snoozedItems.has(it.id)
+                                  ? "bg-amber-100 text-amber-600"
+                                  : "bg-amber-50 text-amber-600 hover:bg-amber-100"
+                              }`}
+                            >
+                              <AlarmClock className="w-3.5 h-3.5" />
+                              {snoozedItems.has(it.id) ? "Snoozed" : "Snooze 1h"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                showFeedback(it.id, "Dismissed", 'info');
+                                setTimeout(() => remove(it.id), 600);
+                              }}
+                              className="flex items-center justify-center p-2.5 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+
+                        {it.type === "invite" && (
+                          <>
+                            <button
+                              onClick={() => acceptInvite(it.id)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-purple-50 text-purple-600 text-[13px] font-semibold hover:bg-purple-100 transition-colors"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                              Join Circle
+                            </button>
+                            <button
+                              onClick={() => {
+                                markRead(it.id);
+                                onNavigate?.("circles");
+                              }}
+                              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 text-slate-600 text-[13px] font-semibold hover:bg-slate-200 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              View
+                            </button>
+                            <button
+                              onClick={() => declineInvite(it.id)}
+                              className="flex items-center justify-center p-2.5 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+
+                        {it.type === "social" && (
+                          <>
+                            <button
+                              onClick={() => handleSocialView(it.id)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-pink-50 text-pink-600 text-[13px] font-semibold hover:bg-pink-100 transition-colors"
+                            >
+                              <Heart className="w-3.5 h-3.5" />
+                              View Activity
+                            </button>
+                            {it.isNew && (
+                              <button
+                                onClick={() => markRead(it.id)}
+                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 text-slate-600 text-[13px] font-semibold hover:bg-slate-200 transition-colors"
+                              >
+                                <CheckCheck className="w-3.5 h-3.5" />
+                                Read
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                showFeedback(it.id, "Archived", 'info');
+                                setTimeout(() => remove(it.id), 600);
+                              }}
+                              className="flex items-center justify-center p-2.5 rounded-xl bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </>
                     )}
-                  </div>
                   </div>
                 </div>
               ))}
