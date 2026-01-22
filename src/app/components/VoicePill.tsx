@@ -61,11 +61,11 @@ export function VoicePill({
         className={`
           relative flex items-center justify-between w-full
           rounded-full px-5 py-3.5
-          bg-gradient-to-r from-[#E879F9] via-[#A78BFA] to-[#38BDF8]
+          bg-gradient-to-r from-primary via-orb-middle to-secondary
           transition-all duration-300 cursor-pointer
-          hover:shadow-[0_0_25px_0_rgba(232,121,249,0.35)]
+          hover:shadow-[0_0_25px_0_rgba(181,140,255,0.35)]
           active:scale-95
-          ${isFocused ? 'shadow-[0_0_20px_0_rgba(232,121,249,0.25)]' : 'shadow-[0_4px_12px_0_rgba(0,0,0,0.08)]'}
+          ${isFocused ? 'shadow-[0_0_20px_0_rgba(181,140,255,0.25)]' : 'shadow-md'}
         `}
       >
         <input

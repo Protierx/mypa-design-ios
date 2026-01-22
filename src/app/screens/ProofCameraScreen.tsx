@@ -29,7 +29,10 @@ export function ProofCameraScreen({ onNavigate }: ProofCameraScreenProps) {
       {/* Top Controls */}
       <div className="absolute top-0 left-0 right-0 pt-12 px-6 z-10">
         <div className="flex items-center justify-between">
-          <button className="p-3 rounded-full bg-black/40 backdrop-blur-md">
+          <button 
+            onClick={() => onNavigate?.('challenges')}
+            className="p-3 rounded-full bg-black/40 backdrop-blur-md"
+          >
             <X className="w-6 h-6 text-white" />
           </button>
           <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md rounded-full px-4 py-2">
@@ -72,7 +75,7 @@ export function ProofCameraScreen({ onNavigate }: ProofCameraScreenProps) {
               onClick={handleCapture}
               className="w-20 h-20 rounded-full bg-white border-4 border-white/30 hover:scale-105 transition-transform active:scale-95"
             >
-              <div className="w-full h-full rounded-full bg-gradient-to-br from-[#B58CFF] to-[#64C7FF]" />
+              <div className="w-full h-full rounded-full bg-gradient-to-br from-primary to-secondary" />
             </button>
           </div>
         </div>

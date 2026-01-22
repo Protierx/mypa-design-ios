@@ -17,7 +17,7 @@ export function ProofConfirmScreen({ onNavigate }: ProofConfirmScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F6F7FA] pb-32">
+    <div className="min-h-screen bg-ios-bg pb-32">
       <IOSStatusBar />
       
       {/* Header */}
@@ -46,7 +46,7 @@ export function ProofConfirmScreen({ onNavigate }: ProofConfirmScreenProps) {
         <div>
           <h2 className="text-[17px] font-semibold text-slate-800 mb-3">Attach to</h2>
           <div className="space-y-2">
-            <button className="w-full py-4 px-5 rounded-[20px] bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-left shadow-md">
+            <button className="w-full py-4 px-5 rounded-[20px] bg-gradient-to-r from-primary to-secondary text-white text-left shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-[17px] font-medium">Morning Workout Challenge</span>
                 <span className="text-[13px] text-white/80">Active</span>
@@ -108,10 +108,16 @@ export function ProofConfirmScreen({ onNavigate }: ProofConfirmScreenProps) {
 
         {/* Action Buttons */}
         <div className="space-y-3 pt-4">
-          <button className="w-full py-4 rounded-full bg-gradient-to-r from-[#B58CFF] to-[#64C7FF] text-white text-[17px] font-medium hover:opacity-90 transition-opacity shadow-lg">
+          <button 
+            onClick={() => onNavigate?.('challenges')}
+            className="w-full py-4 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-[17px] font-medium hover:opacity-90 transition-opacity shadow-lg"
+          >
             Post
           </button>
-          <button className="w-full py-4 rounded-full bg-white text-slate-800 text-[17px] font-medium hover:bg-slate-50 transition-colors border border-slate-200">
+          <button 
+            onClick={() => onNavigate?.('challenges')}
+            className="w-full py-4 rounded-full bg-white text-slate-800 text-[17px] font-medium hover:bg-slate-50 transition-colors border border-slate-200"
+          >
             Save Private
           </button>
         </div>

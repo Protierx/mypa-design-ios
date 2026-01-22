@@ -3,6 +3,8 @@ import {
   Users,
   User,
   LayoutGrid,
+  CalendarDays,
+  Home,
 } from "lucide-react";
 import { MYPAOrb } from "./MYPAOrb";
 
@@ -10,19 +12,21 @@ interface TabBarProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   onVoiceClick?: () => void;
+  notifications?: { home?: number; circles?: number };
 }
 
 const tabs = [
-  { id: "hub", label: "Hub", icon: LayoutGrid, gradient: "from-purple-500 to-purple-600" },
-  { id: "inbox", label: "Inbox", icon: Inbox, gradient: "from-blue-500 to-cyan-500" },
+  { id: "home", label: "Home", icon: Home, gradient: "from-purple-500 to-violet-500" },
+  { id: "plan", label: "Plan", icon: CalendarDays, gradient: "from-blue-500 to-cyan-500" },
   { id: "circles", label: "Circles", icon: Users, gradient: "from-pink-500 to-rose-500" },
-  { id: "profile", label: "Profile", icon: User, gradient: "from-emerald-500 to-teal-500" },
+  { id: "profile", label: "Me", icon: User, gradient: "from-emerald-500 to-teal-500" },
 ];
 
 export function TabBar({
-  activeTab = "hub",
+  activeTab = "home",
   onTabChange,
   onVoiceClick,
+  notifications = { home: 2, circles: 1 },
 }: TabBarProps) {
   return (
     <div className="absolute left-0 right-0 bottom-0 z-50 pointer-events-none">
@@ -44,6 +48,7 @@ export function TabBar({
           {tabs.slice(0, 2).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            const badgeCount = notifications?.[tab.id as keyof typeof notifications];
 
             return (
               <button
@@ -57,7 +62,7 @@ export function TabBar({
                     : 'bg-transparent hover:bg-slate-100'
                 }`}
                 style={isActive ? {
-                  boxShadow: tab.id === 'hub' 
+                  boxShadow: tab.id === 'home' 
                     ? '0 4px 14px rgba(168, 85, 247, 0.4)' 
                     : '0 4px 14px rgba(59, 130, 246, 0.4)'
                 } : {}}
@@ -68,6 +73,12 @@ export function TabBar({
                     }`}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
+                  {/* Notification badge */}
+                  {badgeCount && badgeCount > 0 && !isActive && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-sm">
+                      {badgeCount > 9 ? '9+' : badgeCount}
+                    </span>
+                  )}
                 </div>
                 <span
                   className={`text-[10px] font-semibold transition-all duration-200 ${
@@ -82,20 +93,27 @@ export function TabBar({
             );
           })}
 
-          {/* Center Voice Orb - MYPA Orb */}
+          {/* Center Voice Orb - MYPA Orb - PROMINENT */}
           <button
             onClick={onVoiceClick}
-            className="relative mx-2 active:scale-95 transition-all duration-200"
+            className="relative mx-1 active:scale-95 transition-all duration-200 group"
           >
-            <div className="w-12 h-12 flex items-center justify-center">
-              <MYPAOrb size="sm" showGlow={false} />
+            {/* Glow ring */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-secondary opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
+            <div className="w-16 h-16 flex items-center justify-center relative">
+              <MYPAOrb size="md" showGlow={true} />
             </div>
+            {/* Label */}
+            <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-primary whitespace-nowrap">
+              Talk
+            </span>
           </button>
 
           {/* Right tabs */}
           {tabs.slice(2).map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            const badgeCount = notifications?.[tab.id as keyof typeof notifications];
 
             return (
               <button
@@ -120,6 +138,12 @@ export function TabBar({
                     }`}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
+                  {/* Notification badge */}
+                  {badgeCount && badgeCount > 0 && !isActive && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-sm">
+                      {badgeCount > 9 ? '9+' : badgeCount}
+                    </span>
+                  )}
                 </div>
                 <span
                   className={`text-[10px] font-semibold transition-all duration-200 ${
