@@ -228,11 +228,57 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
     },
   ]);
 
+  // State for pending message reply
+  const [replyingTo, setReplyingTo] = useState<{ name: string; message: string } | null>(null);
+  const [replyText, setReplyText] = useState("");
+
+  // Check for pending message actions from Inbox
+  useEffect(() => {
+    const checkForPendingMessage = () => {
+      try {
+        const pendingAction = localStorage.getItem('pendingMessageAction');
+        if (pendingAction) {
+          const action = JSON.parse(pendingAction);
+          if (action.action === 'reply' && action.senderName) {
+            setReplyingTo({
+              name: action.senderName,
+              message: action.messagePreview || '',
+            });
+            // Clear the pending action
+            localStorage.removeItem('pendingMessageAction');
+          }
+        }
+      } catch (e) {
+        console.error('Error processing pending message action', e);
+      }
+    };
+    
+    checkForPendingMessage();
+  }, []);
+
+  // Handle sending a reply
+  const handleSendReply = () => {
+    if (replyText.trim() && replyingTo) {
+      // Add the reply as a new post in the feed
+      const newPost: Post = {
+        id: Date.now(),
+        type: "system",
+        systemType: "completed",
+        systemText: `You replied to ${replyingTo.name}: "${replyText.trim()}"`,
+        icon: "check",
+        time: "just now",
+      };
+      setPosts(prev => [newPost, ...prev]);
+      setReplyText("");
+      setReplyingTo(null);
+    }
+  };
+
   // Update parent about modal state
   useEffect(() => {
-    const isAnyModalOpen = showAssignModal || showShareModal || showMemberPicker || showInviteSheet || showTodayModal || showMembersModal || showMemberDetailModal || showCircleSettings || showMemberActionSheet;
+    const isAnyModalOpen = showAssignModal || showShareModal || showMemberPicker || showInviteSheet || showTodayModal || showMembersModal || showMemberDetailModal || showCircleSettings || showMemberActionSheet || replyingTo !== null;
     onModalStateChange?.(isAnyModalOpen);
-  }, [showAssignModal, showShareModal, showMemberPicker, showInviteSheet, showTodayModal, showMembersModal, showMemberDetailModal, showCircleSettings, showMemberActionSheet, onModalStateChange]);
+  }, [showAssignModal, showShareModal, showMemberPicker, showInviteSheet, showTodayModal, showMembersModal, showMemberDetailModal, showCircleSettings, showMemberActionSheet, replyingTo, onModalStateChange]);
 
   const handleReaction = (postId: number, reaction: "heart" | "fire" | "clap") => {
     setPosts(posts.map(post => {
@@ -2522,6 +2568,79 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
                   className="w-full px-4 py-3 rounded-lg bg-slate-100 text-slate-700 text-[14px] font-medium hover:bg-slate-200 transition-colors"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Reply to Message Modal */}
+      {replyingTo && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-[9998] backdrop-blur-sm"
+            onClick={() => setReplyingTo(null)}
+          />
+          <div className="fixed inset-0 flex items-end z-[9999] pointer-events-none">
+            <div
+              className="w-full bg-white rounded-t-[28px] pointer-events-auto"
+              style={{
+                boxShadow: "0 -4px 20px rgba(0,0,0,0.1)",
+              }}
+            >
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-9 h-1 bg-slate-300 rounded-full" />
+              </div>
+              
+              <div className="px-5 pb-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-[18px] font-semibold text-slate-900">
+                    Reply to {replyingTo.name}
+                  </h2>
+                  <button
+                    onClick={() => setReplyingTo(null)}
+                    className="p-2 -mr-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-slate-500" />
+                  </button>
+                </div>
+
+                {/* Original Message */}
+                {replyingTo.message && (
+                  <div className="bg-slate-50 rounded-xl p-3 mb-4 border-l-4 border-blue-400">
+                    <p className="text-[12px] text-slate-500 mb-1">Original message:</p>
+                    <p className="text-[14px] text-slate-700">{replyingTo.message}</p>
+                  </div>
+                )}
+
+                {/* Reply Input */}
+                <div className="mb-4">
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Type your reply..."
+                    className="w-full p-4 rounded-xl border border-slate-200 text-[15px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    rows={4}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Send Button */}
+                <button
+                  onClick={handleSendReply}
+                  disabled={!replyText.trim()}
+                  className={`w-full py-3.5 rounded-xl text-[15px] font-semibold transition-all ${
+                    replyText.trim()
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30'
+                      : 'bg-slate-100 text-slate-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Send Reply
+                  </div>
                 </button>
               </div>
             </div>

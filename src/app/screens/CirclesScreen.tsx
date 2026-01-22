@@ -87,6 +87,69 @@ export function CirclesScreen({ onNavigate, onModalStateChange }: CirclesScreenP
   const [newName, setNewName] = useState('');
   const [newMembers, setNewMembers] = useState('');
   const [newPrivacy, setNewPrivacy] = useState<'public' | 'private'>('public');
+  const [justJoinedCircle, setJustJoinedCircle] = useState<string | null>(null);
+
+  // Check for pending circle actions from Inbox
+  useEffect(() => {
+    const checkForPendingAction = () => {
+      try {
+        const pendingAction = localStorage.getItem('pendingCircleAction');
+        if (pendingAction) {
+          const action = JSON.parse(pendingAction);
+          if (action.action === 'join' && action.circleName) {
+            // Find or create the circle
+            const existingCircle = circles.find(c => 
+              c.name.toLowerCase().includes(action.circleName.toLowerCase())
+            );
+            
+            if (existingCircle) {
+              // Join existing circle
+              setCircles(prev => prev.map(c => {
+                if (c.id === existingCircle.id) {
+                  if (!c.members.some(m => m.initial === 'Y')) {
+                    return {
+                      ...c,
+                      members: [...c.members, { initial: 'Y', posted: false }],
+                      total: c.total + 1,
+                    };
+                  }
+                }
+                return c;
+              }));
+              setJustJoinedCircle(existingCircle.name);
+            } else {
+              // Create new circle with that name
+              const inviteCode = generateInviteCode();
+              const newCircle = {
+                id: Math.max(0, ...circles.map(c => c.id)) + 1,
+                name: action.circleName,
+                members: [{ initial: 'Y', posted: false }],
+                challenge: '',
+                posted: 0,
+                total: 1,
+                streak: 0,
+                lastActivity: 'just now',
+                inviteCode: inviteCode,
+                inviteLink: `https://mypa.app/invite/${inviteCode}`,
+              };
+              setCircles(prev => [newCircle, ...prev]);
+              setJustJoinedCircle(action.circleName);
+            }
+            
+            // Clear the pending action
+            localStorage.removeItem('pendingCircleAction');
+            
+            // Clear the highlight after a few seconds
+            setTimeout(() => setJustJoinedCircle(null), 3000);
+          }
+        }
+      } catch (e) {
+        console.error('Error processing pending circle action', e);
+      }
+    };
+    
+    checkForPendingAction();
+  }, []);
 
   // Update parent about modal state
   useEffect(() => {
@@ -361,9 +424,17 @@ export function CirclesScreen({ onNavigate, onModalStateChange }: CirclesScreenP
           filteredCircles.map((circle, index) => (
             <div
               key={circle.id}
-              className={`circle-card rounded-2xl shadow-sm slide-up overflow-hidden ${expandedCard === circle.id ? 'expanded' : ''}`}
+              className={`circle-card rounded-2xl shadow-sm slide-up overflow-hidden ${expandedCard === circle.id ? 'expanded' : ''} ${justJoinedCircle === circle.name ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}`}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
+              {/* Just Joined Banner */}
+              {justJoinedCircle === circle.name && (
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 flex items-center justify-center gap-2">
+                  <Check className="w-4 h-4 text-white" />
+                  <span className="text-white text-[13px] font-semibold">Successfully joined!</span>
+                </div>
+              )}
+              
               {/* Main Card Content */}
               <button
                 onClick={() => {
