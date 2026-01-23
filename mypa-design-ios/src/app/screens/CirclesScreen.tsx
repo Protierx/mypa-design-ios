@@ -1,4 +1,4 @@
-import { Users, Plus, Flame, Search, X, Check, ChevronRight, Sparkles, Heart, Zap, Bell, MoreHorizontal, UserPlus, Settings, Trash2 } from "lucide-react";
+import { Users, Plus, Flame, Search, X, Check, ChevronRight, Sparkles, Heart, Zap, Bell, MoreHorizontal, UserPlus, Settings, Trash2, Dumbbell, Briefcase, BookOpen } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState, useEffect, useRef } from "react";
 
@@ -456,7 +456,9 @@ export function CirclesScreen({ onNavigate, onModalStateChange }: CirclesScreenP
                     index % 3 === 1 ? 'bg-gradient-to-br from-rose-500 to-pink-600' :
                     'bg-gradient-to-br from-emerald-500 to-teal-600'
                   }`}>
-                    <span className="text-xl">{index % 3 === 0 ? '🏋️' : index % 3 === 1 ? '💼' : '📚'}</span>
+                    {index % 3 === 0 ? <Dumbbell className="w-6 h-6 text-white" /> : 
+                     index % 3 === 1 ? <Briefcase className="w-6 h-6 text-white" /> : 
+                     <BookOpen className="w-6 h-6 text-white" />}
                   </div>
                   
                   {/* Circle Info */}

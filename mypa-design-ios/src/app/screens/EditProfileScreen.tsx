@@ -26,7 +26,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
   const [username, setUsername] = useState('khalid_m');
   const [email, setEmail] = useState('khalid@email.com');
   const [phone, setPhone] = useState('+1 (555) 123-4567');
-  const [bio, setBio] = useState('Productivity enthusiast 🚀');
+  const [bio, setBio] = useState('Productivity enthusiast');
   
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');

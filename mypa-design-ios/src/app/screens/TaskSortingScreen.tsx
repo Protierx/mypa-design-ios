@@ -27,7 +27,24 @@ import {
   Send,
   CalendarPlus,
   ChevronLeft,
-  Trophy
+  Trophy,
+  Briefcase,
+  HeartPulse,
+  User,
+  BookOpen,
+  Users,
+  Wallet,
+  Home,
+  FileText,
+  Phone,
+  Mail,
+  Dumbbell,
+  ShoppingCart,
+  ClipboardCheck,
+  Handshake,
+  Keyboard,
+  Bot,
+  LucideIcon
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 
@@ -383,16 +400,16 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
     setShowPlanModal(null);
   };
 
-  const getCategoryEmoji = (category?: BrainDumpItem['aiCategory']) => {
+  const getCategoryIcon = (category?: BrainDumpItem['aiCategory']): LucideIcon => {
     switch (category) {
-      case 'work': return '💼';
-      case 'health': return '🏥';
-      case 'personal': return '👤';
-      case 'learning': return '📚';
-      case 'social': return '👥';
-      case 'finance': return '💰';
-      case 'home': return '🏠';
-      default: return '📝';
+      case 'work': return Briefcase;
+      case 'health': return HeartPulse;
+      case 'personal': return User;
+      case 'learning': return BookOpen;
+      case 'social': return Users;
+      case 'finance': return Wallet;
+      case 'home': return Home;
+      default: return FileText;
     }
   };
 
@@ -419,11 +436,11 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
     }
   };
 
-  const getSourceIcon = (source: BrainDumpItem['source']) => {
+  const getSourceIcon = (source: BrainDumpItem['source']): LucideIcon => {
     switch (source) {
-      case 'voice': return '🎤';
-      case 'ai-chat': return '🤖';
-      case 'typed': return '⌨️';
+      case 'voice': return Mic;
+      case 'ai-chat': return Bot;
+      case 'typed': return Keyboard;
     }
   };
 
@@ -598,12 +615,12 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
       <div className="px-4 mb-3 flex-shrink-0">
         <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {[
-            { emoji: '📞', label: 'Call', template: 'Call ' },
-            { emoji: '📧', label: 'Email', template: 'Email ' },
-            { emoji: '🏃', label: 'Exercise', template: 'Go to gym' },
-            { emoji: '🛒', label: 'Shopping', template: 'Buy groceries' },
-            { emoji: '📝', label: 'Review', template: 'Review ' },
-            { emoji: '🤝', label: 'Meeting', template: 'Meeting with ' },
+            { icon: Phone, color: 'text-blue-500', label: 'Call', template: 'Call ' },
+            { icon: Mail, color: 'text-rose-500', label: 'Email', template: 'Email ' },
+            { icon: Dumbbell, color: 'text-orange-500', label: 'Exercise', template: 'Go to gym' },
+            { icon: ShoppingCart, color: 'text-emerald-500', label: 'Shopping', template: 'Buy groceries' },
+            { icon: ClipboardCheck, color: 'text-violet-500', label: 'Review', template: 'Review ' },
+            { icon: Handshake, color: 'text-amber-500', label: 'Meeting', template: 'Meeting with ' },
           ].map((tpl) => (
             <button
               key={tpl.label}
@@ -613,7 +630,7 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
               }}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-white shadow-sm text-[11px] font-medium text-slate-600 hover:bg-slate-50 active:scale-95 transition-all whitespace-nowrap border border-slate-100"
             >
-              <span>{tpl.emoji}</span>
+              <tpl.icon className={`w-3.5 h-3.5 ${tpl.color}`} />
               <span>{tpl.label}</span>
             </button>
           ))}
@@ -748,9 +765,10 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
                       {/* Meta Info */}
                       <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                         {/* Source indicator */}
-                        <span className="text-[10px]" title={item.source}>
-                          {getSourceIcon(item.source)}
-                        </span>
+                        {(() => {
+                          const SourceIcon = getSourceIcon(item.source);
+                          return <SourceIcon className="w-3 h-3 text-slate-400" />;
+                        })()}
                         
                         {/* Status badge */}
                         {item.status === 'unsorted' ? (
@@ -759,8 +777,12 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
                             Unsorted
                           </span>
                         ) : item.aiCategory && (
-                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${getCategoryColor(item.aiCategory)}`}>
-                            {getCategoryEmoji(item.aiCategory)} {item.aiCategory}
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full flex items-center gap-1 ${getCategoryColor(item.aiCategory)}`}>
+                            {(() => {
+                              const CategoryIcon = getCategoryIcon(item.aiCategory);
+                              return <CategoryIcon className="w-3 h-3" />;
+                            })()}
+                            {item.aiCategory}
                           </span>
                         )}
                         
@@ -992,7 +1014,10 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-medium text-slate-800 truncate">{task.title}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px]">{getCategoryEmoji(task.aiCategory)}</span>
+                        {(() => {
+                          const CategoryIcon = getCategoryIcon(task.aiCategory);
+                          return <CategoryIcon className="w-3 h-3 text-slate-500" />;
+                        })()}
                         <span className={`text-[9px] px-1.5 py-0.5 rounded ${getCategoryColor(task.aiCategory)}`}>
                           {task.aiCategory}
                         </span>

@@ -18,6 +18,8 @@ import { SettingsScreen } from "./screens/SettingsScreen";
 import { HelpSupportScreen } from "./screens/HelpSupportScreen";
 import { EditProfileScreen } from "./screens/EditProfileScreen";
 import { NotificationsScreen } from "./screens/NotificationsScreen";
+import { StreakScreen } from "./screens/StreakScreen";
+import { LevelScreen } from "./screens/LevelScreen";
 import { TabBar } from "./components/TabBar";
 
 export default function App() {
@@ -95,6 +97,10 @@ export default function App() {
         return <EditProfileScreen onNavigate={handleNavigate} />;
       case 'notifications':
         return <NotificationsScreen onNavigate={handleNavigate} />;
+      case 'streak':
+        return <StreakScreen onNavigate={handleNavigate} />;
+      case 'level':
+        return <LevelScreen onNavigate={handleNavigate} />;
       default:
         return <HubScreen onNavigate={handleNavigate} onVoiceClick={handleVoiceClick} />;
     }

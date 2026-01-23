@@ -1,4 +1,4 @@
-import { ArrowLeft, Heart, Sparkles, RefreshCw, MessageCircle, Target, Flame } from "lucide-react";
+import { ArrowLeft, Heart, Sparkles, RefreshCw, MessageCircle, Target, Flame, AlertCircle, Battery, Timer, HelpCircle, Footprints, BookOpen, LayoutGrid, Wind, Droplets } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState } from "react";
 
@@ -21,18 +21,18 @@ export function ResetScreen({ onNavigate, onVoiceClick }: ResetScreenProps) {
   };
 
   const reasons = [
-    { id: 'stress', label: 'Feeling stressed', emoji: '😰', tip: "That's normal. Let's simplify today." },
-    { id: 'tired', label: 'Too tired', emoji: '😴', tip: "Rest is productive. Let's focus on essentials." },
-    { id: 'busy', label: 'Too busy', emoji: '🏃', tip: "Let's trim the non-essentials." },
-    { id: 'forgot', label: 'Just forgot', emoji: '🤷', tip: "No worries! Lets get back on track." },
+    { id: 'stress', label: 'Feeling stressed', icon: AlertCircle, color: 'text-rose-500', tip: "That's normal. Let's simplify today." },
+    { id: 'tired', label: 'Too tired', icon: Battery, color: 'text-amber-500', tip: "Rest is productive. Let's focus on essentials." },
+    { id: 'busy', label: 'Too busy', icon: Timer, color: 'text-blue-500', tip: "Let's trim the non-essentials." },
+    { id: 'forgot', label: 'Just forgot', icon: HelpCircle, color: 'text-slate-500', tip: "No worries! Lets get back on track." },
   ];
 
   const smallWins = [
-    { id: 'walk', label: '10-minute walk', time: '10 min', emoji: '🚶', xp: 15 },
-    { id: 'read', label: 'Read 5 pages', time: '15 min', emoji: '📖', xp: 20 },
-    { id: 'organize', label: 'Organize desk', time: '10 min', emoji: '🗂️', xp: 15 },
-    { id: 'breathe', label: '5-min breathing', time: '5 min', emoji: '🧘', xp: 10 },
-    { id: 'water', label: 'Drink 3 glasses water', time: '—', emoji: '💧', xp: 10 },
+    { id: 'walk', label: '10-minute walk', time: '10 min', icon: Footprints, color: 'text-green-500', xp: 15 },
+    { id: 'read', label: 'Read 5 pages', time: '15 min', icon: BookOpen, color: 'text-blue-500', xp: 20 },
+    { id: 'organize', label: 'Organize desk', time: '10 min', icon: LayoutGrid, color: 'text-violet-500', xp: 15 },
+    { id: 'breathe', label: '5-min breathing', time: '5 min', icon: Wind, color: 'text-cyan-500', xp: 10 },
+    { id: 'water', label: 'Drink 3 glasses water', time: '—', icon: Droplets, color: 'text-sky-500', xp: 10 },
   ];
 
   if (wizardStep === 'intro') {
@@ -139,7 +139,9 @@ export function ResetScreen({ onNavigate, onVoiceClick }: ResetScreenProps) {
           </p>
 
           <div className="space-y-3 mb-8">
-            {reasons.map(reason => (
+            {reasons.map(reason => {
+              const ReasonIcon = reason.icon;
+              return (
               <button
                 key={reason.id}
                 onClick={() => setSelectedReason(reason.id)}
@@ -150,7 +152,11 @@ export function ResetScreen({ onNavigate, onVoiceClick }: ResetScreenProps) {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{reason.emoji}</span>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    selectedReason === reason.id ? 'bg-white/20' : 'bg-slate-100'
+                  }`}>
+                    <ReasonIcon className={`w-5 h-5 ${selectedReason === reason.id ? 'text-white' : reason.color}`} />
+                  </div>
                   <div className="flex-1">
                     <p className="text-[17px] font-medium">{reason.label}</p>
                     {selectedReason === reason.id && (
@@ -159,7 +165,8 @@ export function ResetScreen({ onNavigate, onVoiceClick }: ResetScreenProps) {
                   </div>
                 </div>
               </button>
-            ))}
+            );
+            })}
           </div>
 
           <button
@@ -201,7 +208,9 @@ export function ResetScreen({ onNavigate, onVoiceClick }: ResetScreenProps) {
           </p>
 
           <div className="space-y-3 mb-8">
-            {smallWins.map(win => (
+            {smallWins.map(win => {
+              const WinIcon = win.icon;
+              return (
               <button
                 key={win.id}
                 onClick={() => setSelectedWin(win.id)}
@@ -212,7 +221,11 @@ export function ResetScreen({ onNavigate, onVoiceClick }: ResetScreenProps) {
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <span className="text-2xl">{win.emoji}</span>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    selectedWin === win.id ? 'bg-white/20' : 'bg-slate-100'
+                  }`}>
+                    <WinIcon className={`w-5 h-5 ${selectedWin === win.id ? 'text-white' : win.color}`} />
+                  </div>
                   <div className="flex-1">
                     <p className="text-[17px] font-medium">{win.label}</p>
                     <div className="flex items-center gap-2 mt-1">
@@ -228,7 +241,8 @@ export function ResetScreen({ onNavigate, onVoiceClick }: ResetScreenProps) {
                   </div>
                 </div>
               </button>
-            ))}
+            );
+            })}
           </div>
 
           <button

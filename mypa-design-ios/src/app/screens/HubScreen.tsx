@@ -1,4 +1,4 @@
-import { Calendar, Inbox, Trophy, Clock, CheckCircle2, Wallet, Sparkles, ChevronRight, Zap, Sun, Moon, CloudSun, Target, ArrowRight, MessageCircle, Check, Flame, X, Volume2, Award, TrendingUp, Play, Star, Gift, Mic, ArrowUpRight, Pause, SkipForward, Brain, Timer, Rocket } from "lucide-react";
+import { Calendar, Inbox, Trophy, Clock, CheckCircle2, Wallet, Sparkles, ChevronRight, Zap, Sun, Moon, CloudSun, Target, ArrowRight, MessageCircle, Check, Flame, X, Volume2, Award, TrendingUp, Play, Star, Gift, Mic, ArrowUpRight, Pause, SkipForward, Brain, Timer, Rocket, BarChart3, Dumbbell, Phone, Sunrise, Hand } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState, useEffect, useRef } from "react";
 import "../../styles/cards.css";
@@ -17,7 +17,7 @@ interface Achievement {
 }
 
 export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
-  const [greeting, setGreeting] = useState({ text: '', emoji: '☀️', period: 'day', timeOfDay: 'morning' });
+  const [greeting, setGreeting] = useState({ text: '', icon: Sun, period: 'day', timeOfDay: 'morning' });
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
   const [showBriefing, setShowBriefing] = useState(false);
   const [briefingStep, setBriefingStep] = useState(0);
@@ -53,21 +53,21 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) {
-      setGreeting({ text: 'Good morning', emoji: '☀️', period: 'morning', timeOfDay: 'morning' });
+      setGreeting({ text: 'Good morning', icon: Sun, period: 'morning', timeOfDay: 'morning' });
     } else if (hour < 17) {
-      setGreeting({ text: 'Good afternoon', emoji: '🌤️', period: 'afternoon', timeOfDay: 'afternoon' });
+      setGreeting({ text: 'Good afternoon', icon: CloudSun, period: 'afternoon', timeOfDay: 'afternoon' });
     } else if (hour < 21) {
-      setGreeting({ text: 'Good evening', emoji: '🌅', period: 'evening', timeOfDay: 'evening' });
+      setGreeting({ text: 'Good evening', icon: Sunrise, period: 'evening', timeOfDay: 'evening' });
     } else {
-      setGreeting({ text: 'Good night', emoji: '🌙', period: 'night', timeOfDay: 'night' });
+      setGreeting({ text: 'Good night', icon: Moon, period: 'night', timeOfDay: 'night' });
     }
   }, []);
 
   // Rotating insights
   const insights = [
-    { icon: '🎯', text: "Peak focus hours: 9-11am", color: 'blue' },
-    { icon: '⚡', text: "You're 67% more productive today", color: 'emerald' },
-    { icon: '��', text: '7-day streak active!', color: 'orange' },
+    { icon: Target, text: "Peak focus hours: 9-11am", color: 'blue' },
+    { icon: Zap, text: "You're 67% more productive today", color: 'emerald' },
+    { icon: Flame, text: '7-day streak active!', color: 'orange' },
   ];
 
   useEffect(() => {
@@ -79,13 +79,13 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
 
   // Briefing items
   const briefingItems = [
-    { icon: '👋', text: greeting.text + "! I'm MYPA, your AI life organizer. Let me brief you.", delay: 2500 },
-    { icon: '📊', text: 'You have 3 tasks remaining today, with 2 marked priority. Very achievable!', delay: 3000 },
-    { icon: '⏰', text: "Your peak focus window is 9-11am. I've scheduled your hardest tasks then.", delay: 2800 },
-    { icon: '🎯', text: 'Next up: "Review Q1 metrics" at 5PM. You usually finish these in 15 mins.', delay: 2800 },
-    { icon: '📈', text: "Exciting! You're 67% above last week. Your consistency is remarkable!", delay: 2500 },
-    { icon: '🔥', text: 'Your 7-day streak gives you 1.5x XP multiplier. Push to 14 days!', delay: 2300 },
-    { icon: '🚀', text: "With your pace, you'll hit 85% completion. Ready to make it 100%?", delay: 2500 },
+    { icon: Hand, text: greeting.text + "! I'm MYPA, your AI life organizer. Let me brief you.", delay: 2500 },
+    { icon: BarChart3, text: 'You have 3 tasks remaining today, with 2 marked priority. Very achievable!', delay: 3000 },
+    { icon: Clock, text: "Your peak focus window is 9-11am. I've scheduled your hardest tasks then.", delay: 2800 },
+    { icon: Target, text: 'Next up: "Review Q1 metrics" at 5PM. You usually finish these in 15 mins.', delay: 2800 },
+    { icon: TrendingUp, text: "Exciting! You're 67% above last week. Your consistency is remarkable!", delay: 2500 },
+    { icon: Flame, text: 'Your 7-day streak gives you 1.5x XP multiplier. Push to 14 days!', delay: 2300 },
+    { icon: Rocket, text: "With your pace, you'll hit 85% completion. Ready to make it 100%?", delay: 2500 },
   ];
 
   const startBriefing = () => {
@@ -158,16 +158,16 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
 
   // Priority tasks
   const tasks = [
-    { id: 1, title: 'Review Q1 metrics', time: '5:00 PM', icon: '📊', category: 'Work', duration: '15m', priority: true },
-    { id: 2, title: 'Gym Session', time: '6:00 PM', icon: '🏋️', category: 'Health', duration: '1h', priority: true },
-    { id: 3, title: 'Call Mom', time: 'Evening', icon: '📞', category: 'Personal', duration: '15m', priority: false },
+    { id: 1, title: 'Review Q1 metrics', time: '5:00 PM', icon: BarChart3, category: 'Work', duration: '15m', priority: true },
+    { id: 2, title: 'Gym Session', time: '6:00 PM', icon: Dumbbell, category: 'Health', duration: '1h', priority: true },
+    { id: 3, title: 'Call Mom', time: 'Evening', icon: Phone, category: 'Personal', duration: '15m', priority: false },
   ];
 
   // Achievements
   const recentAchievements = [
-    { id: 1, icon: '🌅', name: 'Early Bird', new: true },
-    { id: 2, icon: '🔥', name: '7-Day Streak', new: true },
-    { id: 3, icon: '⚡', name: 'Speed Runner', new: false },
+    { id: 1, icon: Sunrise, name: 'Early Bird', new: true },
+    { id: 2, icon: Flame, name: '7-Day Streak', new: true },
+    { id: 3, icon: Zap, name: 'Speed Runner', new: false },
   ];
 
   const formattedTime = currentTime.toLocaleTimeString('en-US', { 
@@ -310,10 +310,15 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
 
         {/* Live Insight Ticker */}
         <div className="flex items-center gap-2 py-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 border border-violet-200/50">
-            <span className="text-sm">{insights[activeInsightIndex].icon}</span>
-            <span className="text-[12px] font-medium text-violet-700">{insights[activeInsightIndex].text}</span>
-          </div>
+          {(() => {
+            const InsightIcon = insights[activeInsightIndex].icon;
+            return (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 border border-violet-200/50">
+              <InsightIcon className="w-4 h-4 text-violet-600" />
+              <span className="text-[12px] font-medium text-violet-700">{insights[activeInsightIndex].text}</span>
+            </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -432,30 +437,44 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
         {/* Streak & Level Row - Gamification Spotlight */}
         <div className="grid grid-cols-2 gap-3">
           {/* Streak Card */}
-          <div className="glass rounded-2xl p-4 shadow-md border border-orange-200/50 bg-gradient-to-br from-orange-50/50 to-transparent relative overflow-hidden">
-            <div className="absolute -top-4 -right-4 text-[60px] opacity-10">🔥</div>
+          <button 
+            onClick={() => onNavigate?.('streak')}
+            className="glass rounded-2xl p-4 shadow-md border border-orange-200/50 bg-gradient-to-br from-orange-50/50 to-transparent relative overflow-hidden text-left active:scale-95 transition-transform"
+          >
+            <div className="absolute -top-4 -right-4 opacity-10">
+              <Flame className="w-16 h-16 text-orange-500" />
+            </div>
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl badge-bounce">🔥</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-sm">
+                  <Flame className="w-5 h-5 text-white" />
+                </div>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500 text-white">1.5x XP</span>
               </div>
               <p className="text-[28px] font-bold text-slate-900 leading-none">{today.streak}</p>
               <p className="text-[11px] text-slate-500 font-medium mt-1">Day Streak</p>
             </div>
-          </div>
+          </button>
 
           {/* Level Card */}
-          <div className="glass rounded-2xl p-4 shadow-md border border-violet-200/50 bg-gradient-to-br from-violet-50/50 to-transparent relative overflow-hidden">
-            <div className="absolute -top-4 -right-4 text-[60px] opacity-10">⭐</div>
+          <button 
+            onClick={() => onNavigate?.('level')}
+            className="glass rounded-2xl p-4 shadow-md border border-violet-200/50 bg-gradient-to-br from-violet-50/50 to-transparent relative overflow-hidden text-left active:scale-95 transition-transform"
+          >
+            <div className="absolute -top-4 -right-4 opacity-10">
+              <Star className="w-16 h-16 text-violet-500" />
+            </div>
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">⭐</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-sm">
+                  <Star className="w-5 h-5 text-white" />
+                </div>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500 text-white">{today.xpToNext > 0 ? today.xpToNext : 0} to next</span>
               </div>
               <p className="text-[28px] font-bold text-slate-900 leading-none">Lv {today.level}</p>
               <p className="text-[11px] text-slate-500 font-medium mt-1">{today.xp.toLocaleString()} XP</p>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Achievements Banner */}
@@ -470,7 +489,9 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
             </button>
           </div>
           <div className="flex gap-2">
-            {recentAchievements.map((badge, idx) => (
+            {recentAchievements.map((badge, idx) => {
+              const BadgeIcon = badge.icon;
+              return (
               <div
                 key={badge.id}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl ${
@@ -480,13 +501,16 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
                 } scale-in`}
                 style={{ animationDelay: `${idx * 0.1}s` }}
               >
-                <span className="text-lg">{badge.icon}</span>
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${badge.new ? 'bg-amber-100' : 'bg-slate-100'}`}>
+                  <BadgeIcon className={`w-4 h-4 ${badge.new ? 'text-amber-600' : 'text-slate-500'}`} />
+                </div>
                 <div>
                   <p className="text-[11px] font-semibold text-slate-800">{badge.name}</p>
                   {badge.new && <span className="text-[8px] font-bold text-amber-600">NEW!</span>}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
 
@@ -534,10 +558,10 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
                     </button>
                     
                     {/* Icon */}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                       task.priority && !isCompleted ? 'bg-violet-100' : 'bg-slate-100'
                     }`}>
-                      {task.icon}
+                      <task.icon className={`w-5 h-5 ${task.priority && !isCompleted ? 'text-violet-600' : 'text-slate-500'}`} />
                     </div>
                     
                     {/* Content */}
@@ -680,6 +704,7 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
               {briefingItems.slice(Math.max(0, briefingStep - 1), briefingStep + 1).map((item, index) => {
                 const actualIndex = Math.max(0, briefingStep - 1) + index;
                 const isCurrent = actualIndex === briefingStep;
+                const ItemIcon = item.icon;
                 return (
                   <div
                     key={actualIndex}
@@ -688,7 +713,9 @@ export function HubScreen({ onNavigate, onVoiceClick }: HubScreenProps) {
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="text-[22px] flex-shrink-0">{item.icon}</span>
+                      <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <ItemIcon className="w-5 h-5 text-white" />
+                      </div>
                       <p className="text-white text-[14px] font-medium leading-relaxed">{item.text}</p>
                     </div>
                   </div>

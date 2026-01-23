@@ -5,7 +5,7 @@ interface MYPAOrbProps {
 }
 
 const sizeClasses = {
-  sm: "w-12 h-12",
+  sm: "w-14 h-14",
   md: "w-20 h-20",
   lg: "w-32 h-32",
   xl: "w-48 h-48",

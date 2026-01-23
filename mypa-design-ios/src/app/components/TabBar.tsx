@@ -33,7 +33,7 @@ export function TabBar({
       <div className="relative mx-auto max-w-[390px] w-full pointer-events-auto">
         {/* Premium frosted glass background */}
         <div 
-          className="absolute inset-x-3 bottom-3 h-[72px] rounded-[24px] overflow-hidden"
+          className="absolute inset-x-3 bottom-3 h-[70px] rounded-[24px] overflow-hidden"
           style={{
             background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.92) 100%)',
             boxShadow: '0 -4px 30px rgba(181, 140, 255, 0.15), 0 4px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
@@ -43,7 +43,7 @@ export function TabBar({
           }}
         />
 
-        <div className="relative px-4 pb-5 pt-3 flex items-center justify-between z-10">
+        <div className="relative px-6 pb-4 pt-2 flex items-end justify-evenly z-10 h-[76px]">
           {/* Left tabs */}
           {tabs.slice(0, 2).map((tab) => {
             const Icon = tab.icon;
@@ -54,7 +54,7 @@ export function TabBar({
               <button
                 key={tab.id}
                 onClick={() => onTabChange?.(tab.id)}
-                className="flex flex-col items-center gap-1 min-w-[56px] py-1.5 active:scale-90 transition-all duration-200"
+                className="flex flex-col items-center gap-0.5 w-[60px] active:scale-90 transition-all duration-200"
               >
                 <div className={`relative p-2 rounded-2xl transition-all duration-300 ${
                   isActive 
@@ -68,7 +68,7 @@ export function TabBar({
                 } : {}}
                 >
                   <Icon
-                    className={`w-5 h-5 transition-all duration-200 ${
+                    className={`w-[22px] h-[22px] transition-all duration-200 ${
                       isActive ? "text-white" : "text-slate-600"
                     }`}
                     strokeWidth={isActive ? 2.5 : 2}
@@ -96,15 +96,15 @@ export function TabBar({
           {/* Center Voice Orb - MYPA Orb - PROMINENT */}
           <button
             onClick={onVoiceClick}
-            className="relative mx-1 active:scale-95 transition-all duration-200 group"
+            className="relative flex flex-col items-center active:scale-95 transition-all duration-200 group -mt-6"
           >
             {/* Glow ring */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-secondary opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
-            <div className="w-16 h-16 flex items-center justify-center relative">
-              <MYPAOrb size="md" showGlow={true} />
+            <div className="w-[52px] h-[52px] flex items-center justify-center relative">
+              <MYPAOrb size="sm" showGlow={true} />
             </div>
             {/* Label */}
-            <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-semibold text-primary whitespace-nowrap">
+            <span className="text-[10px] font-semibold text-primary whitespace-nowrap mt-1">
               Talk
             </span>
           </button>
@@ -119,7 +119,7 @@ export function TabBar({
               <button
                 key={tab.id}
                 onClick={() => onTabChange?.(tab.id)}
-                className="flex flex-col items-center gap-1 min-w-[56px] py-1.5 active:scale-90 transition-all duration-200"
+                className="flex flex-col items-center gap-0.5 w-[60px] active:scale-90 transition-all duration-200"
               >
                 <div className={`relative p-2 rounded-2xl transition-all duration-300 ${
                   isActive 
@@ -133,7 +133,7 @@ export function TabBar({
                 } : {}}
                 >
                   <Icon
-                    className={`w-5 h-5 transition-all duration-200 ${
+                    className={`w-[22px] h-[22px] transition-all duration-200 ${
                       isActive ? "text-white" : "text-slate-600"
                     }`}
                     strokeWidth={isActive ? 2.5 : 2}

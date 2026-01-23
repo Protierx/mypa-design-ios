@@ -21,7 +21,16 @@ import {
   X,
   Check,
   Users,
-  Calendar
+  Calendar,
+  Dumbbell,
+  BookOpen,
+  Smartphone,
+  Droplets,
+  Gem,
+  Bird,
+  Handshake,
+  Heart,
+  LucideIcon
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 
@@ -32,7 +41,8 @@ interface ChallengesScreenProps {
 interface Challenge {
   id: number;
   name: string;
-  emoji: string;
+  icon: LucideIcon;
+  iconColor: string;
   duration: string;
   daysLeft: number;
   totalDays: number;
@@ -77,21 +87,22 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
 
   // Achievements
   const achievements = [
-    { id: 1, name: 'First Blood', emoji: '🎯', description: 'Complete your first challenge', unlocked: true, xp: 100 },
-    { id: 2, name: 'Streak Master', emoji: '🔥', description: '7-day streak', unlocked: true, xp: 250 },
-    { id: 3, name: 'Consistency King', emoji: '👑', description: '21-day streak', unlocked: false, xp: 500, progress: 7, total: 21 },
-    { id: 4, name: 'Social Butterfly', emoji: '🦋', description: 'Join 5 group challenges', unlocked: true, xp: 150 },
-    { id: 5, name: 'Early Bird', emoji: '🐦', description: 'Submit proof before 8 AM for 7 days', unlocked: false, xp: 300, progress: 3, total: 7 },
-    { id: 6, name: 'Champion', emoji: '🏆', description: 'Win 10 challenges', unlocked: false, xp: 1000, progress: 8, total: 10 },
-    { id: 7, name: 'Perfectionist', emoji: '💎', description: '100% completion rate for a month', unlocked: false, xp: 750, progress: 89, total: 100 },
-    { id: 8, name: 'Team Player', emoji: '🤝', description: 'Help 5 friends complete challenges', unlocked: true, xp: 200 },
+    { id: 1, name: 'First Blood', icon: Target, color: 'text-blue-500', description: 'Complete your first challenge', unlocked: true, xp: 100 },
+    { id: 2, name: 'Streak Master', icon: Flame, color: 'text-orange-500', description: '7-day streak', unlocked: true, xp: 250 },
+    { id: 3, name: 'Consistency King', icon: Crown, color: 'text-amber-500', description: '21-day streak', unlocked: false, xp: 500, progress: 7, total: 21 },
+    { id: 4, name: 'Social Butterfly', icon: Heart, color: 'text-pink-500', description: 'Join 5 group challenges', unlocked: true, xp: 150 },
+    { id: 5, name: 'Early Bird', icon: Bird, color: 'text-sky-500', description: 'Submit proof before 8 AM for 7 days', unlocked: false, xp: 300, progress: 3, total: 7 },
+    { id: 6, name: 'Champion', icon: Trophy, color: 'text-yellow-500', description: 'Win 10 challenges', unlocked: false, xp: 1000, progress: 8, total: 10 },
+    { id: 7, name: 'Perfectionist', icon: Gem, color: 'text-cyan-500', description: '100% completion rate for a month', unlocked: false, xp: 750, progress: 89, total: 100 },
+    { id: 8, name: 'Team Player', icon: Handshake, color: 'text-emerald-500', description: 'Help 5 friends complete challenges', unlocked: true, xp: 200 },
   ];
 
   const [activeChallenges] = useState<Challenge[]>([
     {
       id: 1,
       name: 'Morning Workout',
-      emoji: '🏋️',
+      icon: Dumbbell,
+      iconColor: 'text-rose-500',
       duration: '30 days',
       daysLeft: 18,
       totalDays: 30,
@@ -114,7 +125,8 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
     {
       id: 2,
       name: 'Daily Reading',
-      emoji: '📚',
+      icon: BookOpen,
+      iconColor: 'text-blue-500',
       duration: '14 days',
       daysLeft: 6,
       totalDays: 14,
@@ -134,7 +146,8 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
     {
       id: 3,
       name: 'No Phone After 9PM',
-      emoji: '📵',
+      icon: Smartphone,
+      iconColor: 'text-violet-500',
       duration: '7 days',
       daysLeft: 3,
       totalDays: 7,
@@ -156,7 +169,8 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
     {
       id: 1,
       name: 'Hydration Challenge',
-      emoji: '💧',
+      icon: Droplets,
+      iconColor: 'text-cyan-500',
       inviter: 'Sarah',
       duration: '7 days',
       members: 4,
@@ -346,8 +360,8 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
                 {invites.map(invite => (
                   <div key={invite.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm">
-                        {invite.emoji}
+                      <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                        <invite.icon className={`w-6 h-6 ${invite.iconColor}`} />
                       </div>
                       <div>
                         <p className="text-[15px] font-semibold text-slate-900">{invite.name}</p>
@@ -378,8 +392,8 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
                 <div className={`p-4 bg-gradient-to-r ${getCategoryGradient(challenge.category)}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl">
-                        {challenge.emoji}
+                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                        <challenge.icon className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h3 className="text-[17px] font-bold text-white">{challenge.name}</h3>
@@ -641,12 +655,12 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl ${
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
                     achievement.unlocked 
                       ? 'bg-gradient-to-br from-amber-100 to-orange-100' 
                       : 'bg-slate-100'
                   }`}>
-                    {achievement.unlocked ? achievement.emoji : <Lock className="w-6 h-6 text-slate-400" />}
+                    {achievement.unlocked ? <achievement.icon className={`w-7 h-7 ${achievement.color}`} /> : <Lock className="w-6 h-6 text-slate-400" />}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -730,17 +744,17 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
               <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide block mb-2">Category</label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { name: 'Fitness', emoji: '🏋️' },
-                  { name: 'Wellness', emoji: '🧘' },
-                  { name: 'Learning', emoji: '📚' },
-                  { name: 'Productivity', emoji: '⚡' },
-                  { name: 'Social', emoji: '👥' }
+                  { name: 'Fitness', icon: Dumbbell, color: 'text-rose-500' },
+                  { name: 'Wellness', icon: Heart, color: 'text-violet-500' },
+                  { name: 'Learning', icon: BookOpen, color: 'text-blue-500' },
+                  { name: 'Productivity', icon: Zap, color: 'text-amber-500' },
+                  { name: 'Social', icon: Users, color: 'text-emerald-500' }
                 ].map((cat) => (
                   <button
                     key={cat.name}
                     className="px-3 py-2 rounded-xl bg-slate-100 text-[13px] font-medium text-slate-700 active:bg-slate-200 transition-colors flex items-center gap-1.5"
                   >
-                    <span>{cat.emoji}</span>
+                    <cat.icon className={`w-4 h-4 ${cat.color}`} />
                     {cat.name}
                   </button>
                 ))}
