@@ -44,18 +44,11 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
   const [gmailConnected, setGmailConnected] = useState(true);
   const [outlookMailConnected, setOutlookMailConnected] = useState(false);
 
-  // Permissions State  
+  // Notifications & Focus State  
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [locationEnabled, setLocationEnabled] = useState(false);
-  const [calendarAccess, setCalendarAccess] = useState(true);
-  const [contactsAccess, setContactsAccess] = useState(false);
-  const [healthAccess, setHealthAccess] = useState(false);
   const [focusModeAccess, setFocusModeAccess] = useState(true);
-  const [siriAccess, setSiriAccess] = useState(false);
-  const [backgroundRefresh, setBackgroundRefresh] = useState(true);
 
   // App Preferences
-  const [darkMode, setDarkMode] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [autoSync, setAutoSync] = useState(true);
@@ -195,10 +188,10 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
           </div>
         </div>
 
-        {/* Permissions Section */}
+        {/* Notifications & Focus */}
         <div>
           <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-2 px-1">
-            Permissions
+            Notifications
           </h2>
           <div className="ios-card overflow-hidden shadow-sm">
             {/* Notifications */}
@@ -208,71 +201,15 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
                   <Bell className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-[15px] font-medium text-slate-900">Notifications</p>
+                  <p className="text-[15px] font-medium text-slate-900">Push Notifications</p>
                   <p className="text-[12px] text-slate-500">Reminders, updates & nudges</p>
                 </div>
               </div>
               <ToggleSwitch active={notificationsEnabled} onToggle={() => setNotificationsEnabled(!notificationsEnabled)} />
             </div>
 
-            {/* Location */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${locationEnabled ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-slate-300'}`}>
-                  <MapPin className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-medium text-slate-900">Location</p>
-                  <p className="text-[12px] text-slate-500">For commute & location reminders</p>
-                </div>
-              </div>
-              <ToggleSwitch active={locationEnabled} onToggle={() => setLocationEnabled(!locationEnabled)} />
-            </div>
-
-            {/* Calendar Access */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${calendarAccess ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-slate-300'}`}>
-                  <Calendar className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-medium text-slate-900">Calendar Access</p>
-                  <p className="text-[12px] text-slate-500">Read & write calendar events</p>
-                </div>
-              </div>
-              <ToggleSwitch active={calendarAccess} onToggle={() => setCalendarAccess(!calendarAccess)} />
-            </div>
-
-            {/* Contacts */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${contactsAccess ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-slate-300'}`}>
-                  <Smartphone className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-medium text-slate-900">Contacts</p>
-                  <p className="text-[12px] text-slate-500">For meeting invites</p>
-                </div>
-              </div>
-              <ToggleSwitch active={contactsAccess} onToggle={() => setContactsAccess(!contactsAccess)} />
-            </div>
-
-            {/* Health & Fitness */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${healthAccess ? 'bg-gradient-to-br from-pink-500 to-pink-600' : 'bg-slate-300'}`}>
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-medium text-slate-900">Health & Fitness</p>
-                  <p className="text-[12px] text-slate-500">Sleep & activity data</p>
-                </div>
-              </div>
-              <ToggleSwitch active={healthAccess} onToggle={() => setHealthAccess(!healthAccess)} />
-            </div>
-
             {/* Focus Mode */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+            <div className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${focusModeAccess ? 'bg-gradient-to-br from-indigo-500 to-indigo-600' : 'bg-slate-300'}`}>
                   <Moon className="w-5 h-5 text-white" />
@@ -284,35 +221,54 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
               </div>
               <ToggleSwitch active={focusModeAccess} onToggle={() => setFocusModeAccess(!focusModeAccess)} />
             </div>
-
-            {/* Siri & Shortcuts */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${siriAccess ? 'bg-gradient-to-br from-gradient-purple to-gradient-blue' : 'bg-slate-300'}`}>
-                  <Volume2 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-medium text-slate-900">Siri & Shortcuts</p>
-                  <p className="text-[12px] text-slate-500">Voice commands & automation</p>
-                </div>
-              </div>
-              <ToggleSwitch active={siriAccess} onToggle={() => setSiriAccess(!siriAccess)} />
-            </div>
-
-            {/* Background Refresh */}
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${backgroundRefresh ? 'bg-gradient-to-br from-cyan-500 to-cyan-600' : 'bg-slate-300'}`}>
-                  <RefreshCw className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-medium text-slate-900">Background Refresh</p>
-                  <p className="text-[12px] text-slate-500">Keep data up to date</p>
-                </div>
-              </div>
-              <ToggleSwitch active={backgroundRefresh} onToggle={() => setBackgroundRefresh(!backgroundRefresh)} />
-            </div>
           </div>
+        </div>
+
+        {/* Privacy & Data */}
+        <div>
+          <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-2 px-1">
+            Privacy & Data
+          </h2>
+          <div className="ios-card overflow-hidden shadow-sm">
+            <button 
+              onClick={() => onNavigate?.('privacy-controls')}
+              className="flex items-center justify-between p-4 w-full active:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[15px] font-medium text-slate-900">Privacy Controls</p>
+                  <p className="text-[12px] text-slate-500">Permissions, data access & sharing</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Saved Places */}
+        <div>
+          <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-2 px-1">
+          <div className="ios-card overflow-hidden shadow-sm">
+            <button 
+              onClick={() => onNavigate?.('saved-places')}
+              className="flex items-center justify-between p-4 w-full active:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                  <MapPin className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[15px] font-medium text-slate-900">Saved Places</p>
+                  <p className="text-[12px] text-slate-500">Home, work, gym & more</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+          <p className="text-[12px] text-slate-500 mt-2 px-1">MYPA uses your saved places for smart ETAs and location-aware reminders</p>
         </div>
 
         {/* App Preferences */}

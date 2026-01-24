@@ -1,4 +1,4 @@
-import { ArrowLeft, Lock, Users, Eye, ChevronRight, Check } from "lucide-react";
+import { ArrowLeft, Lock, Users, Eye, ChevronRight, Check, MapPin, Smartphone, Zap, Volume2, RefreshCw, Calendar, Heart, Mic } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { useState } from "react";
 
@@ -22,6 +22,14 @@ export function PrivacyControlsScreen({ onNavigate }: PrivacyControlsScreenProps
   const [showPickerForCircle, setShowPickerForCircle] = useState<number | null>(null);
   const [hideWallet, setHideWallet] = useState(false);
   const [anonymousMode, setAnonymousMode] = useState(false);
+  
+  // Data permissions
+  const [locationEnabled, setLocationEnabled] = useState(true);
+  const [contactsAccess, setContactsAccess] = useState(false);
+  const [healthAccess, setHealthAccess] = useState(false);
+  const [calendarAccess, setCalendarAccess] = useState(true);
+  const [microphoneAccess, setMicrophoneAccess] = useState(true);
+  const [backgroundRefresh, setBackgroundRefresh] = useState(true);
 
   const privacyModes = [
     {
@@ -174,6 +182,128 @@ export function PrivacyControlsScreen({ onNavigate }: PrivacyControlsScreenProps
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Data Permissions */}
+        <div>
+          <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-2 px-1">Data Permissions</h2>
+          
+          <div className="bg-white rounded-2xl overflow-hidden">
+            {/* Location */}
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${locationEnabled ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                  <MapPin className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-slate-900">Location</p>
+                  <p className="text-[12px] text-slate-500">Commute ETAs & reminders</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setLocationEnabled(!locationEnabled)}
+                className={`w-[51px] h-[31px] rounded-full relative transition-colors ${locationEnabled ? 'bg-green-500' : 'bg-slate-200'}`}
+              >
+                <div className={`w-[27px] h-[27px] rounded-full bg-white absolute top-[2px] transition-transform shadow-sm ${locationEnabled ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+              </button>
+            </div>
+
+            {/* Calendar */}
+            <div className="p-4 flex items-center justify-between border-t border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${calendarAccess ? 'bg-red-500' : 'bg-slate-200'}`}>
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-slate-900">Calendar</p>
+                  <p className="text-[12px] text-slate-500">Read & write events</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCalendarAccess(!calendarAccess)}
+                className={`w-[51px] h-[31px] rounded-full relative transition-colors ${calendarAccess ? 'bg-green-500' : 'bg-slate-200'}`}
+              >
+                <div className={`w-[27px] h-[27px] rounded-full bg-white absolute top-[2px] transition-transform shadow-sm ${calendarAccess ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+              </button>
+            </div>
+
+            {/* Contacts */}
+            <div className="p-4 flex items-center justify-between border-t border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${contactsAccess ? 'bg-green-500' : 'bg-slate-200'}`}>
+                  <Smartphone className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-slate-900">Contacts</p>
+                  <p className="text-[12px] text-slate-500">For meeting invites</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setContactsAccess(!contactsAccess)}
+                className={`w-[51px] h-[31px] rounded-full relative transition-colors ${contactsAccess ? 'bg-green-500' : 'bg-slate-200'}`}
+              >
+                <div className={`w-[27px] h-[27px] rounded-full bg-white absolute top-[2px] transition-transform shadow-sm ${contactsAccess ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+              </button>
+            </div>
+
+            {/* Microphone */}
+            <div className="p-4 flex items-center justify-between border-t border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${microphoneAccess ? 'bg-violet-500' : 'bg-slate-200'}`}>
+                  <Mic className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-slate-900">Microphone</p>
+                  <p className="text-[12px] text-slate-500">Voice commands & calls</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setMicrophoneAccess(!microphoneAccess)}
+                className={`w-[51px] h-[31px] rounded-full relative transition-colors ${microphoneAccess ? 'bg-green-500' : 'bg-slate-200'}`}
+              >
+                <div className={`w-[27px] h-[27px] rounded-full bg-white absolute top-[2px] transition-transform shadow-sm ${microphoneAccess ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+              </button>
+            </div>
+
+            {/* Health & Fitness */}
+            <div className="p-4 flex items-center justify-between border-t border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${healthAccess ? 'bg-pink-500' : 'bg-slate-200'}`}>
+                  <Heart className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-slate-900">Health & Fitness</p>
+                  <p className="text-[12px] text-slate-500">Sleep & activity data</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setHealthAccess(!healthAccess)}
+                className={`w-[51px] h-[31px] rounded-full relative transition-colors ${healthAccess ? 'bg-green-500' : 'bg-slate-200'}`}
+              >
+                <div className={`w-[27px] h-[27px] rounded-full bg-white absolute top-[2px] transition-transform shadow-sm ${healthAccess ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+              </button>
+            </div>
+
+            {/* Background Refresh */}
+            <div className="p-4 flex items-center justify-between border-t border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${backgroundRefresh ? 'bg-cyan-500' : 'bg-slate-200'}`}>
+                  <RefreshCw className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-slate-900">Background Refresh</p>
+                  <p className="text-[12px] text-slate-500">Keep data synced</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setBackgroundRefresh(!backgroundRefresh)}
+                className={`w-[51px] h-[31px] rounded-full relative transition-colors ${backgroundRefresh ? 'bg-green-500' : 'bg-slate-200'}`}
+              >
+                <div className={`w-[27px] h-[27px] rounded-full bg-white absolute top-[2px] transition-transform shadow-sm ${backgroundRefresh ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+              </button>
+            </div>
+          </div>
+          <p className="text-[12px] text-slate-500 mt-2 px-1">These permissions help MYPA assist you better. Disable any you're not comfortable with.</p>
         </div>
       </div>
 

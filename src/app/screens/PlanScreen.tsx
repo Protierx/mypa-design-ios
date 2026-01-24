@@ -154,6 +154,8 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('Personal');
   const [newDuration, setNewDuration] = useState('30m');
+  const [newPriority, setNewPriority] = useState<'High' | 'Normal' | 'Low'>('Normal');
+  const [newTime, setNewTime] = useState('');
   
   // Track highlighted (newly added) task
   const [highlightedTaskTitle, setHighlightedTaskTitle] = useState<string | null>(null);
@@ -473,12 +475,12 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
     const newTask: Task = {
       id: Date.now(),
       date: todayStr,
-      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+      time: newTime || new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
       duration: newDuration,
       durationMin: parseDuration(newDuration),
       title: newTitle.trim(),
       category: newCategory,
-      priority: 'Normal',
+      priority: newPriority,
       completed: false,
       isFixed: false,
     };
@@ -486,6 +488,8 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
     setNewTitle('');
     setNewCategory('Personal');
     setNewDuration('30m');
+    setNewPriority('Normal');
+    setNewTime('');
     setIsAdding(false);
   };
 
@@ -1090,55 +1094,125 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
             onClick={() => setIsAdding(false)}
           />
           
-          <div className="relative w-full max-w-[390px] bg-white rounded-t-[28px] p-6 pb-10 shadow-2xl slide-up">
-            <div className="w-10 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
+          <div className="relative w-full max-w-[390px] bg-white rounded-t-[28px] p-5 pb-8 shadow-2xl slide-up max-h-[85vh] overflow-y-auto">
+            <div className="w-10 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
 
-            <h2 className="text-[22px] font-bold text-slate-900 mb-5">Add Task</h2>
+            <h2 className="text-[20px] font-bold text-slate-900 mb-4">Add Task</h2>
 
             {/* Title Input - Large Touch Target */}
-            <input
-              value={newTitle}
-              onChange={e => setNewTitle(e.target.value)}
-              placeholder="What do you need to do?"
-              className="w-full px-4 py-4 rounded-xl bg-slate-100 outline-none text-slate-900 placeholder:text-slate-400 text-[16px] mb-5"
-              autoFocus
-            />
+            <div className="mb-4">
+              <input
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                placeholder="What do you need to do?"
+                className="w-full px-4 py-4 rounded-2xl bg-slate-100 outline-none text-slate-900 placeholder:text-slate-400 text-[16px] focus:ring-2 focus:ring-violet-500 focus:bg-white transition-all"
+                autoFocus
+              />
+              
+              {/* Quick Suggestions */}
+              {!newTitle && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {['Go to gym', 'Call mom', 'Review emails', 'Grocery shopping', 'Read for 30 min'].map(suggestion => (
+                    <button
+                      key={suggestion}
+                      onClick={() => setNewTitle(suggestion)}
+                      className="px-3 py-1.5 rounded-full bg-violet-50 text-violet-700 text-[13px] font-medium active:scale-95 transition-transform"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            {/* Category - Horizontal Scroll */}
-            <div className="mb-5">
-              <label className="text-[12px] text-slate-500 font-semibold uppercase tracking-wide block mb-2">Category</label>
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-                {['Personal', 'Work', 'Health', 'Learning'].map(cat => (
+            {/* Time & Duration Row */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {/* Time Picker */}
+              <div>
+                <label className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide block mb-1.5">When</label>
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={newTime}
+                    onChange={e => setNewTime(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl bg-slate-100 text-slate-900 text-[15px] outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                  {!newTime && (
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[14px] pointer-events-none">
+                      Anytime
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide block mb-1.5">Duration</label>
+                <div className="grid grid-cols-4 gap-1">
+                  {['15m', '30m', '1h', '2h'].map(dur => (
+                    <button
+                      key={dur}
+                      onClick={() => setNewDuration(dur)}
+                      className={`py-3 rounded-lg text-[13px] font-semibold transition-all active:scale-95 ${
+                        newDuration === dur
+                          ? 'bg-violet-600 text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {dur}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="mb-4">
+              <label className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide block mb-1.5">Category</label>
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                {[
+                  { name: 'Personal', color: 'bg-blue-500' },
+                  { name: 'Work', color: 'bg-violet-500' },
+                  { name: 'Health', color: 'bg-emerald-500' },
+                  { name: 'Learning', color: 'bg-amber-500' },
+                  { name: 'Errands', color: 'bg-rose-500' },
+                ].map(cat => (
                   <button
-                    key={cat}
-                    onClick={() => setNewCategory(cat)}
-                    className={`px-5 py-3 rounded-xl text-[14px] font-medium whitespace-nowrap transition-all active:scale-95 ${
-                      newCategory === cat 
+                    key={cat.name}
+                    onClick={() => setNewCategory(cat.name)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-all active:scale-95 ${
+                      newCategory === cat.name 
                         ? 'bg-slate-900 text-white' 
                         : 'bg-slate-100 text-slate-600'
                     }`}
                   >
-                    {cat}
+                    <span className={`w-2 h-2 rounded-full ${newCategory === cat.name ? 'bg-white' : cat.color}`} />
+                    {cat.name}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Duration - Large Buttons */}
-            <div className="mb-6">
-              <label className="text-[12px] text-slate-500 font-semibold uppercase tracking-wide block mb-2">Duration</label>
-              <div className="grid grid-cols-4 gap-2">
-                {['15m', '30m', '1h', '2h'].map(dur => (
+            {/* Priority */}
+            <div className="mb-5">
+              <label className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide block mb-1.5">Priority</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'Low', label: 'Low', color: 'bg-slate-100 text-slate-600', activeColor: 'bg-slate-600 text-white' },
+                  { value: 'Normal', label: 'Normal', color: 'bg-slate-100 text-slate-600', activeColor: 'bg-blue-500 text-white' },
+                  { value: 'High', label: 'High', color: 'bg-slate-100 text-slate-600', activeColor: 'bg-red-500 text-white' },
+                ].map(p => (
                   <button
-                    key={dur}
-                    onClick={() => setNewDuration(dur)}
-                    className={`py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-95 ${
-                      newDuration === dur
-                        ? 'bg-violet-600 text-white'
-                        : 'bg-slate-100 text-slate-600'
+                    key={p.value}
+                    onClick={() => setNewPriority(p.value as 'High' | 'Normal' | 'Low')}
+                    className={`py-2.5 rounded-xl text-[14px] font-semibold transition-all active:scale-95 ${
+                      newPriority === p.value ? p.activeColor : p.color
                     }`}
                   >
-                    {dur}
+                    {p.value === 'High' && '🔴 '}
+                    {p.value === 'Normal' && '🔵 '}
+                    {p.value === 'Low' && '⚪ '}
+                    {p.label}
                   </button>
                 ))}
               </div>
@@ -1147,16 +1221,24 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
             {/* Actions - Large Touch Targets */}
             <div className="flex gap-3">
               <button 
-                onClick={() => setIsAdding(false)}
-                className="flex-1 py-4 rounded-xl text-[16px] font-semibold text-slate-700 bg-slate-100 active:bg-slate-200 transition-colors"
+                onClick={() => {
+                  setIsAdding(false);
+                  setNewTitle('');
+                  setNewCategory('Personal');
+                  setNewDuration('30m');
+                  setNewPriority('Normal');
+                  setNewTime('');
+                }}
+                className="flex-1 py-4 rounded-xl text-[15px] font-semibold text-slate-700 bg-slate-100 active:bg-slate-200 transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleAddTask}
                 disabled={!newTitle.trim()}
-                className="flex-1 py-4 rounded-xl bg-violet-600 text-white text-[16px] font-semibold disabled:opacity-40 active:scale-[0.98] transition-transform"
+                className="flex-1 py-4 rounded-xl bg-violet-600 text-white text-[15px] font-semibold disabled:opacity-40 active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
               >
+                <Plus className="w-5 h-5" />
                 Add Task
               </button>
             </div>

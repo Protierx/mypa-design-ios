@@ -20,6 +20,7 @@ import { EditProfileScreen } from "./screens/EditProfileScreen";
 import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { StreakScreen } from "./screens/StreakScreen";
 import { LevelScreen } from "./screens/LevelScreen";
+import { SavedPlacesScreen } from "./screens/SavedPlacesScreen";
 import { TabBar } from "./components/TabBar";
 
 export default function App() {
@@ -101,6 +102,8 @@ export default function App() {
         return <StreakScreen onNavigate={handleNavigate} />;
       case 'level':
         return <LevelScreen onNavigate={handleNavigate} />;
+      case 'saved-places':
+        return <SavedPlacesScreen onNavigate={handleNavigate} />;
       default:
         return <HubScreen onNavigate={handleNavigate} onVoiceClick={handleVoiceClick} />;
     }
