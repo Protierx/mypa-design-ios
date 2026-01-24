@@ -601,7 +601,7 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
 
       {/* Calendar */}
       {showCalendar && (
-        <div className="px-4 mb-4 slide-up">
+        <div className="px-5 mb-4 slide-up">
           <div className="glass rounded-2xl p-4 shadow-lg">
             <Calendar
               month={selectedDate}
@@ -616,7 +616,7 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
         </div>
       )}
 
-      <div className="px-4 space-y-3">
+      <div className="px-5 space-y-3">
         
         {/* Progress Card */}
         <div className="glass rounded-2xl p-4 shadow-sm">
@@ -1173,7 +1173,7 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
         
         return (
           <div className="fixed inset-0 z-50 flex items-end justify-center">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAbandonConfirm(false)} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAbandonConfirm(false)} />
             <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 slide-up">
               {/* Warning Icon */}
               <div className="flex justify-center mb-4">

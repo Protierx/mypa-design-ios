@@ -1,4 +1,4 @@
-import { ChevronLeft, Star, Zap, Trophy, Target, TrendingUp, Gift, Lock, Sprout, Compass, Crown, Gem, Award, Check, CircleCheck, Flame, Users, Sunrise } from "lucide-react";
+import { ArrowLeft, Star, Zap, Trophy, Target, TrendingUp, Gift, Lock, Sprout, Compass, Crown, Gem, Award, Check, CircleCheck, Flame, Users, Sunrise } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 
 interface LevelScreenProps {
@@ -66,7 +66,7 @@ export function LevelScreen({ onNavigate }: LevelScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-purple-50/30 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-violet-50 via-white to-purple-50/30 pb-28 relative overflow-hidden">
       <IOSStatusBar />
       
       {/* Animated background elements */}
@@ -80,10 +80,10 @@ export function LevelScreen({ onNavigate }: LevelScreenProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button 
-            onClick={() => onNavigate?.('home')}
-            className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
+            onClick={() => onNavigate?.('hub')}
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <h1 className="text-[17px] font-bold text-slate-900">Your Level</h1>
           <div className="w-10" />

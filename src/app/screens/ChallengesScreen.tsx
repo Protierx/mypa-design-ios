@@ -197,7 +197,7 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-ios-bg pb-32 relative overflow-hidden">
+    <div className="min-h-screen bg-ios-bg pb-28 relative overflow-hidden">
       <IOSStatusBar />
       
       <style>{`
@@ -234,7 +234,7 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
         <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate?.('hub')}
-            className="w-10 h-10 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
@@ -249,7 +249,7 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
       </div>
 
       {/* Stats Banner */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-4">
         <div className="ios-glass rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             {/* XP & Level */}
@@ -302,7 +302,7 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
       </div>
 
       {/* Tab Navigation */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-4">
         <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
           {[
             { id: 'active', label: 'Active', icon: Target },
@@ -326,7 +326,7 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
       </div>
 
       {/* Context-Aware Quick Access */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-4">
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onNavigate?.('plan')}
@@ -346,7 +346,7 @@ export function ChallengesScreen({ onNavigate }: ChallengesScreenProps) {
         </div>
       </div>
 
-      <div className="px-4">
+      <div className="px-5">
         {/* Active Challenges Tab */}
         {activeTab === 'active' && (
           <div className="space-y-4">

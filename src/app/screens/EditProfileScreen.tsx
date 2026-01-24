@@ -87,7 +87,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
       `}</style>
 
       {/* Header */}
-      <div className="px-4 pt-2 pb-4">
+      <div className="px-5 pt-2 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
@@ -114,7 +114,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
         </div>
       )}
 
-      <div className="px-4 space-y-5">
+      <div className="px-5 space-y-5">
         
         {/* Profile Picture */}
         <div className="flex flex-col items-center py-4">
@@ -315,7 +315,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
       {showChangePassword && (
         <>
           <div 
-            className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
             onClick={() => setShowChangePassword(false)}
           />
           <div className="fixed inset-0 flex items-end z-50 pointer-events-none">
@@ -425,7 +425,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
       {showDeleteAccount && (
         <>
           <div 
-            className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
             onClick={() => setShowDeleteAccount(false)}
           />
           <div className="fixed inset-0 flex items-end z-50 pointer-events-none">

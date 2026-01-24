@@ -1,4 +1,4 @@
-import { ChevronLeft, Flame, Calendar, Trophy, Zap, Gift, Shield, Crown, Gem, Award, Check } from "lucide-react";
+import { ArrowLeft, Flame, Calendar, Trophy, Zap, Gift, Shield, Crown, Gem, Award, Check } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 
 interface StreakScreenProps {
@@ -50,7 +50,7 @@ export function StreakScreen({ onNavigate }: StreakScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-amber-50/30 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-amber-50/30 pb-28 relative overflow-hidden">
       <IOSStatusBar />
       
       {/* Animated background elements */}
@@ -64,10 +64,10 @@ export function StreakScreen({ onNavigate }: StreakScreenProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button 
-            onClick={() => onNavigate?.('home')}
-            className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
+            onClick={() => onNavigate?.('hub')}
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <h1 className="text-[17px] font-bold text-slate-900">Your Streak</h1>
           <div className="w-10" />

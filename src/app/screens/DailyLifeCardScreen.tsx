@@ -22,24 +22,23 @@ export function DailyLifeCardScreen({ onNavigate }: DailyLifeCardScreenProps) {
   const xpReward = selectedPrivacy === 'full' ? 30 : selectedPrivacy === 'metrics' ? 20 : 10;
 
   return (
-    <div className="min-h-screen bg-ios-bg pb-32">
+    <div className="min-h-screen bg-ios-bg pb-28">
       <IOSStatusBar />
       
       {/* Header */}
-      <div className="px-6 pt-4 pb-6">
-        <div className="flex items-center justify-between">
+      <div className="px-5 pt-2 pb-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate?.('hub')}
-            className="p-2 rounded-full hover:bg-black/5 transition-colors -ml-2"
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
-          <h1 className="text-[20px] font-semibold text-slate-800">Daily Life Card</h1>
-          <div className="w-10" /> {/* Spacer */}
+          <h1 className="text-[20px] font-bold text-slate-900">Daily Life Card</h1>
         </div>
       </div>
 
-      <div className="px-6 space-y-5">
+      <div className="px-5 space-y-5">
         {/* Hero Card Preview */}
         <div className="rounded-[24px] p-5 shadow-xl" style={{ background: 'linear-gradient(145deg, var(--dark-card-start) 0%, var(--dark-card-middle) 50%, var(--dark-card-end) 100%)' }}>
           <div className="flex items-center gap-2 mb-4">

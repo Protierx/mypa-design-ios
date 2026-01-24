@@ -29,6 +29,7 @@ import {
   HardDrive
 } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
+import { ToggleSwitch } from "../components/ToggleSwitch";
 import { useState } from "react";
 
 interface SettingsScreenProps {
@@ -100,7 +101,7 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
       `}</style>
 
       {/* Header */}
-      <div className="px-4 pt-2 pb-4">
+      <div className="px-5 pt-2 pb-4">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => onNavigate?.('profile')}
@@ -112,7 +113,7 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
         </div>
       </div>
 
-      <div className="px-4 space-y-5">
+      <div className="px-5 space-y-5">
         
         {/* Integrations Section */}
         <div>
@@ -488,23 +489,5 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
         </div>
       </div>
     </div>
-  );
-}
-
-// Toggle Switch Component
-function ToggleSwitch({ active, onToggle }: { active: boolean; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      className={`relative w-[51px] h-[31px] rounded-full transition-colors duration-200 ${
-        active ? 'bg-gradient-to-r from-primary to-secondary' : 'bg-slate-300'
-      }`}
-    >
-      <div 
-        className={`absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-md transition-transform duration-200 ${
-          active ? 'translate-x-5' : 'translate-x-0'
-        }`}
-      />
-    </button>
   );
 }

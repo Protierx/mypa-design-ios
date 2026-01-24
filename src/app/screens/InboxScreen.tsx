@@ -398,9 +398,17 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
       {/* Header */}
       <div className="px-5 pt-2 pb-4 relative z-10">
         <div className="flex items-center justify-between mb-2">
-          <div>
-            <p className="text-[13px] text-slate-500 font-medium">Stay on top of things</p>
-            <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Your Inbox</h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onNavigate?.("hub")}
+              className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+            </button>
+            <div>
+              <p className="text-[13px] text-slate-500 font-medium">Messages & Requests</p>
+              <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Inbox</h1>
+            </div>
           </div>
           {newCount > 0 && (
             <div className="flex items-center gap-1.5 bg-gradient-to-r from-purple-500 to-primary px-3 py-1.5 rounded-full shadow-lg shadow-purple-500/30">
@@ -468,7 +476,7 @@ export function InboxScreen({ onNavigate }: InboxScreenProps) {
         </div>
       </div>
 
-      <div className="px-4 space-y-4">
+      <div className="px-5 space-y-4">
         {/* Assigned to You Section */}
         {assignments.length > 0 && (
           <div>

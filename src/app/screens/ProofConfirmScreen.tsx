@@ -17,24 +17,23 @@ export function ProofConfirmScreen({ onNavigate }: ProofConfirmScreenProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-ios-bg pb-32">
+    <div className="min-h-screen bg-ios-bg pb-28">
       <IOSStatusBar />
       
       {/* Header */}
-      <div className="px-6 pt-4 pb-6">
-        <div className="flex items-center justify-between">
+      <div className="px-5 pt-2 pb-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate?.('challenges')}
-            className="p-2 rounded-full hover:bg-black/5 transition-colors -ml-2"
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
-          <h1 className="text-[20px] font-semibold text-slate-800">Confirm Proof</h1>
-          <div className="w-10" /> {/* Spacer */}
+          <h1 className="text-[20px] font-bold text-slate-900">Confirm Proof</h1>
         </div>
       </div>
 
-      <div className="px-6 space-y-6">
+      <div className="px-5 space-y-6">
         {/* Image Thumbnail */}
         <div className="aspect-square rounded-[24px] bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shadow-sm overflow-hidden">
           <div className="text-slate-400 text-center">

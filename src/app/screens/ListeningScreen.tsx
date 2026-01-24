@@ -99,12 +99,20 @@ export function ListeningScreen({ onEndCall, onSettings }: ListeningScreenProps)
             I'm<br />Listening{dots}
           </h1>
         </div>
-        <button 
-          onClick={() => setShowSettings(true)}
-          className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 backdrop-blur-sm"
-        >
-          <Settings className="w-5 h-5 text-white/80" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 backdrop-blur-sm"
+          >
+            <Settings className="w-5 h-5 text-white/80" />
+          </button>
+          <button 
+            onClick={onEndCall}
+            className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 backdrop-blur-sm"
+          >
+            <X className="w-5 h-5 text-white/80" />
+          </button>
+        </div>
       </div>
 
       {/* Settings Modal */}

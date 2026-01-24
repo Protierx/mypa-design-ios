@@ -66,19 +66,18 @@ export function PrivacyControlsScreen({ onNavigate }: PrivacyControlsScreenProps
       
       {/* Header */}
       <div className="px-5 pt-2 pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate?.('profile')}
-            className="w-10 h-10 rounded-full flex items-center justify-center active:bg-black/5 transition-colors -ml-2"
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
-          <h1 className="text-[17px] font-semibold text-slate-900">Privacy Controls</h1>
-          <div className="w-10" />
+          <h1 className="text-[20px] font-bold text-slate-900">Privacy Controls</h1>
         </div>
       </div>
 
-      <div className="px-4 space-y-6">
+      <div className="px-5 space-y-6">
         {/* Info Card */}
         <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100">
           <h3 className="text-[14px] font-semibold text-slate-800 mb-1">Your privacy matters</h3>

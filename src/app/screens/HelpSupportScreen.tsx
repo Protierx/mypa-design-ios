@@ -125,7 +125,7 @@ export function HelpSupportScreen({ onNavigate }: HelpSupportScreenProps) {
       `}</style>
 
       {/* Header */}
-      <div className="px-4 pt-2 pb-4">
+      <div className="px-5 pt-2 pb-4">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => onNavigate?.('profile')}
@@ -137,7 +137,7 @@ export function HelpSupportScreen({ onNavigate }: HelpSupportScreenProps) {
         </div>
       </div>
 
-      <div className="px-4 space-y-5">
+      <div className="px-5 space-y-5">
         
         {/* Search */}
         <div className="relative">
@@ -323,7 +323,7 @@ export function HelpSupportScreen({ onNavigate }: HelpSupportScreenProps) {
       {showContactForm && (
         <>
           <div 
-            className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
             onClick={() => !messageSent && setShowContactForm(false)}
           />
           <div className="fixed inset-0 flex items-end z-50 pointer-events-none">

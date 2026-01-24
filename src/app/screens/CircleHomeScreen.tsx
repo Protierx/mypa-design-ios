@@ -556,7 +556,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
   };
 
   return (
-    <div className="min-h-screen bg-ios-bg pb-24 relative">
+    <div className="min-h-screen bg-ios-bg pb-28 relative">
       <IOSStatusBar />
 
       <style>{`
@@ -579,7 +579,7 @@ export function CircleHomeScreen({ onNavigate, onAssignmentCreated, onModalState
         <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate?.("circles")}
-            className="p-2 -ml-2 rounded-xl glass-button hover:bg-white/90 transition-colors"
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>

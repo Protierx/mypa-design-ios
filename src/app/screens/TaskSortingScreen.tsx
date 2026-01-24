@@ -507,17 +507,17 @@ export function TaskSortingScreen({ onNavigate }: TaskSortingProps) {
       `}</style>
 
       {/* Header */}
-      <div className="px-4 pt-1 pb-2 relative z-10 flex-shrink-0">
+      <div className="px-5 pt-1 pb-2 relative z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate?.('hub')}
-            className="w-9 h-9 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div className="text-center">
             <h1 className="text-[17px] font-bold text-slate-900">Brain Dump</h1>
-            <p className="text-[10px] text-slate-500">Capture now, organize later</p>
+            <p className="text-[10px] text-slate-500">Your thoughts, organized</p>
           </div>
           <button 
             onClick={handleAISort}

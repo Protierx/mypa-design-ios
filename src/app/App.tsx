@@ -131,8 +131,8 @@ export default function App() {
             {renderScreen()}
           </div>
 
-          {/* Tab Bar (Only show if not listening and no modal is open) */}
-          {!isListening && !isModalOpen && (
+          {/* Tab Bar (Only show if not listening, no modal, and not on reset screen) */}
+          {!isListening && !isModalOpen && activeTab !== 'reset' && (
             <TabBar 
               activeTab={activeTab} 
               onTabChange={handleTabChange}

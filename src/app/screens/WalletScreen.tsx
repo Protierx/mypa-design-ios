@@ -78,7 +78,7 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
   const currentStats = stats[selectedPeriod];
 
   return (
-    <div className="min-h-screen bg-ios-bg pb-32 relative overflow-hidden">
+    <div className="min-h-screen bg-ios-bg pb-28 relative overflow-hidden">
       <IOSStatusBar />
 
       <style>{`
@@ -104,19 +104,19 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
         <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate?.('hub')}
-            className="w-10 h-10 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <h1 className="text-[20px] font-bold text-slate-900">Time Saved</h1>
-          <button className="w-10 h-10 rounded-xl ios-glass shadow-sm flex items-center justify-center active:scale-95 transition-transform">
+          <button className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform">
             <History className="w-5 h-5 text-slate-600" />
           </button>
         </div>
       </div>
 
       {/* Main Time Card */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-4">
         <div className="rounded-2xl overflow-hidden" style={{
           background: 'linear-gradient(145deg, #10b981 0%, #059669 50%, #047857 100%)'
         }}>
@@ -166,7 +166,7 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
       </div>
 
       {/* Period Selector */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-4">
         <div className="flex gap-2">
           {(['today', 'week', 'month'] as const).map((period) => (
             <button
@@ -185,7 +185,7 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
       </div>
 
       {/* Context-Aware Quick Access */}
-      <div className="px-4 mb-4">
+      <div className="px-5 mb-4">
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onNavigate?.('plan')}
@@ -205,7 +205,7 @@ export function WalletScreen({ onNavigate }: WalletScreenProps) {
         </div>
       </div>
 
-      <div className="px-4 space-y-4">
+      <div className="px-5 space-y-4">
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3">
           <div className="ios-glass rounded-xl p-3 text-center shadow-sm">
