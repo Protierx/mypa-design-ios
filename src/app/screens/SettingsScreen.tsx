@@ -251,6 +251,8 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
         {/* Saved Places */}
         <div>
           <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-2 px-1">
+            Location Intelligence
+          </h2>
           <div className="ios-card overflow-hidden shadow-sm">
             <button 
               onClick={() => onNavigate?.('saved-places')}
