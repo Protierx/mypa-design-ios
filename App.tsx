@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,6 +14,7 @@ import { ChallengesScreen } from './src/screens/ChallengesScreen';
 import { CirclesScreen } from './src/screens/CirclesScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { TasksScreen } from './src/screens/TasksScreen';
+import { ListeningScreen } from './src/screens/ListeningScreen';
 import { colors } from './src/styles/colors';
 
 const Tab = createBottomTabNavigator();
@@ -44,7 +45,14 @@ const tabConfig = [
   { name: 'Profile', icon: 'person', iconOutline: 'person-outline', color: '#10B981' },
 ];
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
+interface CustomTabBarProps {
+  state: any;
+  descriptors: any;
+  navigation: any;
+  onVoicePress: () => void;
+}
+
+function CustomTabBar({ state, descriptors, navigation, onVoicePress }: CustomTabBarProps) {
   return (
     <View style={styles.tabBarContainer}>
       <View style={styles.tabBarBackground} />
@@ -56,6 +64,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
           const onPress = () => {
             if (route.name === 'Voice') {
+              onVoicePress();
               return;
             }
             const event = navigation.emit({
@@ -72,7 +81,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             return (
               <TouchableOpacity
                 key={route.key}
-                onPress={() => {}}
+                onPress={onPress}
                 style={styles.voiceButton}
                 activeOpacity={0.8}
               >
@@ -115,11 +124,18 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export default function App() {
+  const [showListening, setShowListening] = useState(false);
+
   return (
     <NavigationContainer>
       <StatusBar barStyle="dark-content" />
       <Tab.Navigator
-        tabBar={(props) => <CustomTabBar {...props} />}
+        tabBar={(props) => (
+          <CustomTabBar 
+            {...props} 
+            onVoicePress={() => setShowListening(true)} 
+          />
+        )}
         screenOptions={{ headerShown: false }}
       >
         <Tab.Screen name="Home" component={HomeStack} />
@@ -128,6 +144,11 @@ export default function App() {
         <Tab.Screen name="Circles" component={CirclesScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
+      
+      <ListeningScreen 
+        visible={showListening} 
+        onClose={() => setShowListening(false)} 
+      />
     </NavigationContainer>
   );
 }
