@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Clock, ChevronRight, Calendar as CalendarIcon, Sparkles, Play, Pause, Square, Trash2, Check, Mic, MicOff, ChevronDown, RotateCcw, ArrowRight, Zap, Target } from "lucide-react";
+import { Plus, Clock, ChevronRight, Calendar as CalendarIcon, Sparkles, Play, Pause, Square, Trash2, Check, Mic, MicOff, ChevronDown, RotateCcw, ArrowRight, Zap, Target, SkipForward } from "lucide-react";
 import { IOSStatusBar } from "../components/IOSStatusBar";
 import { Calendar } from "../components/ui/calendar";
 
@@ -157,6 +157,14 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
   const [newPriority, setNewPriority] = useState<'High' | 'Normal' | 'Low'>('Normal');
   const [newTime, setNewTime] = useState('');
   
+  // Edit task state
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editCategory, setEditCategory] = useState('Personal');
+  const [editDuration, setEditDuration] = useState('30m');
+  const [editPriority, setEditPriority] = useState<'High' | 'Normal' | 'Low'>('Normal');
+  const [editTime, setEditTime] = useState('');
+  
   // Track highlighted (newly added) task
   const [highlightedTaskTitle, setHighlightedTaskTitle] = useState<string | null>(null);
   const [showAddedBanner, setShowAddedBanner] = useState<string | null>(null);
@@ -278,8 +286,28 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
       Health: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
       Personal: { bg: 'bg-violet-100', text: 'text-violet-700', dot: 'bg-violet-500' },
       Learning: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
+      Finance: { bg: 'bg-cyan-100', text: 'text-cyan-700', dot: 'bg-cyan-500' },
     };
     return styles[category] || styles.Personal;
+  };
+
+  // Determine if a task is a "quick task" that doesn't need focus time
+  // Quick tasks: short duration (≤10min), or administrative/finance tasks
+  const isQuickTask = (task: Task): boolean => {
+    const quickCategories = ['Finance', 'Social']; // Admin-like categories
+    const quickKeywords = ['pay', 'reply', 'email', 'call', 'text', 'message', 'order', 'book', 'schedule', 'confirm', 'cancel', 'check', 'send'];
+    const titleLower = task.title.toLowerCase();
+    
+    // Short tasks are quick tasks
+    if (task.durationMin <= 10) return true;
+    
+    // Finance tasks are usually quick
+    if (quickCategories.includes(task.category)) return true;
+    
+    // Tasks with quick action keywords
+    if (quickKeywords.some(kw => titleLower.includes(kw))) return true;
+    
+    return false;
   };
 
   // Computed
@@ -355,6 +383,36 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
     setTasks(prev => prev.map(t => t.id === id ? { ...t, date: tomorrowStr } : t));
+  };
+
+  // Open edit modal for a task
+  const openEditModal = (task: Task) => {
+    setEditingTask(task);
+    setEditTitle(task.title);
+    setEditCategory(task.category);
+    setEditDuration(task.duration);
+    setEditPriority(task.priority);
+    setEditTime(task.time);
+  };
+
+  // Save edited task
+  const saveEditedTask = () => {
+    if (!editingTask || !editTitle.trim()) return;
+    
+    setTasks(prev => prev.map(t => 
+      t.id === editingTask.id 
+        ? {
+            ...t,
+            title: editTitle.trim(),
+            category: editCategory,
+            duration: editDuration,
+            durationMin: parseDuration(editDuration),
+            priority: editPriority,
+            time: editTime || t.time,
+          }
+        : t
+    ));
+    setEditingTask(null);
   };
 
   const startTimer = (taskId: number) => {
@@ -622,52 +680,46 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
 
       <div className="px-5 space-y-3">
         
-        {/* Progress Card */}
+        {/* Day Overview */}
         <div className="glass rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-4">
-            {/* Progress Ring */}
-            <div className="relative w-16 h-16 flex-shrink-0">
-              <svg className="w-16 h-16 transform -rotate-90">
-                <circle cx="32" cy="32" r="28" stroke="#e2e8f0" strokeWidth="5" fill="none" />
-                <circle
-                  cx="32" cy="32" r="28"
-                  stroke="url(#progressGrad)"
-                  strokeWidth="5"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 28 * (progressPercent / 100)} ${2 * Math.PI * 28}`}
-                  className="transition-all duration-700"
-                />
-                <defs>
-                  <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#8b5cf6" />
-                    <stop offset="100%" stopColor="#06b6d4" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[16px] font-bold text-slate-900">{progressPercent}%</span>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[13px] font-medium text-slate-500">Today's Progress</p>
+              <p className="text-[22px] font-bold text-slate-900">{completedCount}<span className="text-slate-400 font-medium">/{totalCount}</span> <span className="text-[14px] font-medium text-slate-500">tasks</span></p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] text-slate-400 uppercase tracking-wide">Time left</p>
+              <p className="text-[18px] font-bold text-slate-700">{formatDuration(totalMinutes - completedMinutes)}</p>
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          
+          {/* Quick Stats Row */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-[11px] text-slate-500"><span className="font-semibold text-slate-700">{formatDuration(completedMinutes)}</span> done</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-violet-500" />
+                <span className="text-[11px] text-slate-500"><span className="font-semibold text-slate-700">{todayTasks.filter(t => !t.completed && !isQuickTask(t)).length}</span> focus tasks</span>
               </div>
             </div>
-            
-            {/* Stats */}
-            <div className="flex-1">
-              <p className="text-[18px] font-bold text-slate-900">{completedCount} of {totalCount} done</p>
-              <p className="text-[12px] text-slate-500 mt-0.5">
-                {formatDuration(completedMinutes)} completed • {formatDuration(totalMinutes - completedMinutes)} left
-              </p>
-            </div>
-            
-            {/* Quick Actions */}
-            <div className="flex flex-col gap-1.5">
-              <button
-                onClick={() => onNavigate?.('sort')}
-                className="px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-[11px] font-semibold active:scale-95 transition-transform flex items-center gap-1"
-              >
-                <Sparkles className="w-3 h-3" />
-                Dump
-              </button>
-            </div>
+            <button
+              onClick={() => onNavigate?.('sort')}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-semibold active:scale-95 transition-transform flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3" />
+              Dump
+            </button>
           </div>
         </div>
 
@@ -865,44 +917,38 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
           );
         })()}
 
-        {/* Next Task Card - Only show when not recording */}
-        {nextTask && activeTimerId === null && (
-          <div className="glass rounded-2xl p-4 shadow-sm border-l-4 border-violet-500 slide-up">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => startTimer(nextTask.id)}
-                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30 active:scale-95 transition-transform"
-              >
-                <Play className="w-6 h-6 text-white ml-0.5" fill="currentColor" />
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-violet-600 uppercase">Up Next</p>
-                <p className="text-[16px] font-semibold text-slate-900 truncate">{nextTask.title}</p>
-                <p className="text-[12px] text-slate-500">{nextTask.time} • {nextTask.duration}</p>
+        {/* Current Focus Card - Only for focus-worthy tasks when not in session */}
+        {nextTask && activeTimerId === null && !isQuickTask(nextTask) && (
+          <div className="rounded-2xl overflow-hidden shadow-lg slide-up">
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => startTimer(nextTask.id)}
+                  className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                >
+                  <Play className="w-6 h-6 text-slate-800 ml-0.5" fill="currentColor" />
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wide">Ready to Focus</p>
+                  <p className="text-[16px] font-semibold text-white truncate">{nextTask.title}</p>
+                  <p className="text-[12px] text-slate-400">{nextTask.time} • {nextTask.duration} estimated</p>
+                </div>
+                <button
+                  onClick={() => handleComplete(nextTask.id)}
+                  className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center active:scale-95 transition-transform"
+                >
+                  <Check className="w-5 h-5 text-white/70" />
+                </button>
               </div>
-              <button
-                onClick={() => handleComplete(nextTask.id)}
-                className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center active:scale-95 transition-transform"
-              >
-                <Check className="w-5 h-5 text-emerald-600" />
-              </button>
             </div>
           </div>
         )}
 
-        {/* Swipe Instructions */}
+        {/* Swipe Hint - compact */}
         {todayTasks.length > 0 && (
-          <div className="flex items-center justify-center gap-6 py-2">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-              <ArrowRight className="w-3 h-3 rotate-180" />
-              <span>Swipe left to delete</span>
-            </div>
-            <div className="w-px h-3 bg-slate-200" />
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-              <span>Swipe right to complete</span>
-              <ArrowRight className="w-3 h-3" />
-            </div>
-          </div>
+          <p className="text-center text-[10px] text-slate-400 py-1">
+            Swipe tasks: <span className="text-emerald-500">→ complete</span> • <span className="text-red-400">← delete</span>
+          </p>
         )}
 
         {/* Added from Inbox Banner */}
@@ -920,57 +966,108 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
           </div>
         )}
 
-        {/* Task List */}
-        <div className="space-y-2">
+        {/* Task List - Rich Card Design */}
+        <div className="space-y-2.5">
           {todayTasks.map((task, index) => {
             const swipeDistance = swipeStates[task.id] || 0;
             const catStyle = getCategoryStyle(task.category);
             const isSwipingRight = swipeDistance > 20;
             const isSwipingLeft = swipeDistance < -20;
             const isHighlighted = highlightedTaskTitle === task.title;
+            const isActive = activeTimerId === task.id;
+            const taskIsQuick = isQuickTask(task);
+            
+            // Category colors for accent
+            const catAccent = task.category === 'Work' 
+              ? { bar: 'bg-blue-500', light: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-500' }
+              : task.category === 'Health'
+                ? { bar: 'bg-emerald-500', light: 'bg-emerald-50', border: 'border-emerald-200', badge: 'bg-emerald-500' }
+                : task.category === 'Learning'
+                  ? { bar: 'bg-amber-500', light: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-500' }
+                  : task.category === 'Finance'
+                    ? { bar: 'bg-cyan-500', light: 'bg-cyan-50', border: 'border-cyan-200', badge: 'bg-cyan-500' }
+                    : { bar: 'bg-violet-500', light: 'bg-violet-50', border: 'border-violet-200', badge: 'bg-violet-500' };
             
             return (
               <div
                 key={task.id}
-                className={`relative slide-up overflow-hidden rounded-2xl ${isHighlighted ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}`}
-                style={{ animationDelay: `${index * 0.05}s` }}
+                className={`relative slide-up ${isHighlighted ? 'ring-2 ring-emerald-400 ring-offset-2 rounded-2xl' : ''}`}
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
                 {/* Newly Added Badge */}
                 {isHighlighted && (
-                  <div className="absolute top-0 right-0 z-10 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-xl rounded-tr-2xl">
-                    NEW
+                  <div className="absolute -top-2 right-4 z-10 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                    Just added
                   </div>
                 )}
                 
-                {/* Swipe Background - Complete (Right) */}
-                <div 
-                  className={`absolute inset-y-0 left-0 w-24 flex items-center justify-start pl-4 rounded-l-2xl transition-colors ${
-                    isSwipingRight ? 'bg-emerald-500' : 'bg-emerald-100'
-                  }`}
-                >
-                  <Check className={`w-6 h-6 ${isSwipingRight ? 'text-white' : 'text-emerald-500'}`} />
+                {/* Swipe Backgrounds */}
+                <div className={`absolute inset-y-0 left-0 w-20 flex items-center justify-start pl-4 transition-colors ${isSwipingRight ? 'bg-emerald-500' : 'bg-emerald-50'} rounded-l-2xl`}>
+                  <Check className={`w-5 h-5 ${isSwipingRight ? 'text-white' : 'text-emerald-400'}`} />
                 </div>
-                
-                {/* Swipe Background - Delete (Left) */}
-                <div 
-                  className={`absolute inset-y-0 right-0 w-24 flex items-center justify-end pr-4 rounded-r-2xl transition-colors ${
-                    isSwipingLeft ? 'bg-red-500' : 'bg-red-100'
-                  }`}
-                >
-                  <Trash2 className={`w-6 h-6 ${isSwipingLeft ? 'text-white' : 'text-red-500'}`} />
+                <div className={`absolute inset-y-0 right-0 w-20 flex items-center justify-end pr-4 transition-colors ${isSwipingLeft ? 'bg-red-500' : 'bg-red-50'} rounded-r-2xl`}>
+                  <Trash2 className={`w-5 h-5 ${isSwipingLeft ? 'text-white' : 'text-red-400'}`} />
                 </div>
                 
                 {/* Task Card */}
                 <div
-                  className={`glass rounded-2xl shadow-sm relative task-swipe ${task.completed ? 'opacity-60' : ''}`}
+                  className={`relative overflow-hidden rounded-2xl transition-all task-swipe ${
+                    task.completed 
+                      ? 'bg-slate-50 opacity-60' 
+                      : isActive
+                        ? 'bg-emerald-50 shadow-lg border border-emerald-200'
+                        : 'bg-white shadow-sm border border-slate-100 hover:shadow-md'
+                  }`}
                   style={{ transform: `translateX(${swipeDistance}px)` }}
                   onTouchStart={(e) => handleTouchStart(task.id, e)}
                   onTouchMove={(e) => handleTouchMove(task.id, e)}
                   onTouchEnd={() => handleTouchEnd(task.id)}
                 >
-                  <div className="p-4 flex items-center gap-3">
-                    {/* Start/Complete Button */}
-                    {!task.completed ? (
+                  {/* Category Accent Bar */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${task.completed ? 'bg-slate-300' : catAccent.bar}`} />
+                  
+                  {/* Quick Task Badge */}
+                  {taskIsQuick && !task.completed && (
+                    <div className="absolute top-2 right-2">
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500">
+                        Quick
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Active Session Badge */}
+                  {isActive && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500 shadow-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-white pulse-recording" />
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3 p-3.5 pl-4">
+                    {/* Time Column */}
+                    <div className="w-12 flex-shrink-0 text-center">
+                      <span className={`text-[14px] font-bold ${task.completed ? 'text-slate-400' : 'text-slate-700'}`}>
+                        {task.time.replace(':00', '').replace(' ', '')}
+                      </span>
+                    </div>
+                    
+                    {/* Checkbox or Play button based on task type */}
+                    {task.completed ? (
+                      <button
+                        onClick={() => handleComplete(task.id)}
+                        className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0"
+                      >
+                        <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                      </button>
+                    ) : taskIsQuick ? (
+                      /* Quick task - just checkbox */
+                      <button
+                        onClick={() => handleComplete(task.id)}
+                        className="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center flex-shrink-0 hover:border-emerald-400 hover:bg-emerald-50 transition-all active:scale-90"
+                      >
+                      </button>
+                    ) : (
+                      /* Focus task - play button */
                       <button
                         onClick={() => {
                           if (activeTimerId === task.id) {
@@ -980,55 +1077,54 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
                             startTimer(task.id);
                           }
                         }}
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 active:scale-95 transition-all ${
-                          activeTimerId === task.id
-                            ? 'bg-emerald-500 shadow-md shadow-emerald-500/30'
-                            : 'bg-violet-100'
+                        className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 shadow-sm ${
+                          isActive
+                            ? 'bg-emerald-500'
+                            : 'bg-slate-800 hover:bg-slate-700'
                         }`}
                       >
-                        {activeTimerId === task.id ? (
-                          <Pause className="w-5 h-5 text-white" fill="currentColor" />
+                        {isActive ? (
+                          <Pause className="w-4 h-4 text-white" fill="currentColor" />
                         ) : (
-                          <Play className="w-5 h-5 text-violet-600" fill="currentColor" />
+                          <Play className="w-3.5 h-3.5 text-white ml-0.5" fill="currentColor" />
                         )}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleComplete(task.id)}
-                        className="w-11 h-11 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0 active:scale-95"
-                      >
-                        <Check className="w-5 h-5 text-white" strokeWidth={3} />
                       </button>
                     )}
                     
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className={`text-[15px] font-medium ${task.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                    {/* Task Content - Tappable to edit */}
+                    <div 
+                      className="flex-1 min-w-0 cursor-pointer active:opacity-70"
+                      onClick={() => openEditModal(task)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <h3 className={`text-[14px] font-semibold leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
                           {task.title}
                         </h3>
-                        {task.priority === 'High' && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-600">!</span>
+                        {task.priority === 'High' && !task.completed && (
+                          <span className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-[9px] font-bold text-white">!</span>
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <div className={`w-1.5 h-1.5 rounded-full ${catStyle.dot}`} />
-                        <span className="text-[12px] text-slate-500">{task.time}</span>
-                        <span className="text-[12px] text-slate-400">•</span>
-                        <span className="text-[12px] text-slate-500">{task.duration}</span>
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${catStyle.bg} ${catStyle.text}`}>
-                          {task.category}
-                        </span>
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span className="text-[11px] text-slate-500">{task.duration}</span>
+                        <span className="text-slate-300">·</span>
+                        <span className={`text-[11px] font-medium ${catStyle.text}`}>{task.category}</span>
                       </div>
                     </div>
                     
                     {/* Move to Tomorrow */}
                     {!task.completed && (
                       <button
-                        onClick={() => handleMoveToTomorrow(task.id)}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveToTomorrow(task.id);
+                        }}
+                        className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all flex items-center gap-1"
                       >
-                        <ArrowRight className="w-4 h-4 text-slate-400" />
+                        <SkipForward className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="text-[10px] font-medium text-slate-500">Tmrw</span>
                       </button>
                     )}
                   </div>
@@ -1408,6 +1504,184 @@ export function PlanScreen({ onNavigate }: PlanScreenProps) {
             >
               Continue
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {editingTask && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditingTask(null)} />
+          <div className="relative w-full max-w-lg bg-white rounded-t-3xl p-5 pb-8 slide-up max-h-[85vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[20px] font-bold text-slate-900">Edit Task</h3>
+              <button 
+                onClick={() => setEditingTask(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"
+              >
+                <span className="text-slate-500 text-lg">×</span>
+              </button>
+            </div>
+
+            {/* Task Title */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Task Name</label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                placeholder="What needs to be done?"
+              />
+            </div>
+
+            {/* Time Picker */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Time</label>
+              <div className="flex gap-2">
+                <input
+                  type="time"
+                  value={(() => {
+                    // Convert "9:00 AM" format to "09:00" for input
+                    const match = editTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+                    if (match) {
+                      let hours = parseInt(match[1]);
+                      const mins = match[2];
+                      const period = match[3].toUpperCase();
+                      if (period === 'PM' && hours !== 12) hours += 12;
+                      if (period === 'AM' && hours === 12) hours = 0;
+                      return `${hours.toString().padStart(2, '0')}:${mins}`;
+                    }
+                    return '09:00';
+                  })()}
+                  onChange={(e) => {
+                    // Convert "09:00" format to "9:00 AM" for display
+                    const [hours, mins] = e.target.value.split(':').map(Number);
+                    const period = hours >= 12 ? 'PM' : 'AM';
+                    const displayHours = hours % 12 || 12;
+                    setEditTime(`${displayHours}:${mins.toString().padStart(2, '0')} ${period}`);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-[15px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                />
+                {/* Quick time buttons */}
+                <div className="flex gap-1">
+                  {['9AM', '12PM', '3PM', '6PM'].map((quickTime) => {
+                    const timeMap: Record<string, string> = {
+                      '9AM': '9:00 AM',
+                      '12PM': '12:00 PM', 
+                      '3PM': '3:00 PM',
+                      '6PM': '6:00 PM'
+                    };
+                    return (
+                      <button
+                        key={quickTime}
+                        onClick={() => setEditTime(timeMap[quickTime])}
+                        className="px-2.5 py-2 rounded-lg bg-slate-100 text-[11px] font-semibold text-slate-600 hover:bg-slate-200 transition-all"
+                      >
+                        {quickTime}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Duration */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Duration</label>
+              <div className="flex gap-2">
+                {['5m', '10m', '15m', '30m', '45m', '1h', '1h 30m', '2h'].map((dur) => (
+                  <button
+                    key={dur}
+                    onClick={() => setEditDuration(dur)}
+                    className={`flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all ${
+                      editDuration === dur 
+                        ? 'bg-slate-900 text-white' 
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {dur}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Category</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { name: 'Personal', color: 'violet' },
+                  { name: 'Work', color: 'blue' },
+                  { name: 'Health', color: 'emerald' },
+                  { name: 'Learning', color: 'amber' },
+                  { name: 'Finance', color: 'cyan' },
+                  { name: 'Social', color: 'pink' },
+                ].map((cat) => (
+                  <button
+                    key={cat.name}
+                    onClick={() => setEditCategory(cat.name)}
+                    className={`px-4 py-2 rounded-xl text-[13px] font-semibold transition-all ${
+                      editCategory === cat.name 
+                        ? `bg-${cat.color}-500 text-white` 
+                        : `bg-${cat.color}-50 text-${cat.color}-700 hover:bg-${cat.color}-100`
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Priority */}
+            <div className="mb-6">
+              <label className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-2 block">Priority</label>
+              <div className="flex gap-2">
+                {[
+                  { value: 'Low' as const, label: 'Low', color: 'slate' },
+                  { value: 'Normal' as const, label: 'Normal', color: 'blue' },
+                  { value: 'High' as const, label: 'High', color: 'red' },
+                ].map((pri) => (
+                  <button
+                    key={pri.value}
+                    onClick={() => setEditPriority(pri.value)}
+                    className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+                      editPriority === pri.value 
+                        ? pri.value === 'High' 
+                          ? 'bg-red-500 text-white' 
+                          : pri.value === 'Normal'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-slate-500 text-white'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {pri.value === 'High' && '🔥 '}{pri.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  handleDelete(editingTask.id);
+                  setEditingTask(null);
+                }}
+                className="px-5 py-3.5 rounded-xl bg-red-50 text-red-600 text-[14px] font-semibold active:scale-[0.98] transition-all flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+              <button 
+                onClick={saveEditedTask}
+                disabled={!editTitle.trim()}
+                className="flex-1 py-3.5 rounded-xl bg-slate-900 text-white text-[15px] font-bold active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}
