@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Image, StyleSheet } from 'react-native';
 
 interface MYPAOrbProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -8,10 +7,10 @@ interface MYPAOrbProps {
 }
 
 const sizeConfig = {
-  sm: { container: 56, icon: 24 },
-  md: { container: 80, icon: 32 },
-  lg: { container: 128, icon: 48 },
-  xl: { container: 192, icon: 64 },
+  sm: { container: 56 },
+  md: { container: 80 },
+  lg: { container: 128 },
+  xl: { container: 192 },
 };
 
 export function MYPAOrb({ size = 'lg', showGlow = true }: MYPAOrbProps) {
@@ -24,25 +23,22 @@ export function MYPAOrb({ size = 'lg', showGlow = true }: MYPAOrbProps) {
           style={[
             styles.glow,
             {
-              width: config.container * 1.2,
-              height: config.container * 1.2,
-              borderRadius: (config.container * 1.2) / 2,
+              width: config.container * 1.15,
+              height: config.container * 1.15,
+              borderRadius: (config.container * 1.15) / 2,
             },
           ]}
         />
       )}
-      <View
-        style={[
-          styles.orb,
-          {
-            width: config.container,
-            height: config.container,
-            borderRadius: config.container / 2,
-          },
-        ]}
-      >
-        <Ionicons name="sparkles" size={config.icon} color="#FFFFFF" />
-      </View>
+      <Image
+        source={require('../../assets/mypa-orb.png')}
+        style={{
+          width: config.container,
+          height: config.container,
+          borderRadius: config.container / 2,
+        }}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -55,16 +51,6 @@ const styles = StyleSheet.create({
   },
   glow: {
     position: 'absolute',
-    backgroundColor: 'rgba(139, 92, 246, 0.3)',
-  },
-  orb: {
-    backgroundColor: '#8B5CF6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: 'rgba(181, 140, 255, 0.3)',
   },
 });
