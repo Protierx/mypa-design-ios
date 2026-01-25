@@ -72,6 +72,20 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
     │   ├── HelpSupportScreen.tsx    # Help & support
     │   └── CircleHomeScreen.tsx     # Individual circle view
     ├── components/              # Reusable UI components
+    │   ├── ui/                  # UI component library
+    │   │   ├── Accordion.tsx    # Expandable accordion
+    │   │   ├── Alert.tsx        # Alert messages
+    │   │   ├── Avatar.tsx       # User avatars
+    │   │   ├── Badge.tsx        # Status badges
+    │   │   ├── Button.tsx       # Button variants
+    │   │   ├── Card.tsx         # Card containers
+    │   │   ├── Checkbox.tsx     # Checkbox input
+    │   │   ├── Dialog.tsx       # Modal dialogs
+    │   │   ├── Input.tsx        # Text input
+    │   │   ├── Progress.tsx     # Progress bar
+    │   │   ├── Separator.tsx    # Visual separator
+    │   │   ├── Switch.tsx       # Toggle switch
+    │   │   └── index.ts         # Component exports
     │   ├── MYPAOrb.tsx          # Animated MYPA AI orb
     │   ├── FloatingMYPAButton.tsx # Floating voice access button
     │   ├── IOSStatusBar.tsx     # iOS-style status bar
