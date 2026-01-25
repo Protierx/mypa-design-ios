@@ -6,8 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  Animated,
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { colors } from '../styles/colors';
 
 interface HubScreenProps {
@@ -31,7 +31,7 @@ const categoryStyles = {
 };
 
 export function HubScreen({ navigation }: HubScreenProps) {
-  const [greeting, setGreeting] = useState({ text: 'Good morning', icon: '☀️' });
+  const [greeting, setGreeting] = useState({ text: 'Good morning', icon: 'sunny' as const });
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
   const [xpEarned, setXpEarned] = useState(0);
   const [showXpPopup, setShowXpPopup] = useState(false);
@@ -41,20 +41,20 @@ export function HubScreen({ navigation }: HubScreenProps) {
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) {
-      setGreeting({ text: 'Good morning', icon: '☀️' });
+      setGreeting({ text: 'Good morning', icon: 'sunny' });
     } else if (hour < 17) {
-      setGreeting({ text: 'Good afternoon', icon: '🌤️' });
+      setGreeting({ text: 'Good afternoon', icon: 'partly-sunny' });
     } else if (hour < 21) {
-      setGreeting({ text: 'Good evening', icon: '🌅' });
+      setGreeting({ text: 'Good evening', icon: 'sunny' });
     } else {
-      setGreeting({ text: 'Good night', icon: '🌙' });
+      setGreeting({ text: 'Good night', icon: 'moon' });
     }
   }, []);
 
   const insights = [
-    { icon: '🎯', text: 'Peak focus hours: 9-11am', color: colors.primary },
-    { icon: '⚡', text: "You're 67% more productive today", color: colors.success },
-    { icon: '🔥', text: '7-day streak active!', color: '#F97316' },
+    { icon: 'crosshairs-gps' as const, text: 'Peak focus hours: 9-11am', color: colors.primary },
+    { icon: 'lightning-bolt' as const, text: "You're 67% more productive today", color: colors.success },
+    { icon: 'fire' as const, text: '7-day streak active!', color: '#F97316' },
   ];
 
   useEffect(() => {
@@ -73,9 +73,9 @@ export function HubScreen({ navigation }: HubScreenProps) {
   };
 
   const tasks: Task[] = [
-    { id: 1, title: 'Review Q1 metrics', time: '5:00 PM', icon: '📊', category: 'Work', duration: '15m', priority: true },
-    { id: 2, title: 'Gym Session', time: '6:00 PM', icon: '💪', category: 'Health', duration: '1h', priority: true },
-    { id: 3, title: 'Call Mom', time: 'Evening', icon: '📞', category: 'Personal', duration: '15m', priority: false },
+    { id: 1, title: 'Review Q1 metrics', time: '5:00 PM', icon: 'chart-bar', category: 'Work', duration: '15m', priority: true },
+    { id: 2, title: 'Gym Session', time: '6:00 PM', icon: 'dumbbell', category: 'Health', duration: '1h', priority: true },
+    { id: 3, title: 'Call Mom', time: 'Evening', icon: 'phone', category: 'Personal', duration: '15m', priority: false },
   ];
 
   const toggleTask = (taskId: number) => {
@@ -95,10 +95,10 @@ export function HubScreen({ navigation }: HubScreenProps) {
   };
 
   const quickActions = [
-    { icon: '📅', label: 'Plan', color: ['#3B82F6', '#06B6D4'], screen: 'Plan' },
-    { icon: '🧠', label: 'Dump', color: ['#374151', '#1F2937'], screen: 'Tasks' },
-    { icon: '🏆', label: 'Compete', color: ['#F97316', '#F59E0B'], screen: 'Challenges' },
-    { icon: '💰', label: 'Wallet', color: ['#10B981', '#14B8A6'], screen: 'Wallet' },
+    { icon: 'calendar' as const, label: 'Plan', color: '#3B82F6', screen: 'Plan' },
+    { icon: 'brain' as const, label: 'Dump', color: '#374151', screen: 'Tasks' },
+    { icon: 'trophy' as const, label: 'Compete', color: '#F97316', screen: 'Challenges' },
+    { icon: 'wallet' as const, label: 'Wallet', color: '#10B981', screen: 'Wallet' },
   ];
 
   const progressPercent = Math.round((completedTasks.length / tasks.length) * 100);
@@ -107,7 +107,8 @@ export function HubScreen({ navigation }: HubScreenProps) {
     <SafeAreaView style={styles.container}>
       {showXpPopup && (
         <View style={styles.xpPopup}>
-          <Text style={styles.xpPopupText}>⭐ +{lastXpGain} XP</Text>
+          <Ionicons name="star" size={14} color="#FFFFFF" />
+          <Text style={styles.xpPopupText}>+{lastXpGain} XP</Text>
         </View>
       )}
 
@@ -123,7 +124,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
               style={styles.inboxButton}
               onPress={() => navigation.navigate('Inbox')}
             >
-              <Text style={styles.inboxIcon}>📬</Text>
+              <Ionicons name="mail-outline" size={18} color="#475569" />
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationText}>3</Text>
               </View>
@@ -144,7 +145,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
               <View style={styles.orbContainer}>
                 <View style={styles.orbGlow} />
                 <View style={styles.orb}>
-                  <Text style={styles.orbIcon}>✨</Text>
+                  <Ionicons name="sparkles" size={20} color="#FFFFFF" />
                 </View>
               </View>
               <View style={styles.briefingText}>
@@ -157,7 +158,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
                 <Text style={styles.briefingSubtitle}>Tap for your daily briefing</Text>
               </View>
               <View style={styles.playButton}>
-                <Text style={styles.playIcon}>▶️</Text>
+                <Ionicons name="play" size={16} color="#8B5CF6" style={{ marginLeft: 2 }} />
               </View>
             </View>
           </TouchableOpacity>
@@ -169,7 +170,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
               onPress={() => navigation.navigate('Profile')}
             >
               <View style={styles.streakIcon}>
-                <Text style={styles.streakEmoji}>🔥</Text>
+                <MaterialCommunityIcons name="fire" size={22} color="#FFFFFF" />
               </View>
               <View>
                 <Text style={styles.streakValue}>{today.streak} days</Text>
@@ -182,7 +183,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
               onPress={() => navigation.navigate('Profile')}
             >
               <View style={styles.levelIcon}>
-                <Text style={styles.levelEmoji}>⭐</Text>
+                <Ionicons name="star" size={22} color="#FFFFFF" />
               </View>
               <View>
                 <Text style={styles.levelValue}>Level {today.level}</Text>
@@ -196,15 +197,19 @@ export function HubScreen({ navigation }: HubScreenProps) {
             <View style={styles.focusHeader}>
               <View style={styles.focusTitleRow}>
                 <View style={styles.focusIconContainer}>
-                  <Text style={styles.focusIcon}>🎯</Text>
+                  <MaterialCommunityIcons name="target" size={16} color="#FFFFFF" />
                 </View>
                 <View>
                   <Text style={styles.focusTitle}>Today's Focus</Text>
                   <Text style={styles.focusSubtitle}>{completedTasks.length}/{tasks.length} completed</Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={() => navigation.navigate('Plan')}>
-                <Text style={styles.fullPlanLink}>Full Plan →</Text>
+              <TouchableOpacity 
+                style={styles.fullPlanButton}
+                onPress={() => navigation.navigate('Plan')}
+              >
+                <Text style={styles.fullPlanLink}>Full Plan</Text>
+                <Ionicons name="chevron-forward" size={16} color="#8B5CF6" />
               </TouchableOpacity>
             </View>
 
@@ -259,7 +264,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
                       ]}
                       onPress={() => toggleTask(task.id)}
                     >
-                      {isCompleted && <Text style={styles.checkmark}>✓</Text>}
+                      {isCompleted && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
                     </TouchableOpacity>
 
                     {/* Task Info */}
@@ -275,7 +280,8 @@ export function HubScreen({ navigation }: HubScreenProps) {
                         )}
                       </View>
                       <View style={styles.taskMeta}>
-                        <Text style={styles.taskDuration}>⏱️ {task.duration}</Text>
+                        <Feather name="clock" size={11} color="#64748B" />
+                        <Text style={styles.taskDuration}>{task.duration}</Text>
                         <Text style={styles.taskMetaDot}>·</Text>
                         <Text style={[styles.taskCategory, { color: catStyle.text }]}>{task.category}</Text>
                       </View>
@@ -285,10 +291,10 @@ export function HubScreen({ navigation }: HubScreenProps) {
                     {!isCompleted && (
                       isNextUp ? (
                         <View style={[styles.playTaskButton, { backgroundColor: catStyle.bg }]}>
-                          <Text style={styles.playTaskIcon}>▶</Text>
+                          <Ionicons name="play" size={14} color="#FFFFFF" style={{ marginLeft: 2 }} />
                         </View>
                       ) : (
-                        <Text style={styles.taskArrow}>›</Text>
+                        <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
                       )
                     )}
                   </View>
@@ -302,7 +308,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
               onPress={() => navigation.navigate('Tasks')}
             >
               <View style={styles.addTaskIcon}>
-                <Text style={styles.addTaskPlus}>+</Text>
+                <Ionicons name="add" size={16} color="#64748B" />
               </View>
               <Text style={styles.addTaskText}>Add task</Text>
             </TouchableOpacity>
@@ -318,8 +324,12 @@ export function HubScreen({ navigation }: HubScreenProps) {
                   style={styles.quickActionCard}
                   onPress={() => navigation.navigate(action.screen)}
                 >
-                  <View style={[styles.quickActionIcon, { backgroundColor: action.color[0] }]}>
-                    <Text style={styles.quickActionEmoji}>{action.icon}</Text>
+                  <View style={[styles.quickActionIcon, { backgroundColor: action.color }]}>
+                    <MaterialCommunityIcons 
+                      name={action.icon as any} 
+                      size={22} 
+                      color="#FFFFFF" 
+                    />
                   </View>
                   <Text style={styles.quickActionLabel}>{action.label}</Text>
                 </TouchableOpacity>
@@ -328,8 +338,12 @@ export function HubScreen({ navigation }: HubScreenProps) {
           </View>
 
           {/* Rotating Insight */}
-          <View style={[styles.insightCard, { backgroundColor: insights[activeInsightIndex].color + '10' }]}>
-            <Text style={styles.insightIcon}>{insights[activeInsightIndex].icon}</Text>
+          <View style={[styles.insightCard, { backgroundColor: insights[activeInsightIndex].color + '15' }]}>
+            <MaterialCommunityIcons 
+              name={insights[activeInsightIndex].icon as any} 
+              size={20} 
+              color={insights[activeInsightIndex].color} 
+            />
             <Text style={[styles.insightText, { color: insights[activeInsightIndex].color }]}>
               {insights[activeInsightIndex].text}
             </Text>
@@ -341,7 +355,9 @@ export function HubScreen({ navigation }: HubScreenProps) {
               style={styles.circlesCard}
               onPress={() => navigation.navigate('Circles')}
             >
-              <Text style={styles.cardEmoji}>👥</Text>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="people" size={24} color="#5856D6" />
+              </View>
               <Text style={styles.cardLabel}>Circles</Text>
               <Text style={styles.cardValue}>5 groups</Text>
             </TouchableOpacity>
@@ -350,7 +366,9 @@ export function HubScreen({ navigation }: HubScreenProps) {
               style={styles.settingsCard}
               onPress={() => navigation.navigate('Settings')}
             >
-              <Text style={styles.cardEmoji}>⚙️</Text>
+              <View style={styles.cardIconContainer}>
+                <Ionicons name="settings-outline" size={24} color="#8E8E93" />
+              </View>
               <Text style={styles.cardLabel}>Settings</Text>
               <Text style={styles.cardValue}>Preferences</Text>
             </TouchableOpacity>
@@ -403,9 +421,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inboxIcon: {
-    fontSize: 16,
-  },
   notificationBadge: {
     position: 'absolute',
     top: -4,
@@ -447,13 +462,15 @@ const styles = StyleSheet.create({
   xpPopup: {
     position: 'absolute',
     top: 80,
-    left: '50%',
-    transform: [{ translateX: -50 }],
+    alignSelf: 'center',
     zIndex: 100,
     backgroundColor: '#8B5CF6',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -505,9 +522,6 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  orbIcon: {
-    fontSize: 20,
-  },
   briefingText: {
     flex: 1,
   },
@@ -550,10 +564,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  playIcon: {
-    fontSize: 14,
-    marginLeft: 2,
-  },
   statsRow: {
     flexDirection: 'row',
     gap: 8,
@@ -581,9 +591,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 2,
-  },
-  streakEmoji: {
-    fontSize: 20,
   },
   streakValue: {
     fontSize: 18,
@@ -619,9 +626,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  levelEmoji: {
-    fontSize: 20,
-  },
   levelValue: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -654,9 +658,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  focusIcon: {
-    fontSize: 16,
-  },
   focusTitle: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -665,6 +666,10 @@ const styles = StyleSheet.create({
   focusSubtitle: {
     fontSize: 12,
     color: '#64748B',
+  },
+  fullPlanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   fullPlanLink: {
     fontSize: 13,
@@ -760,11 +765,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
     borderColor: '#10B981',
   },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   taskInfo: {
     flex: 1,
   },
@@ -809,6 +809,7 @@ const styles = StyleSheet.create({
   taskDuration: {
     fontSize: 11,
     color: '#64748B',
+    marginLeft: 2,
   },
   taskMetaDot: {
     color: '#CBD5E1',
@@ -828,15 +829,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
-  },
-  playTaskIcon: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    marginLeft: 2,
-  },
-  taskArrow: {
-    fontSize: 24,
-    color: '#CBD5E1',
   },
   addTaskButton: {
     flexDirection: 'row',
@@ -859,10 +851,6 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  addTaskPlus: {
-    fontSize: 14,
-    color: '#64748B',
   },
   addTaskText: {
     fontSize: 13,
@@ -909,9 +897,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  quickActionEmoji: {
-    fontSize: 20,
-  },
   quickActionLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -924,9 +909,6 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 16,
     marginTop: 8,
-  },
-  insightIcon: {
-    fontSize: 20,
   },
   insightText: {
     fontSize: 13,
@@ -959,8 +941,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  cardEmoji: {
-    fontSize: 24,
+  cardIconContainer: {
     marginBottom: 8,
   },
   cardLabel: {
