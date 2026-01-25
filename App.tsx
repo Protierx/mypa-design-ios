@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 
 import { HubScreen } from './src/screens/HubScreen';
 import { PlanScreen } from './src/screens/PlanScreen';
@@ -31,9 +32,21 @@ function HomeStack() {
   );
 }
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+interface TabIconProps {
+  iconName: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+}
+
+function TabIcon({ iconName, focused, color }: TabIconProps) {
   return (
-    <Text style={{ fontSize: 24, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Ionicons 
+        name={iconName} 
+        size={24} 
+        color={color}
+      />
+    </View>
   );
 }
 
@@ -64,21 +77,27 @@ export default function App() {
           name="Home"
           component={HomeStack}
           options={{
-            tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon iconName={focused ? "home" : "home-outline"} focused={focused} color={color} />
+            ),
           }}
         />
         <Tab.Screen
           name="Plan"
           component={PlanScreen}
           options={{
-            tabBarIcon: ({ focused }) => <TabIcon emoji="📅" focused={focused} />,
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon iconName={focused ? "calendar" : "calendar-outline"} focused={focused} color={color} />
+            ),
           }}
         />
         <Tab.Screen
           name="Inbox"
           component={InboxScreen}
           options={{
-            tabBarIcon: ({ focused }) => <TabIcon emoji="📬" focused={focused} />,
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon iconName={focused ? "mail" : "mail-outline"} focused={focused} color={color} />
+            ),
             tabBarBadge: 2,
             tabBarBadgeStyle: {
               backgroundColor: colors.danger,
@@ -90,7 +109,9 @@ export default function App() {
           name="Profile"
           component={ProfileScreen}
           options={{
-            tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon iconName={focused ? "person" : "person-outline"} focused={focused} color={color} />
+            ),
           }}
         />
       </Tab.Navigator>
