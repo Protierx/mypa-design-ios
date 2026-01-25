@@ -93,6 +93,12 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
     │   │   ├── Toast.tsx        # Toast notifications
     │   │   ├── Sheet.tsx        # Bottom sheet modal
     │   │   ├── InputOTP.tsx     # OTP code input
+    │   │   ├── Table.tsx        # Data table
+    │   │   ├── Tabs.tsx         # Tab navigation
+    │   │   ├── Textarea.tsx     # Multi-line input
+    │   │   ├── Toggle.tsx       # Toggle button
+    │   │   ├── ToggleGroup.tsx  # Toggle button group
+    │   │   ├── Tooltip.tsx      # Tooltip on long press
     │   │   └── index.ts         # Component exports
     │   ├── MYPAOrb.tsx          # Animated MYPA AI orb
     │   ├── FloatingMYPAButton.tsx # Floating voice access button
