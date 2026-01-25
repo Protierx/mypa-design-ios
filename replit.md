@@ -6,6 +6,7 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
 ## Project Architecture
 - **Framework**: React Native with Expo SDK 52
 - **Navigation**: React Navigation (Bottom Tabs + Native Stack)
+- **Icons**: @expo/vector-icons (Ionicons, MaterialCommunityIcons, Feather)
 - **Bundler**: Metro (Expo's bundler)
 - **Port**: 5000 (web preview)
 
@@ -46,11 +47,39 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
     │   ├── SettingsScreen.tsx   # App settings
     │   └── TasksScreen.tsx      # Task management
     ├── components/              # Reusable UI components
+    │   ├── MYPAOrb.tsx          # Animated MYPA AI orb
+    │   ├── FloatingMYPAButton.tsx # Floating voice access button
+    │   ├── IOSStatusBar.tsx     # iOS-style status bar
+    │   ├── MissionCard.tsx      # Mission/task status card
+    │   ├── ToggleSwitch.tsx     # Toggle switch component
+    │   ├── VoicePill.tsx        # Voice input pill
+    │   ├── TabBar.tsx           # Custom tab bar with center orb
+    │   └── index.ts             # Component exports
     └── styles/
         └── colors.ts            # App color palette
 ```
 
+## Reusable Components
+- **MYPAOrb**: Animated AI assistant orb with sparkle icon and glow effect
+- **FloatingMYPAButton**: Floating action button for voice access from any screen
+- **IOSStatusBar**: iOS-style status bar with time and system icons
+- **MissionCard**: Card component for displaying mission/task status
+- **ToggleSwitch**: Custom iOS-style toggle switch
+- **VoicePill**: Voice input pill that transforms to orb when recording
+- **TabBar**: Custom tab navigation bar with center voice button
+
+## Color Palette
+- Primary: #8B5CF6 (Purple)
+- Work: #3B82F6 (Blue)
+- Health: #10B981 (Green)
+- Fitness: #F43F5E (Red)
+- Wellness: #8B5CF6 (Purple)
+- Creative: #F59E0B (Orange)
+- Personal: #EC4899 (Pink)
+
 ## Recent Changes
+- January 25, 2026: Added reusable UI components (MYPAOrb, FloatingMYPAButton, VoicePill, TabBar, etc.)
+- January 25, 2026: Replaced all emoji icons with vector icons from @expo/vector-icons
 - January 25, 2026: Added detailed screens with full iOS-style UI
 - Added navigation with stack navigator for sub-screens
 - Created 9 fully styled screens with interactive elements
