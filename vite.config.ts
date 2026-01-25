@@ -5,15 +5,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   server: {
-    host: true,
-    port: 5173,
+    host: '0.0.0.0',
+    port: 5000,
     strictPort: true,
-
-    // Allow Cloudflare Quick Tunnel hostnames (they change every run)
-    allowedHosts: ['.trycloudflare.com'],
-
-    // (optional) keep this too if you still use localtunnel sometimes:
-    // allowedHosts: ['.trycloudflare.com', '.loca.lt'],
+    allowedHosts: true,
   },
 
   plugins: [react(), tailwindcss()],
