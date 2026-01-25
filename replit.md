@@ -52,6 +52,11 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
 ├── tsconfig.json                # TypeScript configuration
 ├── assets/                      # App icons, splash screens, mypa-orb.png
 └── src/
+    ├── styles/
+    │   ├── colors.ts           # MYPA brand color palette (light/dark)
+    │   ├── theme.ts            # Typography, spacing, shadows, card styles
+    │   ├── animations.ts       # Reusable animation utilities
+    │   └── index.ts            # Style exports
     ├── screens/                 # Screen components (16 screens total)
     │   ├── HubScreen.tsx        # Home dashboard
     │   ├── PlanScreen.tsx       # Daily schedule

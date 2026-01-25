@@ -5,3 +5,4 @@ export { MissionCard } from './MissionCard';
 export { ToggleSwitch } from './ToggleSwitch';
 export { VoicePill } from './VoicePill';
 export { TabBar } from './TabBar';
+export { AnimatedCard } from './AnimatedCard';
