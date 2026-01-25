@@ -15,6 +15,13 @@ import { CirclesScreen } from './src/screens/CirclesScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { TasksScreen } from './src/screens/TasksScreen';
 import { ListeningScreen } from './src/screens/ListeningScreen';
+import { StreakScreen } from './src/screens/StreakScreen';
+import { LevelScreen } from './src/screens/LevelScreen';
+import { EditProfileScreen } from './src/screens/EditProfileScreen';
+import { NotificationsScreen } from './src/screens/NotificationsScreen';
+import { PrivacyControlsScreen } from './src/screens/PrivacyControlsScreen';
+import { HelpSupportScreen } from './src/screens/HelpSupportScreen';
+import { CircleHomeScreen } from './src/screens/CircleHomeScreen';
 import { colors } from './src/styles/colors';
 
 const Tab = createBottomTabNavigator();
@@ -26,9 +33,32 @@ function HomeStack() {
       <Stack.Screen name="Hub" component={HubScreen} />
       <Stack.Screen name="Wallet" component={WalletScreen} />
       <Stack.Screen name="Challenges" component={ChallengesScreen} />
-      <Stack.Screen name="Circles" component={CirclesScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Tasks" component={TasksScreen} />
+      <Stack.Screen name="Streak" component={StreakScreen} />
+      <Stack.Screen name="Level" component={LevelScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function ProfileStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="PrivacyControls" component={PrivacyControlsScreen} />
+      <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+      <Stack.Screen name="SettingsFromProfile" component={SettingsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function CirclesStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="CirclesList" component={CirclesScreen} />
+      <Stack.Screen name="CircleHome" component={CircleHomeScreen} />
     </Stack.Navigator>
   );
 }
@@ -141,8 +171,8 @@ export default function App() {
         <Tab.Screen name="Home" component={HomeStack} />
         <Tab.Screen name="Plan" component={PlanScreen} />
         <Tab.Screen name="Voice" component={VoicePlaceholder} />
-        <Tab.Screen name="Circles" component={CirclesScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+        <Tab.Screen name="Circles" component={CirclesStack} />
+        <Tab.Screen name="Profile" component={ProfileStack} />
       </Tab.Navigator>
       
       <ListeningScreen 

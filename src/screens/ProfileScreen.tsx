@@ -163,6 +163,13 @@ export function ProfileScreen({ navigation }: any) {
             <TouchableOpacity
               key={item.id}
               style={[styles.menuItem, index < menuItems.length - 1 && styles.menuItemBorder]}
+              onPress={() => {
+                if (item.title === 'Edit Profile') navigation?.navigate('EditProfile');
+                else if (item.title === 'Notifications') navigation?.navigate('Notifications');
+                else if (item.title === 'Privacy Controls') navigation?.navigate('PrivacyControls');
+                else if (item.title === 'Settings') navigation?.navigate('SettingsFromProfile');
+                else if (item.title === 'Help & Support') navigation?.navigate('HelpSupport');
+              }}
             >
               <View style={[styles.menuIconContainer, { backgroundColor: item.iconColor + '15' }]}>
                 <Ionicons name={item.iconName as any} size={20} color={item.iconColor} />

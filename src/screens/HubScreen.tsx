@@ -31,7 +31,7 @@ const categoryStyles = {
 };
 
 export function HubScreen({ navigation }: HubScreenProps) {
-  const [greeting, setGreeting] = useState({ text: 'Good morning', icon: 'sunny' as const });
+  const [greeting, setGreeting] = useState<{ text: string; icon: 'sunny' | 'partly-sunny' | 'moon' }>({ text: 'Good morning', icon: 'sunny' });
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
   const [xpEarned, setXpEarned] = useState(0);
   const [showXpPopup, setShowXpPopup] = useState(false);
@@ -74,7 +74,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
 
   const tasks: Task[] = [
     { id: 1, title: 'Review Q1 metrics', time: '5:00 PM', icon: 'chart-bar', category: 'Work', duration: '15m', priority: true },
-    { id: 2, title: 'Gym Session', time: '6:00 PM', icon: 'dumbbell', category: 'Health', duration: '1h', priority: true },
+    { id: 2, title: 'Gym Session', time: '6:00 PM', icon: 'barbell', category: 'Health', duration: '1h', priority: true },
     { id: 3, title: 'Call Mom', time: 'Evening', icon: 'phone', category: 'Personal', duration: '15m', priority: false },
   ];
 
@@ -167,7 +167,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
           <View style={styles.statsRow}>
             <TouchableOpacity 
               style={styles.streakCard}
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.navigate('Streak')}
             >
               <View style={styles.streakIcon}>
                 <MaterialCommunityIcons name="fire" size={22} color="#FFFFFF" />
@@ -180,7 +180,7 @@ export function HubScreen({ navigation }: HubScreenProps) {
 
             <TouchableOpacity 
               style={styles.levelCard}
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.navigate('Level')}
             >
               <View style={styles.levelIcon}>
                 <Ionicons name="star" size={22} color="#FFFFFF" />

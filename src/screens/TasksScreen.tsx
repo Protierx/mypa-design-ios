@@ -24,7 +24,7 @@ interface Task {
 
 const initialTasks: Task[] = [
   { id: '1', title: 'Complete project proposal', description: 'Draft and review Q1 project proposal', priority: 'high', category: 'Work', categoryIcon: 'briefcase', dueDate: 'Today', completed: false },
-  { id: '2', title: 'Morning workout', description: '45 min strength training session', priority: 'medium', category: 'Fitness', categoryIcon: 'dumbbell', dueDate: 'Today', completed: true },
+  { id: '2', title: 'Morning workout', description: '45 min strength training session', priority: 'medium', category: 'Fitness', categoryIcon: 'barbell', dueDate: 'Today', completed: true },
   { id: '3', title: 'Call with Sarah', description: 'Discuss partnership opportunity', priority: 'high', category: 'Work', categoryIcon: 'phone-portrait', dueDate: 'Today', completed: false },
   { id: '4', title: 'Grocery shopping', description: 'Weekly groceries for meal prep', priority: 'low', category: 'Personal', categoryIcon: 'cart', dueDate: 'Today', completed: false },
   { id: '5', title: 'Read book chapter', description: 'Finish chapter 5 of current book', priority: 'low', category: 'Learning', categoryIcon: 'book', dueDate: 'Tomorrow', completed: false },

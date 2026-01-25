@@ -11,15 +11,31 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
 - **Port**: 5000 (web preview)
 
 ## Key Screens
+### Main Screens (Tab Navigation)
 - **Hub (Home)**: Main dashboard with streak tracker, quick actions, and cards for Plan, Tasks, Challenges, Circles, Wallet, Settings
 - **Plan**: Daily schedule with interactive task timeline, day selector, and progress tracking
-- **Inbox**: Messages and notifications with tabs for direct messages and system notifications
 - **Profile**: User profile with achievements, level progress, stats, and account settings
+- **Circles**: Social groups with activity tracking and member counts
+
+### Sub-Screens (Stack Navigation from Hub)
 - **Wallet**: Balance display, transactions history, send/receive/redeem actions
 - **Challenges**: Active and available challenges with progress tracking and rewards
-- **Circles**: Social groups with activity tracking and member counts
 - **Settings**: App preferences, account settings, and support options
 - **Tasks**: Task management with priority filtering and completion tracking
+- **Streak**: Streak tracking with calendar view, milestones, and XP multiplier benefits
+- **Level**: XP progression, rank tiers, recent XP history, and level rewards
+
+### Sub-Screens (Stack Navigation from Profile)
+- **EditProfile**: User account management with avatar, name, bio, contact info, password change
+- **Notifications**: Granular notification controls for task reminders, circles, challenges, quiet hours
+- **PrivacyControls**: Privacy modes (private/metrics/proof), per-circle settings, data permissions
+- **HelpSupport**: FAQs, contact forms (chat/bug/feature), resources, community links
+
+### Sub-Screens (Stack Navigation from Circles)
+- **CircleHome**: Individual circle view with feed, challenges tab, members list, share progress
+
+### Modal Screens
+- **Listening**: Voice/text input modes, conversation transcripts, settings modal (language, speed, voice)
 
 ## Running the App
 - **Web**: `npm run web` (runs on port 5000)
@@ -34,18 +50,26 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
 ├── package.json                 # Dependencies
 ├── babel.config.js              # Babel configuration
 ├── tsconfig.json                # TypeScript configuration
-├── assets/                      # App icons and splash screens
+├── assets/                      # App icons, splash screens, mypa-orb.png
 └── src/
-    ├── screens/                 # Screen components
+    ├── screens/                 # Screen components (16 screens total)
     │   ├── HubScreen.tsx        # Home dashboard
     │   ├── PlanScreen.tsx       # Daily schedule
     │   ├── InboxScreen.tsx      # Messages & notifications
     │   ├── ProfileScreen.tsx    # User profile
     │   ├── WalletScreen.tsx     # Wallet & transactions
     │   ├── ChallengesScreen.tsx # Challenges
-    │   ├── CirclesScreen.tsx    # Social circles
+    │   ├── CirclesScreen.tsx    # Social circles list
     │   ├── SettingsScreen.tsx   # App settings
-    │   └── TasksScreen.tsx      # Task management
+    │   ├── TasksScreen.tsx      # Task management
+    │   ├── ListeningScreen.tsx  # Voice/text input modal
+    │   ├── StreakScreen.tsx     # Streak tracking & milestones
+    │   ├── LevelScreen.tsx      # XP & level progression
+    │   ├── EditProfileScreen.tsx    # Edit profile form
+    │   ├── NotificationsScreen.tsx  # Notification preferences
+    │   ├── PrivacyControlsScreen.tsx # Privacy settings
+    │   ├── HelpSupportScreen.tsx    # Help & support
+    │   └── CircleHomeScreen.tsx     # Individual circle view
     ├── components/              # Reusable UI components
     │   ├── MYPAOrb.tsx          # Animated MYPA AI orb
     │   ├── FloatingMYPAButton.tsx # Floating voice access button
@@ -57,6 +81,33 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
     │   └── index.ts             # Component exports
     └── styles/
         └── colors.ts            # App color palette
+```
+
+## Navigation Structure
+```
+Tab Navigator
+├── Home (HomeStack)
+│   ├── Hub
+│   ├── Wallet
+│   ├── Challenges
+│   ├── Circles
+│   ├── Settings
+│   ├── Tasks
+│   ├── Streak
+│   ├── Level
+│   └── CircleHome
+├── Plan
+├── Voice (triggers ListeningScreen modal)
+├── Circles (CirclesStack)
+│   ├── CirclesList
+│   └── CircleHome
+└── Profile (ProfileStack)
+    ├── ProfileMain
+    ├── EditProfile
+    ├── Notifications
+    ├── PrivacyControls
+    ├── HelpSupport
+    └── SettingsFromProfile
 ```
 
 ## Reusable Components
@@ -78,14 +129,11 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
 - Personal: #EC4899 (Pink)
 
 ## Recent Changes
+- January 25, 2026: Added 7 new screens (StreakScreen, LevelScreen, EditProfileScreen, NotificationsScreen, PrivacyControlsScreen, HelpSupportScreen, CircleHomeScreen)
+- January 25, 2026: Updated navigation with ProfileStack and CirclesStack for sub-screen navigation
+- January 25, 2026: Connected Hub streak/level cards to new dedicated screens
+- January 25, 2026: Connected Profile menu items to EditProfile, Notifications, PrivacyControls, HelpSupport screens
+- January 25, 2026: Connected Circles list items to CircleHome screen
 - January 25, 2026: Added reusable UI components (MYPAOrb, FloatingMYPAButton, VoicePill, TabBar, etc.)
 - January 25, 2026: Replaced all emoji icons with vector icons from @expo/vector-icons
-- January 25, 2026: Added detailed screens with full iOS-style UI
-- Added navigation with stack navigator for sub-screens
-- Created 9 fully styled screens with interactive elements
-- Added streak tracking, achievements, progress bars
-- Implemented message inbox with tabs for messages and notifications
-- Added wallet with transaction history
-- Created challenges with progress tracking
-- Added social circles management
-- Implemented task management with priority filtering
+- January 25, 2026: Added ListeningScreen with voice/text modes and settings modal

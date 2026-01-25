@@ -125,7 +125,7 @@ export function CirclesScreen({ navigation }: any) {
         </View>
 
         {myCircles.map((circle) => (
-          <TouchableOpacity key={circle.id} style={styles.circleCard}>
+          <TouchableOpacity key={circle.id} style={styles.circleCard} onPress={() => navigation?.navigate('CircleHome')}>
             <View style={[styles.circleIcon, { backgroundColor: circle.color + '20' }]}>
               {renderCircleIcon(circle.iconName, circle.color)}
             </View>
