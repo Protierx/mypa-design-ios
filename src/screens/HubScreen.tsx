@@ -192,6 +192,23 @@ export function HubScreen({ navigation }: HubScreenProps) {
             </TouchableOpacity>
           </View>
 
+          {/* Reset Mode Card */}
+          <TouchableOpacity 
+            style={styles.resetCard}
+            onPress={() => navigation.navigate('Reset')}
+          >
+            <View style={styles.resetCardContent}>
+              <View style={styles.resetIconContainer}>
+                <Ionicons name="moon" size={20} color="#A78BFA" />
+              </View>
+              <View style={styles.resetTextContent}>
+                <Text style={styles.resetTitle}>Reset Mode</Text>
+                <Text style={styles.resetSubtitle}>Take a moment. Breathe.</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
+          </TouchableOpacity>
+
           {/* Today's Focus */}
           <View style={styles.focusSection}>
             <View style={styles.focusHeader}>
@@ -635,6 +652,42 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#7C3AED',
     fontWeight: '500',
+  },
+  resetCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    marginTop: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
+  },
+  resetCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  resetIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetTextContent: {
+    gap: 2,
+  },
+  resetTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  resetSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
   },
   focusSection: {
     marginTop: 8,

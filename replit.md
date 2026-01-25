@@ -65,6 +65,7 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
     │   ├── ListeningScreen.tsx  # Voice/text input modal
     │   ├── StreakScreen.tsx     # Streak tracking & milestones
     │   ├── LevelScreen.tsx      # XP & level progression
+    │   ├── ResetScreen.tsx      # Mindfulness/breathing exercises
     │   ├── EditProfileScreen.tsx    # Edit profile form
     │   ├── NotificationsScreen.tsx  # Notification preferences
     │   ├── PrivacyControlsScreen.tsx # Privacy settings
@@ -93,7 +94,8 @@ Tab Navigator
 │   ├── Settings
 │   ├── Tasks
 │   ├── Streak
-│   └── Level
+│   ├── Level
+│   └── Reset
 ├── Plan
 ├── Voice (triggers ListeningScreen modal)
 ├── Circles (CirclesStack)
@@ -135,3 +137,4 @@ Tab Navigator
 - January 25, 2026: Added reusable UI components (MYPAOrb, FloatingMYPAButton, VoicePill, TabBar, etc.)
 - January 25, 2026: Replaced all emoji icons with vector icons from @expo/vector-icons
 - January 25, 2026: Added ListeningScreen with voice/text modes and settings modal
+- January 25, 2026: Added ResetScreen for mindfulness/breathing exercises with chat interface

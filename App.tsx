@@ -22,6 +22,7 @@ import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { PrivacyControlsScreen } from './src/screens/PrivacyControlsScreen';
 import { HelpSupportScreen } from './src/screens/HelpSupportScreen';
 import { CircleHomeScreen } from './src/screens/CircleHomeScreen';
+import ResetScreen from './src/screens/ResetScreen';
 import { colors } from './src/styles/colors';
 
 const Tab = createBottomTabNavigator();
@@ -37,6 +38,7 @@ function HomeStack() {
       <Stack.Screen name="Tasks" component={TasksScreen} />
       <Stack.Screen name="Streak" component={StreakScreen} />
       <Stack.Screen name="Level" component={LevelScreen} />
+      <Stack.Screen name="Reset" component={ResetScreen} />
     </Stack.Navigator>
   );
 }
