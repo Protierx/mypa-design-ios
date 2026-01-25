@@ -85,6 +85,14 @@ This is a React Native mobile app built with Expo, designed as an iOS-style pers
     │   │   ├── Progress.tsx     # Progress bar
     │   │   ├── Separator.tsx    # Visual separator
     │   │   ├── Switch.tsx       # Toggle switch
+    │   │   ├── Label.tsx        # Form label
+    │   │   ├── RadioGroup.tsx   # Radio button group
+    │   │   ├── Select.tsx       # Dropdown select
+    │   │   ├── Slider.tsx       # Value slider
+    │   │   ├── Skeleton.tsx     # Loading skeleton
+    │   │   ├── Toast.tsx        # Toast notifications
+    │   │   ├── Sheet.tsx        # Bottom sheet modal
+    │   │   ├── InputOTP.tsx     # OTP code input
     │   │   └── index.ts         # Component exports
     │   ├── MYPAOrb.tsx          # Animated MYPA AI orb
     │   ├── FloatingMYPAButton.tsx # Floating voice access button
