@@ -90,12 +90,10 @@ Tab Navigator
 │   ├── Hub
 │   ├── Wallet
 │   ├── Challenges
-│   ├── Circles
 │   ├── Settings
 │   ├── Tasks
 │   ├── Streak
-│   ├── Level
-│   └── CircleHome
+│   └── Level
 ├── Plan
 ├── Voice (triggers ListeningScreen modal)
 ├── Circles (CirclesStack)
