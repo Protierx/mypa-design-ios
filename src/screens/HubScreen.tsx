@@ -192,23 +192,6 @@ export function HubScreen({ navigation }: HubScreenProps) {
             </TouchableOpacity>
           </View>
 
-          {/* Reset Mode Card */}
-          <TouchableOpacity 
-            style={styles.resetCard}
-            onPress={() => navigation.navigate('Reset')}
-          >
-            <View style={styles.resetCardContent}>
-              <View style={styles.resetIconContainer}>
-                <Ionicons name="moon" size={20} color="#A78BFA" />
-              </View>
-              <View style={styles.resetTextContent}>
-                <Text style={styles.resetTitle}>Reset Mode</Text>
-                <Text style={styles.resetSubtitle}>Take a moment. Breathe.</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
-          </TouchableOpacity>
-
           {/* Today's Focus */}
           <View style={styles.focusSection}>
             <View style={styles.focusHeader}>
@@ -390,6 +373,23 @@ export function HubScreen({ navigation }: HubScreenProps) {
               <Text style={styles.cardValue}>Preferences</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Reset Mode Card */}
+          <TouchableOpacity 
+            style={styles.resetCard}
+            onPress={() => navigation.navigate('Reset')}
+          >
+            <View style={styles.resetCardContent}>
+              <View style={styles.resetIconContainer}>
+                <Ionicons name="moon" size={20} color="#A78BFA" />
+              </View>
+              <View style={styles.resetTextContent}>
+                <Text style={styles.resetTitle}>Reset Mode</Text>
+                <Text style={styles.resetSubtitle}>Take a moment. Breathe.</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 100 }} />
